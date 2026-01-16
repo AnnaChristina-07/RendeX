@@ -1,0 +1,178 @@
+[
+    {
+        "id": "rent_69590bcb772bb",
+        "user_id": "117552453048880090373",
+        "item": {
+            "name": "Sleeping Bag (-5\u00b0C)",
+            "price": 8,
+            "img": "sleeping bag",
+            "type": "static",
+            "description": "This is a premium quality Sleeping Bag (-5\u00b0C) available for rent. Well maintained and perfect for your needs. Contact the owner for availability.",
+            "address": "Central District, City"
+        },
+        "status": "returned",
+        "start_date": "2026-01-03",
+        "end_date": "2026-01-03",
+        "total_price": 24
+    },
+    {
+        "id": "rent_69590be92d8e0",
+        "user_id": "117552453048880090373",
+        "item": {
+            "name": "4-Person Camping Tent",
+            "price": 25,
+            "img": "camping tent",
+            "type": "static",
+            "description": "This is a premium quality 4-Person Camping Tent available for rent. Well maintained and perfect for your needs. Contact the owner for availability.",
+            "address": "Central District, City"
+        },
+        "status": "active",
+        "start_date": "2026-01-03",
+        "end_date": "2026-01-06",
+        "total_price": 75
+    },
+    {
+        "id": "rent_69590e5035253",
+        "user_id": "112177629622128647444",
+        "item": {
+            "name": "Epson 4K Home Projector",
+            "price": 40,
+            "img": "projector",
+            "type": "static",
+            "description": "This is a premium quality Epson 4K Home Projector available for rent. Well maintained and perfect for your needs. Contact the owner for availability.",
+            "address": "Central District, City"
+        },
+        "status": "returned",
+        "start_date": "2026-01-03",
+        "end_date": "2026-01-03",
+        "total_price": 120
+    },
+    {
+        "id": "rent_69591d6e8fbc8",
+        "user_id": "112177629622128647444",
+        "item": {
+            "name": "Large Bean Bag Chair",
+            "price": 8,
+            "img": "bean bag",
+            "type": "static",
+            "description": "This is a premium quality Large Bean Bag Chair available for rent. Well maintained and perfect for your needs. Contact the owner for availability.",
+            "address": "Central District, City"
+        },
+        "status": "returned",
+        "start_date": "2026-01-03",
+        "end_date": "2026-01-03",
+        "total_price": 24
+    },
+    {
+        "id": "rent_69591d747255a",
+        "user_id": "112177629622128647444",
+        "item": {
+            "name": "Large Bean Bag Chair",
+            "price": 8,
+            "img": "bean bag",
+            "type": "static",
+            "description": "This is a premium quality Large Bean Bag Chair available for rent. Well maintained and perfect for your needs. Contact the owner for availability.",
+            "address": "Central District, City"
+        },
+        "status": "active",
+        "start_date": "2026-01-03",
+        "end_date": "2026-01-06",
+        "total_price": 24
+    },
+    {
+        "id": "rent_69591eacefe7d",
+        "user_id": "117552453048880090373",
+        "item": {
+            "name": "Large Bean Bag Chair",
+            "price": 8,
+            "img": "bean bag",
+            "type": "static",
+            "description": "This is a premium quality Large Bean Bag Chair available for rent. Well maintained and perfect for your needs. Contact the owner for availability.",
+            "address": "Central District, City"
+        },
+        "status": "active",
+        "start_date": "2026-01-03",
+        "end_date": "2026-01-06",
+        "total_price": 24
+    },
+    {
+        "id": "rent_6959223834841",
+        "user_id": "112177629622128647444",
+        "item": {
+            "name": "Large Bean Bag Chair",
+            "price": 8,
+            "img": "bean bag",
+            "type": "static",
+            "description": "This is a premium quality Large Bean Bag Chair available for rent. Well maintained and perfect for your needs. Contact the owner for availability.",
+            "address": "Central District, City"
+        },
+        "status": "active",
+        "start_date": "2026-01-03",
+        "end_date": "2026-01-06",
+        "total_price": 24
+    },
+    {
+        "id": "rent_6959224f31bcb",
+        "user_id": "112177629622128647444",
+        "item": {
+            "name": "Wooden Bookshelf",
+            "price": 12,
+            "img": "bookshelf",
+            "type": "static",
+            "description": "This is a premium quality Wooden Bookshelf available for rent. Well maintained and perfect for your needs. Contact the owner for availability.",
+            "address": "Central District, City"
+        },
+        "status": "active",
+        "start_date": "2026-01-03",
+        "end_date": "2026-01-06",
+        "total_price": 36
+    },
+    {
+        "id": "rent_6959240e4aa55",
+        "user_id": "69591ae990e5c",
+        "item": {
+            "name": "Bosch Drill Machine Kit",
+            "price": 10,
+            "img": "drill machine",
+            "type": "static",
+            "description": "This is a premium quality Bosch Drill Machine Kit available for rent. Well maintained and perfect for your needs. Contact the owner for availability.",
+            "address": "Central District, City"
+        },
+        "status": "active",
+        "start_date": "2026-01-03",
+        "end_date": "2026-01-06",
+        "total_price": 30
+    },
+    {
+        "id": "rent_695924794b6cf",
+        "user_id": "69591ae990e5c",
+        "item": {
+            "name": "Folding Dining Table (6 Seater)",
+            "price": 20,
+            "img": "folding table",
+            "type": "static",
+            "description": "This is a premium quality Folding Dining Table (6 Seater) available for rent. Well maintained and perfect for your needs. Contact the owner for availability.",
+            "address": "Central District, City"
+        },
+        "status": "returned",
+        "start_date": "2026-01-03",
+        "end_date": "2026-01-03",
+        "total_price": 60
+    },
+    {
+        "id": "rent_695d356d2f4ac",
+        "user_id": "105093713961636344161",
+        "item": {
+            "name": "Wooden Bookshelf",
+            "price": 12,
+            "img": "bookshelf",
+            "type": "static",
+            "description": "This is a premium quality Wooden Bookshelf available for rent. Well maintained and perfect for your needs. Contact the owner for availability.",
+            "address": "Central District, City"
+        },
+        "status": "active",
+        "start_date": "2026-01-06",
+        "end_date": "2026-01-09",
+        "total_price": 36
+    }
+]

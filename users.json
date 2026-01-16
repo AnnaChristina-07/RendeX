@@ -1,0 +1,98 @@
+[
+    {
+        "id": "6948c12c5e567",
+        "name": "elis reji",
+        "email": "elisreji@gmail.com",
+        "phone": "9876543210",
+        "role": "delivery_partner",
+        "password_hash": "$2y$10$ShhZ3hdJXgwYg3Gs90WjM.QEqKXp9zGFd5q562iZH9U4\/DgUKMPRq",
+        "created_at": "2025-12-22 04:55:24"
+    },
+    {
+        "id": "6948d636dab97",
+        "name": "Anna Christina Johny",
+        "email": "annachristinajohny2028@mca.ajce.in",
+        "phone": "7907397205",
+        "password_hash": "$2y$10$shZM8dDdt3YwbXrJS8gjm.ZFValyPv.dM718.cbiHlEu.qOeL13KG",
+        "created_at": "2025-12-22 06:25:11"
+    },
+    {
+        "id": "6948d6fc04fdf",
+        "name": "Anna Christina Johny",
+        "email": "augustinejoyaljose2028@mca.ajce.in",
+        "phone": "7907397205",
+        "password_hash": "$2y$10$FlBgLzKYCezNA\/aApzetuOxWM5yypbrPwezmeTddVLppCIUdbKUi2",
+        "created_at": "2025-12-22 06:28:28"
+    },
+    {
+        "id": "6949055695333",
+        "name": "Anna Christina Johny",
+        "email": "alwinvarghese2028@mca.ajce.in",
+        "phone": "7907397205",
+        "password_hash": "$2y$10$GeFqcOsda7sYpPSguQpy2OUxf4madoizfZszLZ6j9Apt7avzBorY.",
+        "created_at": "2025-12-22 09:46:14"
+    },
+    {
+        "id": "69591ae990e5c",
+        "name": "owner",
+        "email": "owner@gmail.com",
+        "phone": "1234567890",
+        "password_hash": "$2y$10$zILh1akzDoc2j47QHefauuzKqzDDDYtuXct.jPzKWgshu\/kaQh35e",
+        "created_at": "2026-01-03 14:34:33"
+    },
+    {
+        "id": "695a8dc1e017b",
+        "name": "Agnus Sabu",
+        "email": "agnussabu2028@mca.ajce.in",
+        "phone": "6238337511",
+        "role": "owner",
+        "password_hash": "$2y$10$HJ4ex2sBGqlUFijVYYZCOexskaIa7q\/4yxOCieSMr8v4BJsp.wR8y",
+        "created_at": "2026-01-04 16:56:50"
+    },
+    {
+        "id": "695a9a1b6d290",
+        "name": "Jewel Treasa Raphel",
+        "email": "jeweltreasaraphel2028@mca.ajce.in",
+        "phone": "7907397205",
+        "role": "delivery_partner",
+        "password_hash": "$2y$10$uy05GZKm5Z.N0GF3xELkPOaHqluHCajpI0t2\/lQfin.2SpqvkPLmi",
+        "created_at": "2026-01-04 17:49:31"
+    },
+    {
+        "id": "695c962662a09",
+        "name": "paulin paul",
+        "email": "paulinepaul@amaljyothi.ac.in",
+        "phone": "7907397205",
+        "role": "owner",
+        "password_hash": "$2y$10$UjXezEUILZ4PDcsjqtWddeWq8OKDeBf7WWmqpvLEjX47qnfmGpmcm",
+        "created_at": "2026-01-06 05:57:10"
+    },
+    {
+        "id": "695d2f34db4b2",
+        "name": "Anna Christina Johny",
+        "email": "annachristinajohny@gmail.com",
+        "phone": "7907397205",
+        "role": "delivery_partner",
+        "password_hash": "$2y$10$w4B38KZEOftPzG0K98FVCOc0bnLSR.jCR9\/UemqWClMLMAG\/obURe",
+        "created_at": "2026-01-06 16:50:13"
+    },
+    {
+        "id": "695de9000bf3f",
+        "name": "Juna elsa",
+        "email": "junaelsamathew2028@mca.ajce.in",
+        "phone": "9876543210",
+        "role": "delivery_partner",
+        "password_hash": "$2y$10$2TUslxFWQhGLY0BnIlmsn.LCPWkqoNDFXtDhC.b3y52aOGwAygq52",
+        "created_at": "2026-01-07 06:02:56"
+    },
+    {
+        "id": "105831196213432966232",
+        "name": "Anna Christina Johny",
+        "email": "annachristina2005@gmail.com",
+        "phone": "",
+        "role": "user",
+        "password_hash": "$2y$10$hGVUNpeLl8bbPNWC7oFONeB6c2ijfWZb2MLjmfBjvaF70PQRFm4NO",
+        "created_at": "2026-01-08 18:20:52",
+        "profile_picture": "https:\/\/lh3.googleusercontent.com\/a\/ACg8ocLH70uJyDWhFaWj_sJ90Ak_h-ZOpEVJNCMTRGGl6BSpxOK_D6E=s96-c"
+    }
+]
