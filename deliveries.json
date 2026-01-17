@@ -1,0 +1,28 @@
+[
+    {
+        "id": "del_695d3792bfbe6",
+        "rental_id": "rent_6959224f31bcb",
+        "partner_id": "695a9a1b6d290",
+        "status": "assigned",
+        "assigned_at": "2026-01-06 17:25:54",
+        "history": [
+            {
+                "status": "assigned",
+                "timestamp": "2026-01-06 17:25:54"
+            }
+        ]
+    },
+    {
+        "id": "del_695df26bc0279",
+        "rental_id": "rent_695d356d2f4ac",
+        "partner_id": "695de9000bf3f",
+        "status": "assigned",
+        "assigned_at": "2026-01-07 06:43:07",
+        "history": [
+            {
+                "status": "assigned",
+                "timestamp": "2026-01-07 06:43:07"
+            }
+        ]
+    }
+]
