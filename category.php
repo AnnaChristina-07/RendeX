@@ -122,10 +122,12 @@ if (!isset($_SESSION['user_id'])) {
 
     $current_cat = isset($categories[$cat_slug]) ? $categories[$cat_slug] : null;
 
-    // Load Dynamic Items from JSON
+    // Load Dynamic Items
     $items_file = 'items.json';
     $dynamic_items = file_exists($items_file) ? json_decode(file_get_contents($items_file), true) : [];
     if (!is_array($dynamic_items)) $dynamic_items = [];
+
+
 
     $items_to_show = [];
     
@@ -189,341 +191,305 @@ if (!isset($_SESSION['user_id'])) {
             $items_to_show[] = $d_item;
         }
     }
+
+
     ?>
-
+    
     <?php if ($current_cat): ?>
-        <!-- Simple Category Banner - Black Background with Yellow Text -->
-        <section class="mt-8 md:mt-12 rounded-3xl overflow-hidden shadow-lg bg-black border-2 border-[#3e3d2a]">
-            <div class="px-8 py-12 md:px-16 md:py-16">
-                <div class="max-w-6xl mx-auto">
-                    <div class="flex flex-col md:flex-row items-center gap-8">
-                        <!-- Icon -->
-                        <div class="flex-shrink-0">
-                            <div class="w-32 h-32 rounded-2xl bg-primary flex items-center justify-center shadow-xl">
-                                <span class="material-symbols-outlined text-7xl text-black font-bold"><?php echo $current_cat['icon']; ?></span>
-                            </div>
-                        </div>
-                        
-                        <!-- Text Content -->
-                        <div class="flex-1 text-center md:text-left">
-                            <h1 class="text-5xl md:text-6xl font-black tracking-tight mb-4 text-primary">
-                                <?php echo $current_cat['title']; ?>
-                            </h1>
-                            <p class="text-gray-300 text-lg md:text-xl leading-relaxed max-w-2xl mb-6">
-                                Discover quality <?php echo strtolower($current_cat['title']); ?> available for rent. Verified owners, instant booking, and best prices guaranteed.
-                            </p>
-                            
-                            <!-- Stats Badges -->
-                            <div class="flex flex-wrap gap-3 justify-center md:justify-start">
-                                <div class="bg-[#2d2c18] border border-primary/20 rounded-full px-5 py-2 flex items-center gap-2">
-                                    <span class="material-symbols-outlined text-primary text-lg">inventory_2</span>
-                                    <span class="text-white font-bold text-sm"><?php echo count($items_to_show); ?>+ Items</span>
-                                </div>
-                                <div class="bg-[#2d2c18] border border-primary/20 rounded-full px-5 py-2 flex items-center gap-2">
-                                    <span class="material-symbols-outlined text-primary text-lg">verified</span>
-                                    <span class="text-white font-bold text-sm">Verified Sellers</span>
-                                </div>
-                                <div class="bg-[#2d2c18] border border-primary/20 rounded-full px-5 py-2 flex items-center gap-2">
-                                    <span class="material-symbols-outlined text-primary text-lg">bolt</span>
-                                    <span class="text-white font-bold text-sm">Instant Booking</span>
-                                </div>
-                            </div>
-                        </div>
+
+
+
+        <!-- Main Content with Sidebar -->
+        <div class="flex flex-col lg:flex-row gap-8 mt-12 mb-20">
+            <!-- Sidebar Filters -->
+            <!-- Sidebar Filters -->
+            <aside class="w-full lg:w-1/4 lg:min-w-[300px]">
+                <div class="bg-[#121212]/95 backdrop-blur-xl text-white rounded-[2rem] p-8 border border-white/5 sticky top-28 shadow-2xl ring-1 ring-white/10">
+                    <div class="flex items-center justify-between mb-6 border-b border-gray-800 pb-4">
+                        <h3 class="font-black text-xl text-primary">Filters</h3>
+                        <button class="text-xs font-bold text-gray-500 hover:text-primary transition-colors tracking-wider">RESET</button>
                     </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Search Bar (Full Width) -->
-        <div class="mt-10 mb-6">
-            <div class="relative">
-                <input 
-                    type="text" 
-                    id="searchInput" 
-                    placeholder="Search for items in <?php echo $current_cat['title']; ?>..." 
-                    class="w-full bg-surface-light dark:bg-surface-dark border-2 border-[#e9e8ce] dark:border-[#3e3d2a] rounded-2xl px-6 py-4 pl-14 text-base font-medium focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all shadow-sm"
-                />
-                <span class="material-symbols-outlined absolute left-5 top-1/2 -translate-y-1/2 text-text-muted text-xl">search</span>
-                <button id="clearSearch" class="absolute right-5 top-1/2 -translate-y-1/2 hidden bg-primary hover:opacity-80 text-black rounded-full p-1.5 transition-all">
-                    <span class="material-symbols-outlined text-base">close</span>
-                </button>
-            </div>
-        </div>
-
-        <!-- 2-Column Layout: Sidebar + Items Grid -->
-        <div class="flex flex-col lg:flex-row gap-6">
-            <!-- Left Sidebar - Filters -->
-            <aside class="w-full lg:w-64 flex-shrink-0">
-                <div class="bg-surface-light dark:bg-surface-dark rounded-2xl border-2 border-[#e9e8ce] dark:border-[#3e3d2a] p-5 sticky top-24 shadow-md">
-                    <!-- Filter Header -->
-                    <div class="flex items-center justify-between mb-5 pb-4 border-b-2 border-[#e9e8ce] dark:border-[#3e3d2a]">
-                        <div class="flex items-center gap-2">
-                            <span class="material-symbols-outlined text-primary text-xl">tune</span>
-                            <h3 class="font-black text-lg text-text-main dark:text-white">Filters</h3>
-                        </div>
-                        <button id="resetFilters" class="text-primary hover:opacity-80 text-xs font-bold transition-all">
-                            Reset All
-                        </button>
-                    </div>
-
-                    <!-- Items Count -->
-                    <div class="mb-5 p-3 bg-primary/10 border border-primary/30 rounded-xl">
-                        <p class="text-sm font-bold text-text-main dark:text-white text-center">
-                            <span id="itemCount"><?php echo count($items_to_show); ?></span> Items Found
-                        </p>
-                    </div>
-
-                    <!-- Sort By -->
-                    <div class="mb-5">
-                        <label class="block text-xs font-bold text-text-main dark:text-white mb-2">SORT BY</label>
-                        <select id="sortSelect" class="w-full bg-black text-primary border-2 border-primary rounded-xl px-4 py-2.5 text-sm font-bold focus:ring-2 focus:ring-primary outline-none transition-all cursor-pointer">
-                            <option value="recommended">⭐ Recommended</option>
-                            <option value="price-low">↑ Price: Low to High</option>
-                            <option value="price-high">↓ Price: High to Low</option>
-                            <option value="rating">⭐ Top Rated</option>
-                            <option value="distance">📍 Nearest First</option>
-                        </select>
-                    </div>
-
+                    
                     <!-- Price Range -->
-                    <div class="mb-5">
-                        <label class="block text-xs font-bold text-text-main dark:text-white mb-2">PRICE RANGE</label>
-                        <select id="priceFilter" class="w-full bg-surface-light dark:bg-surface-dark border-2 border-[#e9e8ce] dark:border-[#3e3d2a] rounded-xl px-4 py-2.5 text-sm font-bold focus:ring-2 focus:ring-primary outline-none transition-all cursor-pointer">
-                            <option value="all">All Prices</option>
-                            <option value="0-10">₹0 - ₹10/day</option>
-                            <option value="10-25">₹10 - ₹25/day</option>
-                            <option value="25-50">₹25 - ₹50/day</option>
-                            <option value="50+">₹50+/day</option>
-                        </select>
+                    <div class="mb-8">
+                        <h4 class="font-bold text-sm mb-4 text-primary flex items-center gap-2">
+                            <span class="material-symbols-outlined text-lg">payments</span> Price Range
+                        </h4>
+                        <div class="flex items-center gap-2 mb-4">
+                            <div class="relative w-full">
+                                <span class="absolute left-3 top-2.5 text-gray-500 text-xs">₹</span>
+                                <input type="number" placeholder="Min" class="w-full pl-6 bg-[#1e2019] border border-gray-800 rounded-xl px-3 py-2 text-sm font-bold focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all placeholder-gray-600 text-white">
+                            </div>
+                            <span class="text-gray-600 font-bold">-</span>
+                            <div class="relative w-full">
+                                <span class="absolute left-3 top-2.5 text-gray-500 text-xs">₹</span>
+                                <input type="number" placeholder="Max" class="w-full pl-6 bg-[#1e2019] border border-gray-800 rounded-xl px-3 py-2 text-sm font-bold focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all placeholder-gray-600 text-white">
+                            </div>
+                        </div>
                     </div>
 
-                    <!-- Condition -->
-                    <div class="mb-5">
-                        <label class="block text-xs font-bold text-text-main dark:text-white mb-3">CONDITION</label>
-                        <div class="space-y-2">
-                            <label class="flex items-center gap-2 cursor-pointer group">
-                                <input type="checkbox" class="condition-filter w-4 h-4 rounded border-2 border-primary text-primary focus:ring-primary cursor-pointer" value="new">
-                                <span class="text-sm font-medium group-hover:text-primary transition-colors">New</span>
+                    <!-- Availability -->
+                    <div class="mb-8">
+                        <h4 class="font-bold text-sm mb-4 text-primary flex items-center gap-2">
+                            <span class="material-symbols-outlined text-lg">calendar_month</span> Availability
+                        </h4>
+                        <div class="space-y-3">
+                            <label class="flex items-center gap-3 cursor-pointer group">
+                                <div class="w-5 h-5 rounded border-2 border-gray-700 flex items-center justify-center transition-colors group-hover:border-primary bg-[#1e2019]">
+                                    <input type="checkbox" class="appearance-none peer">
+                                    <span class="material-symbols-outlined text-[14px] opacity-0 peer-checked:opacity-100 text-primary font-bold">check</span>
+                                </div>
+                                <span class="text-sm font-medium text-gray-400 group-hover:text-white transition-colors">Available Today</span>
                             </label>
-                            <label class="flex items-center gap-2 cursor-pointer group">
-                                <input type="checkbox" class="condition-filter w-4 h-4 rounded border-2 border-primary text-primary focus:ring-primary cursor-pointer" value="like-new">
-                                <span class="text-sm font-medium group-hover:text-primary transition-colors">Like New</span>
-                            </label>
-                            <label class="flex items-center gap-2 cursor-pointer group">
-                                <input type="checkbox" class="condition-filter w-4 h-4 rounded border-2 border-primary text-primary focus:ring-primary cursor-pointer" value="good">
-                                <span class="text-sm font-medium group-hover:text-primary transition-colors">Good</span>
-                            </label>
-                            <label class="flex items-center gap-2 cursor-pointer group">
-                                <input type="checkbox" class="condition-filter w-4 h-4 rounded border-2 border-primary text-primary focus:ring-primary cursor-pointer" value="fair">
-                                <span class="text-sm font-medium group-hover:text-primary transition-colors">Fair</span>
+                            <label class="flex items-center gap-3 cursor-pointer group">
+                                <div class="w-5 h-5 rounded border-2 border-gray-700 flex items-center justify-center transition-colors group-hover:border-primary bg-[#1e2019]">
+                                    <input type="checkbox" class="appearance-none peer">
+                                    <span class="material-symbols-outlined text-[14px] opacity-0 peer-checked:opacity-100 text-primary font-bold">check</span>
+                                </div>
+                                <span class="text-sm font-medium text-gray-400 group-hover:text-white transition-colors">Next 3 Days</span>
                             </label>
                         </div>
                     </div>
 
-                    <!-- Rating -->
-                    <div class="mb-5">
-                        <label class="block text-xs font-bold text-text-main dark:text-white mb-3">MINIMUM RATING</label>
-                        <div class="space-y-2">
-                            <label class="flex items-center gap-2 cursor-pointer group">
-                                <input type="radio" name="rating" class="rating-filter w-4 h-4 border-2 border-primary text-primary focus:ring-primary cursor-pointer" value="all" checked>
-                                <span class="text-sm font-medium group-hover:text-primary transition-colors">All Ratings</span>
+
+
+                    <!-- Condition (New) -->
+                    <div class="mb-8">
+                        <h4 class="font-bold text-sm mb-4 text-primary flex items-center gap-2">
+                            <span class="material-symbols-outlined text-lg">verified</span> Condition
+                        </h4>
+                        <div class="space-y-3">
+                            <label class="flex items-center gap-3 cursor-pointer group">
+                                <div class="w-5 h-5 rounded-full border-2 border-gray-700 flex items-center justify-center transition-colors group-hover:border-primary bg-[#1e2019]">
+                                    <input type="checkbox" class="appearance-none peer">
+                                    <div class="w-2.5 h-2.5 rounded-full bg-primary opacity-0 peer-checked:opacity-100 transition-opacity"></div>
+                                </div>
+                                <span class="text-sm font-medium text-gray-400 group-hover:text-white transition-colors">Like New / Excellent</span>
                             </label>
-                            <label class="flex items-center gap-2 cursor-pointer group">
-                                <input type="radio" name="rating" class="rating-filter w-4 h-4 border-2 border-primary text-primary focus:ring-primary cursor-pointer" value="4">
-                                <span class="text-sm font-medium group-hover:text-primary transition-colors">⭐ 4.0+</span>
+                            <label class="flex items-center gap-3 cursor-pointer group">
+                                <div class="w-5 h-5 rounded-full border-2 border-gray-700 flex items-center justify-center transition-colors group-hover:border-primary bg-[#1e2019]">
+                                    <input type="checkbox" class="appearance-none peer">
+                                    <div class="w-2.5 h-2.5 rounded-full bg-primary opacity-0 peer-checked:opacity-100 transition-opacity"></div>
+                                </div>
+                                <span class="text-sm font-medium text-gray-400 group-hover:text-white transition-colors">Good / Fair</span>
                             </label>
-                            <label class="flex items-center gap-2 cursor-pointer group">
-                                <input type="radio" name="rating" class="rating-filter w-4 h-4 border-2 border-primary text-primary focus:ring-primary cursor-pointer" value="4.5">
-                                <span class="text-sm font-medium group-hover:text-primary transition-colors">⭐ 4.5+</span>
-                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Handover (New) -->
+                    <div class="mb-8">
+                        <h4 class="font-bold text-sm mb-4 text-primary flex items-center gap-2">
+                            <span class="material-symbols-outlined text-lg">local_shipping</span> Handover
+                        </h4>
+                        <div class="flex gap-2">
+                             <button class="flex-1 py-2 px-3 rounded-lg border border-gray-700 bg-[#1e2019] text-xs font-bold text-gray-400 hover:border-primary hover:text-white transition-all focus:border-primary focus:text-white focus:bg-primary/10">
+                                 Delivery
+                             </button>
+                             <button class="flex-1 py-2 px-3 rounded-lg border border-gray-700 bg-[#1e2019] text-xs font-bold text-gray-400 hover:border-primary hover:text-white transition-all focus:border-primary focus:text-white focus:bg-primary/10">
+                                 Pickup
+                             </button>
                         </div>
                     </div>
 
                     <!-- Distance -->
-                    <div class="mb-5">
-                        <label class="block text-xs font-bold text-text-main dark:text-white mb-2">MAX DISTANCE</label>
-                        <select id="distanceFilter" class="w-full bg-surface-light dark:bg-surface-dark border-2 border-[#e9e8ce] dark:border-[#3e3d2a] rounded-xl px-4 py-2.5 text-sm font-bold focus:ring-2 focus:ring-primary outline-none transition-all cursor-pointer">
-                            <option value="all">Any Distance</option>
-                            <option value="5">Within 5 km</option>
-                            <option value="10">Within 10 km</option>
-                            <option value="20">Within 20 km</option>
-                            <option value="50">Within 50 km</option>
-                        </select>
-                    </div>
-
-                    <!-- Availability -->
-                    <div class="mb-5">
-                        <label class="block text-xs font-bold text-text-main dark:text-white mb-3">AVAILABILITY</label>
-                        <div class="space-y-2">
-                            <label class="flex items-center gap-2 cursor-pointer group">
-                                <input type="checkbox" class="availability-filter w-4 h-4 rounded border-2 border-primary text-primary focus:ring-primary cursor-pointer" value="instant">
-                                <span class="text-sm font-medium group-hover:text-primary transition-colors flex items-center gap-1">
-                                    <span class="material-symbols-outlined text-sm">bolt</span> Instant Booking
-                                </span>
-                            </label>
-                            <label class="flex items-center gap-2 cursor-pointer group">
-                                <input type="checkbox" class="availability-filter w-4 h-4 rounded border-2 border-primary text-primary focus:ring-primary cursor-pointer" value="verified">
-                                <span class="text-sm font-medium group-hover:text-primary transition-colors flex items-center gap-1">
-                                    <span class="material-symbols-outlined text-sm">verified</span> Verified Owner
-                                </span>
-                            </label>
+                    <div class="mb-8">
+                        <div class="flex justify-between mb-4">
+                            <h4 class="font-bold text-sm flex items-center gap-2 text-primary">
+                                <span class="material-symbols-outlined text-lg">location_on</span> Distance
+                            </h4>
+                            <span class="text-xs font-bold bg-primary text-black px-2 py-0.5 rounded">15 km</span>
+                        </div>
+                        <input type="range" class="w-full h-1.5 bg-gray-800 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:shadow-lg hover:[&::-webkit-slider-thumb]:scale-110 transition-all">
+                        <div class="flex justify-between text-[10px] font-bold text-gray-500 mt-2">
+                            <span>1 km</span>
+                            <span>50 km</span>
                         </div>
                     </div>
 
-                    <!-- Clear Filters Button -->
-                    <button id="clearAllFilters" class="w-full bg-primary hover:opacity-90 text-black font-bold py-3 rounded-xl transition-all shadow-md flex items-center justify-center gap-2">
-                        <span class="material-symbols-outlined text-lg">refresh</span>
-                        Reset Filters
+                    <button id="apply-filters-btn" onclick="applyFilters()" class="w-full bg-primary text-black font-black py-4 rounded-full hover:bg-white hover:text-black transition-all shadow-lg hover:shadow-primary/25 active:scale-95 uppercase tracking-wide text-sm flex items-center justify-center gap-2">
+                        <span>Apply Filters</span>
                     </button>
                 </div>
             </aside>
 
-            <!-- Right - Items Grid & Controls -->
-            <div class="flex-1">
-                <!-- Top Controls Bar -->
-                <div class="flex flex-wrap justify-between items-center mb-6 gap-4 bg-surface-light dark:bg-surface-dark rounded-xl p-4 border border-[#e9e8ce] dark:border-[#3e3d2a]">
-                    <p class="font-bold text-text-main dark:text-white text-sm">
-                        Showing <span id="visibleCount"><?php echo count($items_to_show); ?></span> of <span id="totalCount"><?php echo count($items_to_show); ?></span>
-                    </p>
-                    
-                    <!-- View Toggle -->
-                    <div class="flex bg-white dark:bg-[#2d2c18] border-2 border-[#e9e8ce] dark:border-[#3e3d2a] rounded-xl overflow-hidden">
-                        <button id="gridView" class="px-3 py-2 bg-primary text-black transition-all" title="Grid View">
-                            <span class="material-symbols-outlined text-lg">grid_view</span>
-                        </button>
-                        <button id="listView" class="px-3 py-2 hover:bg-[#e9e8ce] dark:hover:bg-[#3e3d2a] transition-all" title="List View">
-                            <span class="material-symbols-outlined text-lg">view_list</span>
-                        </button>
-                    </div>
-                </div>
-
-        <!-- Items Grid with Enhanced Cards -->
-        <div id="itemsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            <?php foreach($items_to_show as $index => $item): ?>
-            <a href="item-details.php?id=<?php echo $item['id']; ?>" 
-               class="item-card block group bg-surface-light dark:bg-surface-dark rounded-2xl overflow-hidden shadow-md hover:shadow-2xl transition-all duration-300 border-2 border-transparent hover:border-primary transform hover:-translate-y-1"
-               data-name="<?php echo strtolower(htmlspecialchars($item['name'])); ?>"
-               data-price="<?php echo $item['price']; ?>"
-               data-rating="4.<?php echo rand(5, 9); ?>"
-               data-images='<?php echo json_encode($item['all_images'] ?? [(strpos($item['img'], 'uploads/') === 0 ? $item['img'] : 'https://source.unsplash.com/random/400x300?' . urlencode($item['img']) . '&sig=' . $index)]); ?>'>
-                
-                <!-- Image Container -->
-                <div class="relative aspect-[4/3] overflow-hidden bg-gray-100 dark:bg-[#2d2c18]">
-                    <img class="product-image object-cover w-full h-full group-hover:scale-110 transition-transform duration-700" 
-                         src="<?php echo (strpos($item['img'], 'uploads/') === 0) ? $item['img'] : 'https://source.unsplash.com/random/400x300?' . urlencode($item['img']) . '&sig=' . $index; ?>" 
-                         alt="<?php echo htmlspecialchars($item['name']); ?>">
-                    
-                    <!-- Dark Overlay on Hover -->
-                    <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                    
-                    <!-- Image Counter -->
-                    <?php if (!empty($item['all_images']) && count($item['all_images']) > 1): ?>
-                    <div class="absolute bottom-3 right-3 z-10 bg-black/80 backdrop-blur-sm text-primary text-xs font-bold px-3 py-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity border border-primary/30">
-                        <span class="material-symbols-outlined text-xs inline mr-1">photo_library</span>
-                        1/<?php echo count($item['all_images']); ?>
-                    </div>
-                    <?php endif; ?>
-
-                    <!-- Favorite Button -->
-                    <button class="absolute top-3 right-3 p-2 bg-white/95 backdrop-blur-sm rounded-full text-text-main hover:bg-primary hover:scale-110 transition-all shadow-lg z-10">
-                        <span class="material-symbols-outlined text-xl">favorite</span>
-                    </button>
-                    
-                    <!-- Distance Badge -->
-                    <div class="absolute bottom-3 left-3 bg-primary text-black text-xs font-black px-3 py-1.5 rounded-full flex items-center gap-1 shadow-lg">
-                        <span class="material-symbols-outlined text-sm">location_on</span>
-                        <?php echo rand(1, 10); ?> km
-                    </div>
-                    
-                    <!-- Premium Badge for expensive items -->
-                    <?php if ($item['price'] > 40): ?>
-                    <div class="absolute top-3 left-3 bg-black/80 backdrop-blur-sm border border-primary text-primary text-xs font-black px-2.5 py-1 rounded-full">
-                        ⭐ PREMIUM
-                    </div>
-                    <?php endif; ?>
-                </div>
-                
-                <!-- Card Content -->
-                <div class="p-4">
-                    <!-- Title & Rating -->
-                    <div class="flex justify-between items-start mb-3">
-                        <div class="flex-1 pr-2">
-                            <h3 class="font-black text-base leading-tight text-text-main dark:text-white line-clamp-2 group-hover:text-primary transition-colors">
-                                <?php echo htmlspecialchars($item['name']); ?>
-                            </h3>
-                            <p class="text-xs text-text-muted dark:text-gray-400 mt-1 flex items-center gap-1">
-                                <span class="material-symbols-outlined text-xs">category</span>
-                                <?php echo $current_cat['title']; ?>
+            <!-- Items Grid -->
+            <div class="flex-1 w-full">
+                <!-- Redesigned Banner Moved Here -->
+                <section class="mb-8 rounded-[2.5rem] bg-black overflow-hidden shadow-2xl border border-gray-800 relative">
+                        <div class="relative p-10 flex flex-col justify-center min-h-[250px] text-left">
+                            <div class="absolute right-0 top-0 h-full w-1/3 bg-gradient-to-l from-primary/10 to-transparent"></div>
+                            <div class="flex items-center gap-6 mb-4 relative z-10">
+                                <div class="w-16 h-16 rounded-2xl bg-primary flex items-center justify-center shadow-lg shadow-primary/20">
+                                    <span class="material-symbols-outlined text-4xl text-black"><?php echo $current_cat['icon']; ?></span>
+                                </div>
+                                <div>
+                                    <!-- Use PHP to display title -->
+                                    <h1 class="text-4xl md:text-5xl font-black tracking-tighter text-white uppercase leading-none">
+                                        <?php echo $current_cat['title']; ?>
+                                    </h1>
+                                </div>
+                            </div>
+                            <p class="text-primary font-bold text-lg max-w-lg mt-2 relative z-10">
+                                Premium selection of <?php echo strtolower($current_cat['title']); ?>. Verified & Ready.
                             </p>
                         </div>
-                        <div class="flex items-center gap-1 bg-primary/10 border border-primary/30 text-xs font-bold px-2 py-1 rounded-lg">
-                            <span class="material-symbols-outlined text-sm text-primary">star</span>
-                            <span class="text-text-main dark:text-white">4.<?php echo rand(5, 9); ?></span>
-                        </div>
-                    </div>
-                    
-                    <!-- Divider -->
-                    <div class="h-px bg-gradient-to-r from-transparent via-[#e9e8ce] dark:via-[#3e3d2a] to-transparent my-3"></div>
-                    
-                    <!-- Price & Owner -->
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <div class="flex items-baseline gap-1">
-                                <span class="text-2xl font-black text-text-main dark:text-white">₹<?php echo $item['price']; ?></span>
-                                <span class="text-xs text-text-muted font-bold">/ day</span>
-                            </div>
-                            <p class="text-xs text-text-muted mt-0.5">Best price</p>
-                        </div>
-                        <?php 
-                        $initial = "R";
-                        if (isset($item['owner_name']) && !empty($item['owner_name'])) {
-                            $initial = strtoupper(substr($item['owner_name'], 0, 1));
-                        }
-                        ?>
-                        <div class="relative">
-                            <div class="w-11 h-11 rounded-xl bg-primary flex items-center justify-center text-black text-sm font-black border-2 border-primary/30 shadow-md transform group-hover:scale-110 transition-all">
-                                <?php echo $initial; ?>
-                            </div>
-                            <!-- Online Status -->
-                            <div class="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-surface-light dark:border-surface-dark"></div>
-                        </div>
+                </section>
+                <div class="flex justify-between items-center mb-6 px-1">
+                    <p class="font-bold text-text-muted dark:text-gray-400 text-sm">Showing <?php echo count($items_to_show); ?> items</p>
+                    <div class="flex items-center gap-2">
+                        <span class="text-sm font-medium text-text-muted hidden sm:inline">Sort by:</span>
+                        <select class="bg-transparent border-none text-sm font-bold focus:ring-0 cursor-pointer text-right py-0 pr-8 pl-0">
+                             <option>Recommended</option>
+                             <option>Price: Low to High</option>
+                             <option>Price: High to Low</option>
+                             <option>Distance: Nearest</option>
+                        </select>
                     </div>
                 </div>
-            </a>
-            <?php endforeach; ?>
-            
-            <!-- Empty State -->
-            <?php if (empty($items_to_show)): ?>
-                 <div class="col-span-full text-center py-20 bg-surface-light dark:bg-surface-dark rounded-2xl border-2 border-dashed border-[#e9e8ce] dark:border-[#3e3d2a]">
-                     <div class="inline-block p-6 bg-primary/10 rounded-2xl mb-4">
-                         <span class="material-symbols-outlined text-7xl text-primary">inventory_2</span>
-                     </div>
-                     <h3 class="text-2xl font-black text-text-main dark:text-white mb-2">No Items Available</h3>
-                     <p class="text-text-muted dark:text-gray-400 mb-6">Be the first to list an item in this category!</p>
-                     <button class="bg-primary hover:opacity-90 text-black font-black px-8 py-3 rounded-xl shadow-lg transition-all transform hover:scale-105">
-                         <span class="material-symbols-outlined inline mr-2">add_circle</span>
-                         List Your Item
-                     </button>
-                 </div>
-            <?php endif; ?>
-         </div>
-         
-         <!-- No Results Message (Hidden by default) -->
-         <div id="noResults" class="hidden text-center py-20 bg-surface-light dark:bg-surface-dark rounded-2xl border-2 border-dashed border-[#e9e8ce] dark:border-[#3e3d2a]">
-             <div class="inline-block p-6 bg-gray-100 dark:bg-[#2d2c18] rounded-2xl mb-4">
-                 <span class="material-symbols-outlined text-7xl text-gray-400">search_off</span>
-             </div>
-             <h3 class="text-2xl font-black text-text-main dark:text-white mb-2">No Matching Items</h3>
-             <p class="text-text-muted dark:text-gray-400 mb-6">Try adjusting your search or filters</p>
-             <button id="clearFiltersBtn" class="bg-primary hover:opacity-90 text-black font-bold px-6 py-3 rounded-xl transition-all">
-                 Clear All Filters
-             </button>
-         </div>
-            </div><!-- Close flex-1 div (Right Items Grid) -->
-        </div><!-- Close 2-column layout div -->
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <?php foreach($items_to_show as $index => $item): 
+                        $distance = rand(1, 15); 
+                    ?>
+                    <a href="item-details.php?id=<?php echo $item['id']; ?>" 
+                       class="item-card block group bg-surface-light dark:bg-surface-dark rounded-2xl p-3 shadow-sm hover:shadow-xl hover:shadow-gray-200/50 dark:hover:shadow-black/50 transition-all duration-300 border border-transparent hover:border-[#e9e8ce] dark:hover:border-[#3e3d2a]"
+                       data-price="<?php echo $item['price']; ?>"
+                       data-distance="<?php echo $distance; ?>"
+                       data-images='<?php echo json_encode($item['all_images'] ?? [(strpos($item['img'], 'uploads/') === 0 ? $item['img'] : 'https://source.unsplash.com/random/400x300?' . urlencode($item['img']) . '&sig=' . $index)]); ?>'>
+                        <div class="relative aspect-[4/3] rounded-xl overflow-hidden bg-gray-100 dark:bg-[#12120b]">
+                            <img class="product-image object-cover w-full h-full group-hover:scale-105 transition-transform duration-700" 
+                                 src="<?php echo (strpos($item['img'], 'uploads/') === 0) ? $item['img'] : 'https://source.unsplash.com/random/400x300?' . urlencode($item['img']) . '&sig=' . $index; ?>" 
+                                 alt="<?php echo htmlspecialchars($item['name']); ?>">
+                            
+                            <?php if (!empty($item['all_images']) && count($item['all_images']) > 1): ?>
+                            <div class="absolute bottom-2 right-2 z-10 bg-black/60 backdrop-blur-md text-white text-[10px] font-bold px-2 py-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                                1/<?php echo count($item['all_images']); ?>
+                            </div>
+                            <?php endif; ?>
+
+                            <button class="absolute top-3 right-3 p-2 bg-white/95 rounded-full text-black hover:bg-primary hover:text-black transition-all scale-90 opacity-0 group-hover:opacity-100 group-hover:scale-100 shadow-sm">
+                                <span class="material-symbols-outlined text-lg block">favorite</span>
+                            </button>
+                            <div class="absolute bottom-3 left-3 bg-white/90 dark:bg-black/80 backdrop-blur-sm text-xs font-bold px-2.5 py-1 rounded-full shadow-sm flex items-center gap-1">
+                                <span class="material-symbols-outlined text-[14px]">location_on</span>
+                                <?php echo $distance; ?> km
+                            </div>
+                        </div>
+                        <div class="pt-4 px-2 pb-2">
+                            <div class="flex justify-between items-start mb-1">
+                                <h3 class="font-bold text-lg leading-tight truncate flex-1 pr-2"><?php echo htmlspecialchars($item['name']); ?></h3>
+                                <div class="flex items-center gap-1 text-[10px] font-black bg-primary/10 text-text-main dark:text-primary px-2 py-1 rounded-full">
+                                    <span class="material-symbols-outlined text-[12px] text-primary fill-current">star</span>
+                                    4.<?php echo rand(5, 9); ?>
+                                </div>
+                            </div>
+                            <p class="text-xs text-text-muted dark:text-gray-500 font-medium mb-4"><?php echo $current_cat['title']; ?></p>
+                            
+                            <div class="flex items-end justify-between border-t border-dashed border-gray-200 dark:border-gray-800 pt-3">
+                                <div>
+                                    <span class="text-xs text-text-muted block mb-0.5">Rent per day</span>
+                                    <div class="flex items-baseline gap-1">
+                                        <span class="text-xl font-black">₹<?php echo $item['price']; ?></span>
+                                    </div>
+                                </div>
+                                <?php 
+                                $initial = "R";
+                                if (isset($item['owner_name']) && !empty($item['owner_name'])) {
+                                    $initial = strtoupper(substr($item['owner_name'], 0, 1));
+                                }
+                                ?>
+                                <div class="w-8 h-8 rounded-full bg-primary text-black flex items-center justify-center text-xs font-black border-2 border-white dark:border-[#23220f] shadow-sm" title="Owned by <?php echo htmlspecialchars($item['owner_name'] ?? 'RendeX'); ?>">
+                                    <?php echo $initial; ?>
+                                </div>
+                            </div>
+                        </div>
+                    </a>
+                    <?php endforeach; ?>
+                    
+                    <div id="no-items-msg" class="hidden col-span-full flex flex-col items-center justify-center py-20 text-center bg-gray-50 dark:bg-white/5 rounded-3xl border border-dashed border-gray-300 dark:border-gray-700">
+                         <div class="w-20 h-20 rounded-full bg-gray-100 dark:bg-white/10 flex items-center justify-center mb-6">
+                            <span class="material-symbols-outlined text-4xl text-text-muted">filter_alt_off</span>
+                         </div>
+                         <h3 class="text-xl font-bold mb-2">No items match your filters</h3>
+                         <p class="text-text-muted mb-6 max-w-xs mx-auto">Try adjusting your price range or distance.</p>
+                         <button onclick="window.location.reload()" class="bg-primary text-black font-bold px-8 py-3 rounded-xl hover:bg-black hover:text-white transition-colors">
+                             Clear Filters
+                         </button>
+                    </div>
+
+                    <?php if (empty($items_to_show)): ?>
+                         <div class="col-span-full flex flex-col items-center justify-center py-20 text-center bg-gray-50 dark:bg-white/5 rounded-3xl border border-dashed border-gray-300 dark:border-gray-700">
+                             <div class="w-20 h-20 rounded-full bg-gray-100 dark:bg-white/10 flex items-center justify-center mb-6">
+                                <span class="material-symbols-outlined text-4xl text-text-muted">manage_search</span>
+                             </div>
+                             <h3 class="text-xl font-bold mb-2">No items found</h3>
+                             <p class="text-text-muted mb-6 max-w-xs mx-auto">We couldn't find any items in this category matching your criteria.</p>
+                             <button class="bg-primary text-black font-bold px-8 py-3 rounded-xl hover:bg-black hover:text-white transition-colors">
+                                 List an Item
+                             </button>
+                         </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
 
         <script>
-        // Image Gallery Functionality
+        function applyFilters() {
+            const btn = document.getElementById('apply-filters-btn');
+            const originalText = btn.innerHTML;
+            
+            // Get Filter Values
+            const minPrice = parseFloat(document.querySelector('input[placeholder="Min"]').value) || 0;
+            const maxPrice = parseFloat(document.querySelector('input[placeholder="Max"]').value) || Infinity;
+            
+            // Distance
+            const distInput = document.querySelector('input[type="range"]');
+            const maxDistance = distInput ? parseFloat(distInput.value) : 50;
+
+
+
+            // Show loading state
+            btn.disabled = true;
+            btn.innerHTML = `
+                <svg class="animate-spin h-5 w-5 text-black" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Processing...
+            `;
+            
+            // Simulate processing
+            setTimeout(() => {
+                let matchCount = 0;
+                const items = document.querySelectorAll('.item-card');
+                
+                items.forEach(item => {
+                    const price = parseFloat(item.dataset.price);
+                    const dist = parseFloat(item.dataset.distance);
+                    // Mock data for brand and rating since they aren't in dataset yet
+                    // In a real app, you'd output these as data attributes too
+                    const itemRating = 4.0 + (Math.random() * 1.0); 
+                    
+                    let isVisible = true;
+                    
+                    if (price < minPrice || price > maxPrice) isVisible = false;
+                    if (dist > maxDistance) isVisible = false;
+                    
+                    item.style.display = isVisible ? 'block' : 'none';
+                    if (isVisible) matchCount++;
+                });
+
+                // Show/Hide "No Items" message
+                const noItemsMsg = document.getElementById('no-items-msg');
+                if (noItemsMsg) {
+                    noItemsMsg.classList.toggle('hidden', matchCount > 0);
+                }
+
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }, 800);
+        }
+
         document.querySelectorAll('.item-card').forEach(card => {
             const images = JSON.parse(card.dataset.images);
             if (!images || images.length <= 1) return;
@@ -538,10 +504,7 @@ if (!isset($_SESSION['user_id'])) {
                     currentIdx = (currentIdx + 1) % images.length;
                     imgElement.src = images[currentIdx];
                     if (counterElement) {
-                        const match = counterElement.textContent.match(/\/(\d+)/);
-                        if (match) {
-                            counterElement.innerHTML = `<span class="material-symbols-outlined text-xs inline mr-1">photo_library</span>${currentIdx + 1}/${match[1]}`;
-                        }
+                        counterElement.textContent = `${currentIdx + 1}/${images.length}`;
                     }
                 }, 1200);
             });
@@ -551,123 +514,9 @@ if (!isset($_SESSION['user_id'])) {
                 currentIdx = 0;
                 imgElement.src = images[0];
                 if (counterElement) {
-                    const match = counterElement.textContent.match(/\/(\d+)/);
-                    if (match) {
-                        counterElement.innerHTML = `<span class="material-symbols-outlined text-xs inline mr-1">photo_library</span>1/${match[1]}`;
-                    }
+                    counterElement.textContent = `1/${images.length}`;
                 }
             });
-        });
-        
-        // Advanced Search & Filter System
-        const searchInput = document.getElementById('searchInput');
-        const clearSearchBtn = document.getElementById('clearSearch');
-        const sortSelect = document.getElementById('sortSelect');
-        const priceFilter = document.getElementById('priceFilter');
-        const resetBtn = document.getElementById('resetFilters');
-        const clearFiltersBtn = document.getElementById('clearFiltersBtn');
-        const itemCount = document.getElementById('itemCount');
-        const itemsGrid = document.getElementById('itemsGrid');
-        const noResults = document.getElementById('noResults');
-        const allCards = Array.from(document.querySelectorAll('.item-card'));
-        
-        function filterAndSort() {
-            const searchTerm = searchInput.value.toLowerCase().trim();
-            const sortValue = sortSelect.value;
-            const priceRange = priceFilter.value;
-            
-            let visibleCards = allCards.filter(card => {
-                // Search filter
-                const name = card.dataset.name;
-                const matchesSearch = searchTerm === '' || name.includes(searchTerm);
-                if (!matchesSearch) return false;
-                
-                // Price filter
-                const price = parseFloat(card.dataset.price);
-                let matchesPrice = true;
-                
-                if (priceRange !== 'all') {
-                    if (priceRange === '0-10') matchesPrice = price <= 10;
-                    else if (priceRange === '10-25') matchesPrice = price > 10 && price <= 25;
-                    else if (priceRange === '25-50') matchesPrice = price > 25 && price <= 50;
-                    else if (priceRange === '50+') matchesPrice = price > 50;
-                }
-                
-                return matchesPrice;
-            });
-            
-            // Sort
-            if (sortValue === 'price-low') {
-                visibleCards.sort((a, b) => parseFloat(a.dataset.price) - parseFloat(b.dataset.price));
-            } else if (sortValue === 'price-high') {
-                visibleCards.sort((a, b) => parseFloat(b.dataset.price) - parseFloat(a.dataset.price));
-            } else if (sortValue === 'rating') {
-                visibleCards.sort((a, b) => parseFloat(b.dataset.rating) - parseFloat(a.dataset.rating));
-            }
-            
-            // Hide all cards first
-            allCards.forEach(card => card.classList.add('hidden'));
-            
-            // Show filtered and sorted cards
-            visibleCards.forEach(card => {
-                card.classList.remove('hidden');
-                itemsGrid.appendChild(card);
-            });
-            
-            // Update count and show/hide no results
-            itemCount.textContent = visibleCards.length;
-            
-            if (visibleCards.length === 0) {
-                noResults.classList.remove('hidden');
-            } else {
-                noResults.classList.add('hidden');
-            }
-        }
-        
-        // Event Listeners
-        searchInput.addEventListener('input', (e) => {
-            clearSearchBtn.classList.toggle('hidden', e.target.value === '');
-            filterAndSort();
-        });
-        
-        clearSearchBtn.addEventListener('click', () => {
-            searchInput.value = '';
-            clearSearchBtn.classList.add('hidden');
-            filterAndSort();
-        });
-        
-        sortSelect.addEventListener('change', filterAndSort);
-        priceFilter.addEventListener('change', filterAndSort);
-        
-        const resetFunction = () => {
-            searchInput.value = '';
-            sortSelect.value = 'recommended';
-            priceFilter.value = 'all';
-            clearSearchBtn.classList.add('hidden');
-            filterAndSort();
-        };
-        
-        resetBtn.addEventListener('click', resetFunction);
-        clearFiltersBtn.addEventListener('click', resetFunction);
-        
-        // View Toggle
-        const gridViewBtn = document.getElementById('gridView');
-        const listViewBtn = document.getElementById('listView');
-        
-        gridViewBtn.addEventListener('click', () => {
-            itemsGrid.className = 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6';
-            gridViewBtn.classList.add('bg-primary', 'text-black');
-            gridViewBtn.classList.remove('hover:bg-[#e9e8ce]', 'dark:hover:bg-[#3e3d2a]');
-            listViewBtn.classList.remove('bg-primary', 'text-black');
-            listViewBtn.classList.add('hover:bg-[#e9e8ce]', 'dark:hover:bg-[#3e3d2a]');
-        });
-        
-        listViewBtn.addEventListener('click', () => {
-            itemsGrid.className = 'grid grid-cols-1 gap-4';
-            listViewBtn.classList.add('bg-primary', 'text-black');
-            listViewBtn.classList.remove('hover:bg-[#e9e8ce]', 'dark:hover:bg-[#3e3d2a]');
-            gridViewBtn.classList.remove('bg-primary', 'text-black');
-            gridViewBtn.classList.add('hover:bg-[#e9e8ce]', 'dark:hover:bg-[#3e3d2a]');
         });
         </script>
         

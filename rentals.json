@@ -524,5 +524,394 @@
         "delivery_address": "",
         "total_price": 900,
         "created_at": "2026-01-08 17:41:15"
+    },
+    {
+        "id": "rent_696baba5b3804",
+        "user_id": "695a8dc1e017b",
+        "item": {
+            "id": "item_695d390100b9b",
+            "user_id": "695d2f34db4b2",
+            "title": "calculator",
+            "category": "student-essentials",
+            "price": "50",
+            "description": "very good working",
+            "address": "kanjirappally",
+            "images": [
+                "695d3900f253b_c2.webp",
+                "695d3900f3b46_c1.jpg"
+            ],
+            "created_at": "2026-01-06 17:32:01",
+            "status": "Active",
+            "name": "calculator",
+            "all_images": [
+                "uploads\/695d3900f253b_c2.webp",
+                "uploads\/695d3900f3b46_c1.jpg"
+            ],
+            "img": "uploads\/695d3900f253b_c2.webp",
+            "type": "dynamic"
+        },
+        "status": "active",
+        "start_date": "2026-01-17",
+        "end_date": "2026-01-19",
+        "fulfillment": "delivery",
+        "delivery_address": "",
+        "total_price": 450,
+        "created_at": "2026-01-17 16:32:53"
+    },
+    {
+        "id": "rent_696badcd3ac9b",
+        "user_id": "695a8dc1e017b",
+        "item": {
+            "id": "item_695d390100b9b",
+            "user_id": "695d2f34db4b2",
+            "title": "calculator",
+            "category": "student-essentials",
+            "price": "50",
+            "description": "very good working",
+            "address": "kanjirappally",
+            "images": [
+                "695d3900f253b_c2.webp",
+                "695d3900f3b46_c1.jpg"
+            ],
+            "created_at": "2026-01-06 17:32:01",
+            "status": "Active",
+            "name": "calculator",
+            "all_images": [
+                "uploads\/695d3900f253b_c2.webp",
+                "uploads\/695d3900f3b46_c1.jpg"
+            ],
+            "img": "uploads\/695d3900f253b_c2.webp",
+            "type": "dynamic"
+        },
+        "status": "active",
+        "start_date": "2026-01-17",
+        "end_date": "2026-01-19",
+        "fulfillment": "pickup",
+        "payment_method": "upi",
+        "delivery_address": "",
+        "total_price": 300,
+        "created_at": "2026-01-17 16:42:05"
+    },
+    {
+        "id": "rent_696badf3eaec7",
+        "user_id": "695a8dc1e017b",
+        "item": {
+            "id": "item_695d390100b9b",
+            "user_id": "695d2f34db4b2",
+            "title": "calculator",
+            "category": "student-essentials",
+            "price": "50",
+            "description": "very good working",
+            "address": "kanjirappally",
+            "images": [
+                "695d3900f253b_c2.webp",
+                "695d3900f3b46_c1.jpg"
+            ],
+            "created_at": "2026-01-06 17:32:01",
+            "status": "Active",
+            "name": "calculator",
+            "all_images": [
+                "uploads\/695d3900f253b_c2.webp",
+                "uploads\/695d3900f3b46_c1.jpg"
+            ],
+            "img": "uploads\/695d3900f253b_c2.webp",
+            "type": "dynamic"
+        },
+        "status": "active",
+        "start_date": "2026-01-17",
+        "end_date": "2026-01-19",
+        "fulfillment": "pickup",
+        "payment_method": "card",
+        "delivery_address": "",
+        "total_price": 300,
+        "created_at": "2026-01-17 16:42:43"
+    },
+    {
+        "id": "rent_696bae15c21f8",
+        "user_id": "695a8dc1e017b",
+        "item": {
+            "id": "item_695d390100b9b",
+            "user_id": "695d2f34db4b2",
+            "title": "calculator",
+            "category": "student-essentials",
+            "price": "50",
+            "description": "very good working",
+            "address": "kanjirappally",
+            "images": [
+                "695d3900f253b_c2.webp",
+                "695d3900f3b46_c1.jpg"
+            ],
+            "created_at": "2026-01-06 17:32:01",
+            "status": "Active",
+            "name": "calculator",
+            "all_images": [
+                "uploads\/695d3900f253b_c2.webp",
+                "uploads\/695d3900f3b46_c1.jpg"
+            ],
+            "img": "uploads\/695d3900f253b_c2.webp",
+            "type": "dynamic"
+        },
+        "status": "active",
+        "start_date": "2026-01-17",
+        "end_date": "2026-01-19",
+        "fulfillment": "delivery",
+        "delivery_address": "",
+        "total_price": 450,
+        "created_at": "2026-01-17 16:43:17"
+    },
+    {
+        "id": "rent_696bb08a8e7ad",
+        "user_id": "695a8dc1e017b",
+        "item": {
+            "id": "item_695d390100b9b",
+            "user_id": "695d2f34db4b2",
+            "title": "calculator",
+            "category": "student-essentials",
+            "price": "50",
+            "description": "very good working",
+            "address": "kanjirappally",
+            "images": [
+                "695d3900f253b_c2.webp",
+                "695d3900f3b46_c1.jpg"
+            ],
+            "created_at": "2026-01-06 17:32:01",
+            "status": "Active",
+            "name": "calculator",
+            "all_images": [
+                "uploads\/695d3900f253b_c2.webp",
+                "uploads\/695d3900f3b46_c1.jpg"
+            ],
+            "img": "uploads\/695d3900f253b_c2.webp",
+            "type": "dynamic"
+        },
+        "status": "active",
+        "start_date": "2026-01-17",
+        "end_date": "2026-01-19",
+        "fulfillment": "pickup",
+        "delivery_address": "",
+        "total_price": 300,
+        "created_at": "2026-01-17 16:53:46"
+    },
+    {
+        "id": "RENT_696bb6e4599b2",
+        "user_id": "695a8dc1e017b",
+        "item": {
+            "id": "item_695d390100b9b",
+            "user_id": "695d2f34db4b2",
+            "title": "calculator",
+            "category": "student-essentials",
+            "price": "50",
+            "description": "very good working",
+            "address": "kanjirappally",
+            "images": [
+                "695d3900f253b_c2.webp",
+                "695d3900f3b46_c1.jpg"
+            ],
+            "created_at": "2026-01-06 17:32:01",
+            "status": "Active",
+            "name": "calculator",
+            "all_images": [
+                "uploads\/695d3900f253b_c2.webp",
+                "uploads\/695d3900f3b46_c1.jpg"
+            ],
+            "img": "uploads\/695d3900f253b_c2.webp",
+            "type": "dynamic"
+        },
+        "status": "active",
+        "start_date": "2026-01-17",
+        "end_date": "2026-01-19",
+        "fulfillment": "pickup",
+        "delivery_address": "",
+        "total_price": 300,
+        "created_at": "2026-01-17 17:20:52"
+    },
+    {
+        "id": "RENT_696bb7de88e68",
+        "user_id": "695a8dc1e017b",
+        "item": {
+            "id": "item_695d390100b9b",
+            "user_id": "695d2f34db4b2",
+            "title": "calculator",
+            "category": "student-essentials",
+            "price": "50",
+            "description": "very good working",
+            "address": "kanjirappally",
+            "images": [
+                "695d3900f253b_c2.webp",
+                "695d3900f3b46_c1.jpg"
+            ],
+            "created_at": "2026-01-06 17:32:01",
+            "status": "Active",
+            "name": "calculator",
+            "all_images": [
+                "uploads\/695d3900f253b_c2.webp",
+                "uploads\/695d3900f3b46_c1.jpg"
+            ],
+            "img": "uploads\/695d3900f253b_c2.webp",
+            "type": "dynamic"
+        },
+        "status": "active",
+        "start_date": "2026-01-17",
+        "end_date": "2026-01-19",
+        "fulfillment": "pickup",
+        "delivery_address": "",
+        "total_price": 300,
+        "created_at": "2026-01-17 17:25:02"
+    },
+    {
+        "id": "RENT_696bba1a8fe45",
+        "user_id": "695a8dc1e017b",
+        "item": {
+            "id": "item_695f56553efff",
+            "user_id": "695f49110500e",
+            "title": "scientific calculator",
+            "category": "student-essentials",
+            "price": "50",
+            "security_deposit": "",
+            "handover_methods": [
+                "pickup"
+            ],
+            "description": "zdxcfgvbhn",
+            "address": "kanjirappally",
+            "available_from": "2026-01-08",
+            "available_to": "2026-01-11",
+            "images": [
+                "695f56553a0bd_c2.webp",
+                "695f56553b31c_c1.jpg"
+            ],
+            "created_at": "2026-01-08 08:01:41",
+            "status": "Active",
+            "name": "scientific calculator",
+            "all_images": [
+                "uploads\/695f56553a0bd_c2.webp",
+                "uploads\/695f56553b31c_c1.jpg"
+            ],
+            "img": "uploads\/695f56553a0bd_c2.webp",
+            "type": "dynamic"
+        },
+        "status": "active",
+        "start_date": "2026-01-17",
+        "end_date": "2026-01-19",
+        "fulfillment": "pickup",
+        "delivery_address": "",
+        "total_price": 300,
+        "created_at": "2026-01-17 17:34:34"
+    },
+    {
+        "id": "RENT_696bba448ff15",
+        "user_id": "695a8dc1e017b",
+        "item": {
+            "id": "item_695f56553efff",
+            "user_id": "695f49110500e",
+            "title": "scientific calculator",
+            "category": "student-essentials",
+            "price": "50",
+            "security_deposit": "",
+            "handover_methods": [
+                "pickup"
+            ],
+            "description": "zdxcfgvbhn",
+            "address": "kanjirappally",
+            "available_from": "2026-01-08",
+            "available_to": "2026-01-11",
+            "images": [
+                "695f56553a0bd_c2.webp",
+                "695f56553b31c_c1.jpg"
+            ],
+            "created_at": "2026-01-08 08:01:41",
+            "status": "Active",
+            "name": "scientific calculator",
+            "all_images": [
+                "uploads\/695f56553a0bd_c2.webp",
+                "uploads\/695f56553b31c_c1.jpg"
+            ],
+            "img": "uploads\/695f56553a0bd_c2.webp",
+            "type": "dynamic"
+        },
+        "status": "active",
+        "start_date": "2026-01-17",
+        "end_date": "2026-01-19",
+        "fulfillment": "pickup",
+        "delivery_address": "",
+        "total_price": 300,
+        "created_at": "2026-01-17 17:35:16"
+    },
+    {
+        "id": "RENT_696bbe8048f9b",
+        "user_id": "695a8dc1e017b",
+        "item": {
+            "id": "item_695f56553efff",
+            "user_id": "695f49110500e",
+            "title": "scientific calculator",
+            "category": "student-essentials",
+            "price": "50",
+            "security_deposit": "",
+            "handover_methods": [
+                "pickup"
+            ],
+            "description": "zdxcfgvbhn",
+            "address": "kanjirappally",
+            "available_from": "2026-01-08",
+            "available_to": "2026-01-11",
+            "images": [
+                "695f56553a0bd_c2.webp",
+                "695f56553b31c_c1.jpg"
+            ],
+            "created_at": "2026-01-08 08:01:41",
+            "status": "Active",
+            "name": "scientific calculator",
+            "all_images": [
+                "uploads\/695f56553a0bd_c2.webp",
+                "uploads\/695f56553b31c_c1.jpg"
+            ],
+            "img": "uploads\/695f56553a0bd_c2.webp",
+            "type": "dynamic"
+        },
+        "status": "active",
+        "start_date": "2026-01-17",
+        "end_date": "2026-01-19",
+        "fulfillment": "pickup",
+        "delivery_address": "",
+        "total_price": 300,
+        "created_at": "2026-01-17 17:53:20"
+    },
+    {
+        "id": "RENT_696bbfca924c4",
+        "user_id": "695a8dc1e017b",
+        "item": {
+            "id": "item_695f56553efff",
+            "user_id": "695f49110500e",
+            "title": "scientific calculator",
+            "category": "student-essentials",
+            "price": "50",
+            "security_deposit": "",
+            "handover_methods": [
+                "pickup"
+            ],
+            "description": "zdxcfgvbhn",
+            "address": "kanjirappally",
+            "available_from": "2026-01-08",
+            "available_to": "2026-01-11",
+            "images": [
+                "695f56553a0bd_c2.webp",
+                "695f56553b31c_c1.jpg"
+            ],
+            "created_at": "2026-01-08 08:01:41",
+            "status": "Active",
+            "name": "scientific calculator",
+            "all_images": [
+                "uploads\/695f56553a0bd_c2.webp",
+                "uploads\/695f56553b31c_c1.jpg"
+            ],
+            "img": "uploads\/695f56553a0bd_c2.webp",
+            "type": "dynamic"
+        },
+        "status": "active",
+        "start_date": "2026-01-17",
+        "end_date": "2026-01-19",
+        "fulfillment": "pickup",
+        "delivery_address": "",
+        "total_price": 300,
+        "created_at": "2026-01-17 17:58:50"
     }
 ]

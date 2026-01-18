@@ -80,6 +80,7 @@ if ($owner_id && $owner_name === "Verified Owner") {
 }
 
 // Handle Rental Process
+$success_booking = null;
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirm_booking'])) {
     $rentals_file = 'rentals.json';
     $rentals = file_exists($rentals_file) ? json_decode(file_get_contents($rentals_file), true) : [];
@@ -93,26 +94,44 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirm_booking'])) {
     $days = max(1, round($diff / (60 * 60 * 24)) + 1);
     
     $subtotal = $item['price'] * $days;
-    $service_fee = 150; // Flat fee or calculation
+    $service_fee = 150; 
     $delivery_fee = ($fulfillment === 'delivery') ? 150 : 0;
     $total = $subtotal + $service_fee + $delivery_fee;
 
+    $success_booking = [
+        'id' => uniqid('RENT_'),
+        'user_id' => $_SESSION['user_id'],
+        'user_name' => $_SESSION['user_name'],
+        'item_name' => $item['name'],
+        'item_img' => $item['img'],
+        'status' => 'confirmed',
+        'start_date' => $start_date,
+        'end_date' => $end_date,
+        'fulfillment' => $fulfillment,
+        'delivery_address' => $_POST['address'] ?? 'Self Pickup',
+        'total_price' => $total,
+        'payment_method' => $_POST['payment_method_val'] ?? 'Card',
+        'payment_details' => ($_POST['payment_method_val'] === 'wallets') 
+            ? ($_POST['upi_app'] ?? 'UPI') . ': ' . ($_POST['upi_id'] ?? '')
+            : 'Card ending in ' . substr($_POST['card_number'] ?? '0000', -4),
+        'created_at' => date('Y-m-d H:i:s')
+    ];
+
     $rentals[] = [
-        'id' => uniqid('rent_'),
+        'id' => $success_booking['id'],
         'user_id' => $_SESSION['user_id'],
         'item' => $item,
         'status' => 'active',
         'start_date' => $start_date,
         'end_date' => $end_date,
         'fulfillment' => $fulfillment,
-        'delivery_address' => $_POST['address'] ?? null,
+        'delivery_address' => $success_booking['delivery_address'],
         'total_price' => $total,
-        'created_at' => date('Y-m-d H:i:s')
+        'created_at' => $success_booking['created_at']
     ];
     
     file_put_contents($rentals_file, json_encode($rentals, JSON_PRETTY_PRINT));
-    header("Location: rentals.php");
-    exit();
+    // We stay on the page to show our premium success message
 }
 
 ?>
@@ -153,12 +172,84 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirm_booking'])) {
         .date-input-custom::-webkit-calendar-picker-indicator {
             filter: invert(0);
         }
-        .step-number {
-            @apply w-10 h-10 rounded-full bg-black text-white flex items-center justify-center font-bold text-lg;
+        .step-inactive { display: none; }
+        .success-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.8);
+            backdrop-filter: blur(10px);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .animate-bounce-subtle {
+            animation: bounce-subtle 2s infinite;
+        }
+        @keyframes bounce-subtle {
+            0%, 100% { transform: translateY(-5%); }
+            50% { transform: translateY(0); }
+        }
+        .error-shake {
+            animation: shake 0.4s;
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
         }
     </style>
 </head>
 <body class="bg-background-light dark:bg-background-dark text-text-main dark:text-white transition-colors duration-200 min-h-screen">
+    <?php if ($success_booking): ?>
+    <div class="success-overlay">
+        <div class="bg-white dark:bg-surface-dark max-w-lg w-full rounded-[40px] p-10 text-center shadow-2xl relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-full h-2 bg-primary"></div>
+            
+            <div class="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-8 animate-bounce-subtle">
+                <span class="material-symbols-outlined text-green-600 text-5xl font-black">check</span>
+            </div>
+            
+            <h2 class="text-3xl font-black mb-2">Booking Confirmed!</h2>
+            <p class="text-text-muted mb-8 italic">Your rental order <span class="text-black dark:text-white font-bold">#<?php echo $success_booking['id']; ?></span> is now active.</p>
+            
+            <div class="bg-gray-50 dark:bg-[#1e2019] rounded-3xl p-6 text-left space-y-4 mb-8">
+                <div class="flex items-center gap-4">
+                    <img src="<?php echo (strpos($success_booking['item_img'], 'uploads/') === 0) ? $success_booking['item_img'] : 'https://source.unsplash.com/random/100x100?' . urlencode($success_booking['item_img']); ?>" class="w-16 h-16 rounded-xl object-cover bg-white">
+                    <div>
+                        <h4 class="font-black text-sm"><?php echo htmlspecialchars($success_booking['item_name']); ?></h4>
+                        <p class="text-[10px] text-text-muted font-bold tracking-widest uppercase"><?php echo date('M d', strtotime($success_booking['start_date'])); ?> - <?php echo date('M d', strtotime($success_booking['end_date'])); ?></p>
+                    </div>
+                </div>
+                
+                <div class="pt-4 border-t border-gray-200 dark:border-gray-800 space-y-2">
+                    <div class="flex justify-between text-xs">
+                        <span class="text-text-muted">Buyer</span>
+                        <span class="font-bold"><?php echo htmlspecialchars($success_booking['user_name']); ?></span>
+                    </div>
+                    <div class="flex justify-between text-xs">
+                        <span class="text-text-muted">Payment</span>
+                        <span class="font-bold"><?php echo htmlspecialchars($success_booking['payment_details']); ?></span>
+                    </div>
+                    <div class="flex justify-between text-xs">
+                        <span class="text-text-muted">Total Paid</span>
+                        <span class="font-bold text-green-600">₹<?php echo number_format($success_booking['total_price'], 2); ?></span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="space-y-3">
+                <a href="rentals.php" class="block w-full bg-black text-white py-5 rounded-2xl font-black hover:bg-gray-900 transition-all shadow-lg">
+                    Go to My Rentals
+                </a>
+                <a href="dashboard.php" class="block w-full border-2 border-gray-100 dark:border-gray-800 py-4 rounded-2xl font-bold text-text-muted hover:bg-gray-50 dark:hover:bg-gray-800 transition-all">
+                    Return Home
+                </a>
+            </div>
+        </div>
+    </div>
+    <?php endif; ?>
     <header class="sticky top-0 z-50 border-b border-[#e9e8ce] dark:border-[#3e3d2a] bg-white/80 dark:bg-background-dark/80 backdrop-blur-md px-6 py-4">
         <div class="max-w-[1400px] mx-auto flex items-center justify-between">
             <a href="dashboard.php" class="flex items-center gap-2">
@@ -186,171 +277,371 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirm_booking'])) {
     </header>
 
     <main class="max-w-[1200px] mx-auto px-4 py-12">
-        <div class="mb-10">
-            <h1 class="text-4xl font-black mb-3">Confirm Rental Details</h1>
-            <p class="text-text-muted">Review your booking dates and choose how you'd like to receive your item.</p>
+        <div id="error-toast" class="hidden fixed top-24 left-1/2 -translate-x-1/2 bg-red-500 text-white px-6 py-4 rounded-2xl shadow-2xl font-bold flex items-center gap-3 z-50 transition-all">
+            <span class="material-symbols-outlined">error</span>
+            <span id="error-text">Please fill all fields</span>
         </div>
 
-        <form method="POST" class="grid grid-cols-1 lg:grid-cols-3 gap-12 items-start">
-            <div class="lg:col-span-2 space-y-12">
-                <!-- Item Summary -->
-                <div class="bg-white dark:bg-surface-dark rounded-3xl p-6 border border-[#e9e8ce] dark:border-[#3e3d2a] shadow-sm flex flex-col md:flex-row gap-6">
-                    <div class="w-full md:w-48 aspect-square rounded-2xl overflow-hidden bg-gray-100 shrink-0">
-                        <img src="<?php echo (strpos($item['img'], 'uploads/') === 0) ? $item['img'] : 'https://source.unsplash.com/random/400x400?' . urlencode($item['img']); ?>" class="w-full h-full object-cover">
-                    </div>
-                    <div class="flex-1">
-                        <div class="flex justify-between items-start mb-2">
-                            <span class="text-xs font-bold uppercase tracking-wider text-text-muted bg-gray-100 dark:bg-[#1e2019] px-2 py-1 rounded"><?php echo htmlspecialchars($item['category'] ?? 'Rental'); ?></span>
-                            <div class="flex items-center gap-1 text-xs font-bold text-yellow-600">
-                                <span class="material-symbols-outlined text-sm">star</span> 4.9
+        <form method="POST" id="rental-form">
+            <!-- STEP 1: RENTAL DETAILS -->
+            <div id="step-1">
+                <div class="mb-10">
+                    <h1 class="text-4xl font-black mb-3">Confirm Rental Details</h1>
+                    <p class="text-text-muted">Review your booking dates and choose how you'd like to receive your item.</p>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-12 items-start">
+                    <div class="lg:col-span-2 space-y-12">
+                        <!-- Item Summary -->
+                        <div class="bg-white dark:bg-surface-dark rounded-3xl p-6 border border-[#e9e8ce] dark:border-[#3e3d2a] shadow-sm flex flex-col md:flex-row gap-6">
+                            <div class="w-full md:w-48 aspect-square rounded-2xl overflow-hidden bg-gray-100 shrink-0">
+                                <img src="<?php echo (strpos($item['img'], 'uploads/') === 0) ? $item['img'] : 'https://source.unsplash.com/random/400x400?' . urlencode($item['img']); ?>" class="w-full h-full object-cover">
+                            </div>
+                            <div class="flex-1">
+                                <div class="flex justify-between items-start mb-2">
+                                    <span class="text-xs font-bold uppercase tracking-wider text-text-muted bg-gray-100 dark:bg-[#1e2019] px-2 py-1 rounded"><?php echo htmlspecialchars($item['category'] ?? 'Rental'); ?></span>
+                                    <div class="flex items-center gap-1 text-xs font-bold text-yellow-600">
+                                        <span class="material-symbols-outlined text-sm">star</span> 4.9
+                                    </div>
+                                </div>
+                                <h2 class="text-2xl font-extrabold mb-2"><?php echo htmlspecialchars($item['name']); ?></h2>
+                                <p class="text-text-muted text-sm line-clamp-2 mb-6"><?php echo htmlspecialchars($item['description']); ?></p>
+                                
+                                <div class="flex items-center gap-3 pt-4 border-t border-gray-100 dark:border-gray-800">
+                                     <div class="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-black text-xs font-bold border border-white">
+                                        <?php echo strtoupper(substr($owner_name, 0, 1)); ?>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs text-text-muted font-bold uppercase">Owner</p>
+                                        <p class="text-sm font-bold"><?php echo htmlspecialchars($owner_name); ?> <span class="text-green-600 ml-2">• Very Responsive</span></p>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                        <h2 class="text-2xl font-extrabold mb-2"><?php echo htmlspecialchars($item['name']); ?></h2>
-                        <p class="text-text-muted text-sm line-clamp-2 mb-6"><?php echo htmlspecialchars($item['description']); ?></p>
-                        
-                        <div class="flex items-center gap-3 pt-4 border-t border-gray-100 dark:border-gray-800">
-                             <div class="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-black text-xs font-bold border border-white">
-                                <?php echo strtoupper(substr($owner_name, 0, 1)); ?>
+
+                        <!-- 1. Select Dates -->
+                        <section class="space-y-6">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-4">
+                                    <div class="w-10 h-10 rounded-full bg-black text-white flex items-center justify-center font-bold">1</div>
+                                    <h3 class="text-2xl font-black">Select Dates</h3>
+                                </div>
+                                <span id="days-count" class="text-sm font-bold text-blue-600 bg-blue-50 px-3 py-1 rounded-full"><?php echo $duration_days; ?> Days Selected</span>
                             </div>
-                            <div>
-                                <p class="text-xs text-text-muted font-bold uppercase">Owner</p>
-                                <p class="text-sm font-bold"><?php echo htmlspecialchars($owner_name); ?> <span class="text-green-600 ml-2">• Very Responsive</span></p>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 bg-white dark:bg-surface-dark rounded-3xl p-8 border border-[#e9e8ce] dark:border-[#3e3d2a]">
+                                <div>
+                                    <label class="block text-xs font-bold text-text-muted uppercase tracking-widest mb-3 ml-1">Start Date</label>
+                                    <div class="relative">
+                                        <span class="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-gray-400">calendar_today</span>
+                                        <input type="date" name="start_date" id="start_date" required onchange="updateSummary()"
+                                               class="w-full pl-12 pr-4 py-4 rounded-2xl border-none bg-gray-50 dark:bg-[#1e2019] focus:ring-2 focus:ring-primary font-bold"
+                                               value="<?php echo date('Y-m-d'); ?>" min="<?php echo date('Y-m-d'); ?>">
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-text-muted uppercase tracking-widest mb-3 ml-1">End Date</label>
+                                    <div class="relative">
+                                        <span class="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-gray-400">calendar_month</span>
+                                        <input type="date" name="end_date" id="end_date" required onchange="updateSummary()"
+                                               class="w-full pl-12 pr-4 py-4 rounded-2xl border-none bg-gray-50 dark:bg-[#1e2019] focus:ring-2 focus:ring-primary font-bold"
+                                               value="<?php echo date('Y-m-d', strtotime('+' . ($duration_days - 1) . ' days')); ?>" min="<?php echo date('Y-m-d'); ?>">
+                                    </div>
+                                </div>
+                                <div class="md:col-span-2 pt-4">
+                                    <div class="flex items-center gap-3 p-4 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 rounded-2xl text-sm">
+                                        <span class="material-symbols-outlined">info</span>
+                                        <p>The owner requires at least 2 days rental for this item.</p>
+                                    </div>
+                                </div>
                             </div>
+                        </section>
+
+                        <!-- 2. Choose Fulfillment -->
+                        <section class="space-y-6">
+                            <div class="flex items-center gap-4">
+                                <div class="w-10 h-10 rounded-full bg-black text-white flex items-center justify-center font-bold">2</div>
+                                <h3 class="text-2xl font-black">Choose Fulfillment</h3>
+                            </div>
+
+                            <div class="grid grid-cols-2 p-1 bg-gray-100 dark:bg-[#1e2019] rounded-2xl mb-6">
+                                <button type="button" onclick="setFulfillment('delivery')" id="btn-delivery" 
+                                        class="py-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all bg-black text-white shadow-lg">
+                                    <span class="material-symbols-outlined">local_shipping</span> Delivery
+                                </button>
+                                <button type="button" onclick="setFulfillment('pickup')" id="btn-pickup" 
+                                        class="py-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all text-text-muted hover:bg-white/50">
+                                    <span class="material-symbols-outlined">storefront</span> Self-Pickup
+                                </button>
+                                <input type="hidden" name="fulfillment_method" id="fulfillment_method" value="delivery">
+                            </div>
+
+                            <div id="address-section" class="bg-white dark:bg-surface-dark rounded-3xl p-8 border border-[#e9e8ce] dark:border-[#3e3d2a] space-y-6">
+                                <div class="flex items-center gap-4 mb-4">
+                                    <div class="w-12 h-12 rounded-full bg-yellow-100 flex items-center justify-center text-yellow-700">
+                                        <span class="material-symbols-outlined">location_on</span>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-bold">Delivery Address</h4>
+                                        <p class="text-sm text-text-muted">Where should we drop off the gear?</p>
+                                    </div>
+                                </div>
+                                
+                                <div class="space-y-4">
+                                    <div>
+                                        <label class="block text-[10px] font-black text-text-muted uppercase tracking-widest mb-2 ml-1">Street Address</label>
+                                        <input type="text" name="address" id="delivery_address" placeholder="123 Creative Ave, Apt 4B" class="w-full px-6 py-4 rounded-2xl border-none bg-gray-50 dark:bg-[#1e2019] focus:ring-2 focus:ring-primary font-medium">
+                                    </div>
+                                    <div class="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label class="block text-[10px] font-black text-text-muted uppercase tracking-widest mb-2 ml-1">City</label>
+                                            <input type="text" name="city" id="delivery_city" placeholder="New York" class="w-full px-6 py-4 rounded-2xl border-none bg-gray-50 dark:bg-[#1e2019] focus:ring-2 focus:ring-primary font-medium">
+                                        </div>
+                                        <div>
+                                            <label class="block text-[10px] font-black text-text-muted uppercase tracking-widest mb-2 ml-1">Zip Code</label>
+                                            <input type="text" name="zip" id="delivery_zip" placeholder="10001" class="w-full px-6 py-4 rounded-2xl border-none bg-gray-50 dark:bg-[#1e2019] focus:ring-2 focus:ring-primary font-medium">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+
+                    <!-- Booking Summary Sidebar (Step 1) -->
+                    <div class="lg:sticky lg:top-32 space-y-6">
+                        <div class="bg-white dark:bg-surface-dark rounded-3xl p-8 border border-[#e9e8ce] dark:border-[#3e3d2a] shadow-xl">
+                            <h3 class="text-xl font-black mb-8">Booking Summary</h3>
+                            
+                            <div class="space-y-4 mb-8">
+                                <div class="flex justify-between text-sm">
+                                    <span class="text-text-muted">₹<?php echo $item['price']; ?> x <span class="summary-days-val"><?php echo $duration_days; ?></span> days</span>
+                                    <span class="font-bold">₹<span class="summary-subtotal-val"><?php echo $item['price'] * $duration_days; ?></span>.00</span>
+                                </div>
+                                <div class="flex justify-between text-sm">
+                                    <span class="text-text-muted">Service Fee</span>
+                                    <span class="font-bold">₹150.00</span>
+                                </div>
+                                <div class="flex justify-between text-sm summary-delivery-row">
+                                    <span class="text-text-muted flex items-center gap-1">Delivery Fee</span>
+                                    <span class="font-bold">₹150.00</span>
+                                </div>
+                            </div>
+                            
+                            <div class="flex justify-between items-end pt-6 border-t border-gray-100 dark:border-gray-800 mb-8">
+                                <span class="text-lg font-black tracking-tight">Total</span>
+                                <div class="text-right">
+                                     <span class="text-3xl font-black">₹<span class="summary-total-val"><?php echo ($item['price'] * $duration_days) + 300; ?></span>.00</span>
+                                </div>
+                            </div>
+                            
+                            <button type="button" onclick="goToStep(2)" class="w-full bg-primary hover:bg-yellow-300 text-black font-black py-5 rounded-2xl text-lg flex items-center justify-center gap-3 shadow-lg shadow-primary/20 transition-all hover:-translate-y-1 active:scale-95">
+                                Proceed to Payment
+                                <span class="material-symbols-outlined font-black">arrow_forward</span>
+                            </button>
+                            
+                            <p class="text-center text-xs text-text-muted mt-6 italic">You won't be charged yet.</p>
                         </div>
                     </div>
                 </div>
-
-                <!-- 1. Select Dates -->
-                <section class="space-y-6">
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center gap-4">
-                            <div class="w-10 h-10 rounded-full bg-black text-white flex items-center justify-center font-bold">1</div>
-                            <h3 class="text-2xl font-black">Select Dates</h3>
-                        </div>
-                        <span id="days-count" class="text-sm font-bold text-blue-600 bg-blue-50 px-3 py-1 rounded-full"><?php echo $duration_days; ?> Days Selected</span>
-                    </div>
-
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 bg-white dark:bg-surface-dark rounded-3xl p-8 border border-[#e9e8ce] dark:border-[#3e3d2a]">
-                        <div>
-                            <label class="block text-xs font-bold text-text-muted uppercase tracking-widest mb-3 ml-1">Start Date</label>
-                            <div class="relative">
-                                <span class="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-gray-400">calendar_today</span>
-                                <input type="date" name="start_date" id="start_date" required onchange="updateSummary()"
-                                       class="w-full pl-12 pr-4 py-4 rounded-2xl border-none bg-gray-50 dark:bg-[#1e2019] focus:ring-2 focus:ring-primary font-bold"
-                                       value="<?php echo date('Y-m-d'); ?>" min="<?php echo date('Y-m-d'); ?>">
-                            </div>
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-text-muted uppercase tracking-widest mb-3 ml-1">End Date</label>
-                            <div class="relative">
-                                <span class="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-gray-400">calendar_month</span>
-                                <input type="date" name="end_date" id="end_date" required onchange="updateSummary()"
-                                       class="w-full pl-12 pr-4 py-4 rounded-2xl border-none bg-gray-50 dark:bg-[#1e2019] focus:ring-2 focus:ring-primary font-bold"
-                                       value="<?php echo date('Y-m-d', strtotime('+' . ($duration_days - 1) . ' days')); ?>" min="<?php echo date('Y-m-d'); ?>">
-                            </div>
-                        </div>
-                        <div class="md:col-span-2 pt-4">
-                            <div class="flex items-center gap-3 p-4 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 rounded-2xl text-sm">
-                                <span class="material-symbols-outlined">info</span>
-                                <p>The owner requires at least 2 days rental for this item.</p>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- 2. Choose Fulfillment -->
-                <section class="space-y-6">
-                    <div class="flex items-center gap-4">
-                        <div class="w-10 h-10 rounded-full bg-black text-white flex items-center justify-center font-bold">2</div>
-                        <h3 class="text-2xl font-black">Choose Fulfillment</h3>
-                    </div>
-
-                    <div class="grid grid-cols-2 p-1 bg-gray-100 dark:bg-[#1e2019] rounded-2xl mb-6">
-                        <button type="button" onclick="setFulfillment('delivery')" id="btn-delivery" 
-                                class="py-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all bg-black text-white shadow-lg">
-                            <span class="material-symbols-outlined">local_shipping</span> Delivery
-                        </button>
-                        <button type="button" onclick="setFulfillment('pickup')" id="btn-pickup" 
-                                class="py-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all text-text-muted hover:bg-white/50">
-                            <span class="material-symbols-outlined">storefront</span> Self-Pickup
-                        </button>
-                        <input type="hidden" name="fulfillment_method" id="fulfillment_method" value="delivery">
-                    </div>
-
-                    <div id="address-section" class="bg-white dark:bg-surface-dark rounded-3xl p-8 border border-[#e9e8ce] dark:border-[#3e3d2a] space-y-6">
-                        <div class="flex items-center gap-4 mb-4">
-                            <div class="w-12 h-12 rounded-full bg-yellow-100 flex items-center justify-center text-yellow-700">
-                                <span class="material-symbols-outlined">location_on</span>
-                            </div>
-                            <div>
-                                <h4 class="font-bold">Delivery Address</h4>
-                                <p class="text-sm text-text-muted">Where should we drop off the gear?</p>
-                            </div>
-                        </div>
-                        
-                        <div class="space-y-4">
-                            <div>
-                                <label class="block text-[10px] font-black text-text-muted uppercase tracking-widest mb-2 ml-1">Street Address</label>
-                                <input type="text" name="address" placeholder="123 Creative Ave, Apt 4B" class="w-full px-6 py-4 rounded-2xl border-none bg-gray-50 dark:bg-[#1e2019] focus:ring-2 focus:ring-primary font-medium">
-                            </div>
-                            <div class="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label class="block text-[10px] font-black text-text-muted uppercase tracking-widest mb-2 ml-1">City</label>
-                                    <input type="text" placeholder="New York" class="w-full px-6 py-4 rounded-2xl border-none bg-gray-50 dark:bg-[#1e2019] focus:ring-2 focus:ring-primary font-medium">
-                                </div>
-                                <div>
-                                    <label class="block text-[10px] font-black text-text-muted uppercase tracking-widest mb-2 ml-1">Zip Code</label>
-                                    <input type="text" placeholder="10001" class="w-full px-6 py-4 rounded-2xl border-none bg-gray-50 dark:bg-[#1e2019] focus:ring-2 focus:ring-primary font-medium">
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="flex items-center gap-2 text-green-600 font-bold text-sm pt-4">
-                            <span class="material-symbols-outlined text-lg">check_circle</span>
-                            <span>Estimated delivery by Oct 14, 9:00 AM</span>
-                        </div>
-                    </div>
-                </section>
             </div>
 
-            <!-- Booking Summary -->
-            <div class="lg:sticky lg:top-32 space-y-6">
-                <div class="bg-white dark:bg-surface-dark rounded-3xl p-8 border border-[#e9e8ce] dark:border-[#3e3d2a] shadow-xl">
-                    <h3 class="text-xl font-black mb-8">Booking Summary</h3>
-                    
-                    <div class="space-y-4 mb-8">
-                        <div class="flex justify-between text-sm">
-                            <span class="text-text-muted">₹<?php echo $item['price']; ?> x <span id="summary-days"><?php echo $duration_days; ?></span> days</span>
-                            <span class="font-bold">₹<span id="summary-subtotal"><?php echo $item['price'] * $duration_days; ?></span>.00</span>
-                        </div>
-                        <div class="flex justify-between text-sm">
-                            <span class="text-text-muted">Service Fee</span>
-                            <span class="font-bold">₹150.00</span>
-                        </div>
-                        <div class="flex justify-between text-sm" id="summary-delivery-row">
-                            <span class="text-text-muted flex items-center gap-1">Delivery Fee <span class="material-symbols-outlined text-sm cursor-help">help</span></span>
-                            <span class="font-bold">₹150.00</span>
-                        </div>
-                    </div>
-                    
-                    <div class="flex justify-between items-end pt-6 border-t border-gray-100 dark:border-gray-800 mb-8">
-                        <span class="text-lg font-black tracking-tight">Total</span>
-                        <div class="text-right">
-                             <span class="text-3xl font-black">₹<span id="summary-total"><?php echo ($item['price'] * $duration_days) + 300; ?></span>.00</span>
-                        </div>
-                    </div>
-                    
-                    <button type="submit" name="confirm_booking" class="w-full bg-primary hover:bg-yellow-300 text-black font-black py-5 rounded-2xl text-lg flex items-center justify-center gap-3 shadow-lg shadow-primary/20 transition-all hover:-translate-y-1 active:scale-95">
-                        Proceed to Payment
-                        <span class="material-symbols-outlined font-black">arrow_forward</span>
+            <!-- STEP 2: PAYMENT METHOD -->
+            <div id="step-2" class="step-inactive">
+                <div class="mb-10 text-center lg:text-left">
+                    <button type="button" onclick="goToStep(1)" class="mb-4 flex items-center gap-2 text-sm font-bold text-text-muted hover:text-black transition-colors">
+                        <span class="material-symbols-outlined text-lg">arrow_back</span> Back to Details
                     </button>
-                    
-                    <p class="text-center text-xs text-text-muted mt-6 italic">You won't be charged yet.</p>
+                    <h1 class="text-4xl font-black mb-3">Select Payment Method</h1>
+                    <p class="text-text-muted">Choose your preferred payment method and complete your rental booking securely.</p>
                 </div>
-                
-                <div class="flex items-center justify-center gap-2 text-text-muted text-xs font-bold uppercase tracking-widest">
-                    <span class="material-symbols-outlined text-sm">lock</span>
-                    Secure SSL Encrypted Transaction
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-12 items-start">
+                    <div class="lg:col-span-2 space-y-8">
+                        <!-- Payment Tabs -->
+                        <div class="flex gap-4 overflow-x-auto pb-2">
+                            <button type="button" onclick="setPaymentMethod('card')" id="tab-card" class="payment-tab active bg-white dark:bg-surface-dark border-2 border-primary rounded-2xl p-6 flex flex-col items-center justify-center min-w-[140px] shadow-sm transition-all">
+                                <span class="material-symbols-outlined text-3xl mb-2">credit_card</span>
+                                <span class="font-bold">Card</span>
+                            </button>
+                            <button type="button" onclick="setPaymentMethod('wallets')" id="tab-wallets" class="payment-tab bg-white dark:bg-surface-dark border border-[#e9e8ce] dark:border-[#3e3d2a] rounded-2xl p-6 flex flex-col items-center justify-center min-w-[140px] shadow-sm transition-all hover:border-gray-300">
+                                <span class="material-symbols-outlined text-3xl mb-2">account_balance_wallet</span>
+                                <span class="font-bold">Wallets</span>
+                            </button>
+                            <button type="button" onclick="setPaymentMethod('netbanking')" id="tab-netbanking" class="payment-tab bg-white dark:bg-surface-dark border border-[#e9e8ce] dark:border-[#3e3d2a] rounded-2xl p-6 flex flex-col items-center justify-center min-w-[140px] shadow-sm transition-all hover:border-gray-300">
+                                <span class="material-symbols-outlined text-3xl mb-2">account_balance</span>
+                                <span class="font-bold">Net Banking</span>
+                            </button>
+                            <input type="hidden" name="payment_method_val" id="payment_method_val" value="card">
+                        </div>
+
+                        <!-- Card Details Form -->
+                        <div id="payment-card-form" class="bg-white dark:bg-surface-dark rounded-3xl p-8 border border-[#e9e8ce] dark:border-[#3e3d2a] shadow-sm space-y-6">
+                            <div class="flex justify-between items-center mb-4">
+                                <h3 class="text-xl font-bold">Card Details</h3>
+                                <div class="flex gap-2">
+                                    <img src="https://upload.wikimedia.org/wikipedia/commons/5/5e/Visa_Inc._logo.svg" class="h-4 opacity-50 grayscale hover:grayscale-0 transition-all">
+                                    <img src="https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg" class="h-6 opacity-50 grayscale hover:grayscale-0 transition-all">
+                                </div>
+                            </div>
+
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-[10px] font-black text-text-muted uppercase tracking-widest mb-2 ml-1">Cardholder Name</label>
+                                    <input type="text" name="card_name" id="card_name" placeholder="John Doe" class="w-full px-6 py-4 rounded-2xl border-none bg-gray-50 dark:bg-[#1e2019] focus:ring-2 focus:ring-primary font-medium">
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-black text-text-muted uppercase tracking-widest mb-2 ml-1">Card Number</label>
+                                    <div class="relative">
+                                        <span class="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-gray-400">credit_card</span>
+                                        <input type="text" name="card_number" id="card_number" placeholder="0000 0000 0000 0000" class="w-full pl-12 pr-6 py-4 rounded-2xl border-none bg-gray-50 dark:bg-[#1e2019] focus:ring-2 focus:ring-primary font-medium">
+                                    </div>
+                                </div>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-[10px] font-black text-text-muted uppercase tracking-widest mb-2 ml-1">Expiry Date</label>
+                                        <input type="text" name="card_expiry" id="card_expiry" placeholder="MM/YY" class="w-full px-6 py-4 rounded-2xl border-none bg-gray-50 dark:bg-[#1e2019] focus:ring-2 focus:ring-primary font-medium">
+                                    </div>
+                                    <div>
+                                        <label class="block text-[10px] font-black text-text-muted uppercase tracking-widest mb-2 ml-1">CVV</label>
+                                        <div class="relative">
+                                            <input type="password" name="card_cvv" id="card_cvv" placeholder="123" class="w-full px-6 py-4 rounded-2xl border-none bg-gray-50 dark:bg-[#1e2019] focus:ring-2 focus:ring-primary font-medium">
+                                            <span class="absolute right-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-gray-400 cursor-help" title="3-digit security code on the back of your card">help</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <label class="flex items-center gap-3 cursor-pointer pt-2 group">
+                                    <div class="w-6 h-6 rounded-full border-2 border-primary flex items-center justify-center text-primary group-hover:bg-primary/10 transition-all">
+                                        <span class="material-symbols-outlined scale-75 hidden group-active:block">check</span>
+                                    </div>
+                                    <span class="text-sm font-bold text-text-muted">Save this card for faster future checkouts</span>
+                                    <input type="checkbox" class="hidden">
+                                </label>
+                            </div>
+                        </div>
+
+                         <!-- Wallets / UPI Form -->
+                        <div id="payment-wallets-form" class="hidden bg-white dark:bg-surface-dark rounded-3xl p-8 border border-[#e9e8ce] dark:border-[#3e3d2a] shadow-sm space-y-6">
+                            <div class="flex justify-between items-center">
+                                <h3 class="text-xl font-bold">Pay via UPI</h3>
+                                <div class="flex gap-2 items-center">
+                                    <img src="https://upload.wikimedia.org/wikipedia/commons/e/e1/UPI-Logo-vector.svg" class="h-6 opacity-70">
+                                </div>
+                            </div>
+                            
+                            <div class="grid grid-cols-2 gap-4 mb-6">
+                                <button type="button" onclick="selectUpiApp('gpay')" class="upi-app-btn p-4 rounded-2xl border-2 border-gray-100 dark:border-gray-800 flex items-center gap-3 hover:border-primary transition-all">
+                                    <div class="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm">
+                                        <span class="material-symbols-outlined text-2xl">g_mobiledata</span>
+                                    </div>
+                                    <span class="font-bold">Google Pay</span>
+                                </button>
+                                <button type="button" onclick="selectUpiApp('phonepe')" class="upi-app-btn p-4 rounded-2xl border-2 border-gray-100 dark:border-gray-800 flex items-center gap-3 hover:border-primary transition-all">
+                                    <div class="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center">
+                                        <span class="material-symbols-outlined text-2xl text-purple-600">smartphone</span>
+                                    </div>
+                                    <span class="font-bold">PhonePe</span>
+                                </button>
+                                <button type="button" onclick="selectUpiApp('paytm')" class="upi-app-btn p-4 rounded-2xl border-2 border-gray-100 dark:border-gray-800 flex items-center gap-3 hover:border-primary transition-all">
+                                    <div class="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
+                                        <span class="material-symbols-outlined text-2xl text-blue-600">account_balance_wallet</span>
+                                    </div>
+                                    <span class="font-bold">Paytm</span>
+                                </button>
+                                <button type="button" onclick="selectUpiApp('other')" class="upi-app-btn p-4 rounded-2xl border-2 border-gray-100 dark:border-gray-800 flex items-center gap-3 hover:border-primary transition-all">
+                                    <div class="w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center">
+                                        <span class="material-symbols-outlined text-2xl">more_horiz</span>
+                                    </div>
+                                    <span class="font-bold">Other UPI</span>
+                                </button>
+                                <input type="hidden" name="upi_app" id="upi_app" value="Other UPI">
+                            </div>
+
+                            <div class="pt-4 border-t border-gray-100 dark:border-gray-800">
+                                <label class="block text-[10px] font-black text-text-muted uppercase tracking-widest mb-2 ml-1">Enter Your UPI ID</label>
+                                <div class="relative">
+                                    <span class="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-gray-400">alternate_email</span>
+                                    <input type="text" name="upi_id" id="upi_id" placeholder="yourname@upi" class="w-full pl-12 pr-6 py-4 rounded-2xl border-none bg-gray-50 dark:bg-[#1e2019] focus:ring-2 focus:ring-primary font-medium">
+                                </div>
+                                <p class="text-xs text-text-muted mt-2 ml-1">Example: 9876543210@ybl, username@oksbi</p>
+                            </div>
+
+                            <div class="flex items-center gap-3 p-4 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 rounded-2xl text-sm">
+                                <span class="material-symbols-outlined">verified_user</span>
+                                <p>Your UPI transaction is secured with 256-bit encryption.</p>
+                            </div>
+                        </div>
+
+                         <!-- Net Banking Form (Placeholder) -->
+                        <div id="payment-netbanking-form" class="hidden bg-white dark:bg-surface-dark rounded-3xl p-8 border border-[#e9e8ce] dark:border-[#3e3d2a] shadow-sm space-y-6">
+                            <h3 class="text-xl font-bold">Select Your Bank</h3>
+                            <select class="w-full px-6 py-4 rounded-2xl border-none bg-gray-50 dark:bg-[#1e2019] focus:ring-2 focus:ring-primary font-medium">
+                                <option>HDFC Bank</option>
+                                <option>ICICI Bank</option>
+                                <option>State Bank of India</option>
+                                <option>Axis Bank</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Booking Summary Sidebar (Step 2) -->
+                    <div class="lg:sticky lg:top-32 space-y-6">
+                        <div class="bg-white dark:bg-surface-dark rounded-3xl border border-[#e9e8ce] dark:border-[#3e3d2a] shadow-xl overflow-hidden">
+                            <div class="p-8 border-b border-gray-100 dark:border-gray-800">
+                                <h3 class="text-xl font-black mb-6">Booking Summary</h3>
+                                <div class="flex gap-4 mb-6">
+                                    <div class="w-20 h-20 rounded-xl overflow-hidden shrink-0 bg-gray-50">
+                                        <img src="<?php echo (strpos($item['img'], 'uploads/') === 0) ? $item['img'] : 'https://source.unsplash.com/random/400x400?' . urlencode($item['img']); ?>" class="w-full h-full object-cover">
+                                    </div>
+                                    <div>
+                                        <h4 class="font-extrabold text-sm mb-1 uppercase tracking-tight"><?php echo htmlspecialchars($item['name']); ?></h4>
+                                        <p class="text-[10px] text-text-muted font-bold" id="summary-dates-display">Oct 14 - Oct 16, 2023</p>
+                                        <p class="text-[10px] font-black text-black dark:text-white mt-1"><span class="summary-days-val">3</span> Days Rental</p>
+                                    </div>
+                                </div>
+                                
+                                <div class="space-y-3 mb-6">
+                                    <div class="flex justify-between text-xs">
+                                        <span class="text-text-muted">Subtotal (₹<?php echo $item['price']; ?> x <span class="summary-days-val">3</span>)</span>
+                                        <span class="font-bold">₹<span class="summary-subtotal-val">450</span>.00</span>
+                                    </div>
+                                    <div class="flex justify-between text-xs">
+                                        <span class="text-text-muted text-[10px] font-bold uppercase tracking-wider">Service Fee</span>
+                                        <span class="font-bold">₹150.00</span>
+                                    </div>
+                                    <div class="flex justify-between text-xs summary-delivery-row">
+                                        <span class="text-text-muted text-[10px] font-bold uppercase tracking-wider">Delivery Fee</span>
+                                        <span class="font-bold">₹150.00</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="flex justify-between items-center py-4 border-t border-dashed border-gray-300">
+                                    <span class="text-lg font-black uppercase tracking-tighter">Total</span>
+                                    <span class="text-2xl font-black">₹<span class="summary-total-val">750</span>.00</span>
+                                </div>
+                            </div>
+                            
+                            <div class="p-8 bg-gray-50 dark:bg-[#1e2019]/50">
+                                <button type="submit" name="confirm_booking" onclick="return validatePayment()" class="w-full bg-primary hover:bg-yellow-300 text-black font-black py-5 rounded-2xl text-lg flex items-center justify-center gap-3 shadow-lg shadow-primary/20 transition-all hover:scale-[1.02] active:scale-95">
+                                    <span class="material-symbols-outlined font-black">lock</span>
+                                    Confirm and Pay
+                                </button>
+                                
+                                <div class="flex items-center justify-center gap-2 mt-4 text-[10px] font-black text-text-muted uppercase tracking-widest">
+                                    <span class="material-symbols-outlined text-[14px]">verified_user</span>
+                                    Safe & Secure Payment
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="p-6 bg-blue-50 dark:bg-blue-900/10 rounded-2xl border border-blue-100 dark:border-blue-900/30">
+                            <div class="flex gap-3">
+                                <span class="material-symbols-outlined text-blue-600 text-xl shrink-0">info</span>
+                                <p class="text-[11px] font-medium leading-relaxed text-blue-900 dark:text-blue-200">
+                                    You are protected by <strong class="font-black">RendeX Protection</strong>. Funds are held in escrow until the rental is successfully completed.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </form>
@@ -362,32 +653,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirm_booking'])) {
         const baseDeliveryFee = 150;
 
         function updateSummary() {
-            const start = new Date(document.getElementById('start_date').value);
-            const end = new Date(document.getElementById('end_date').value);
+            const startInput = document.getElementById('start_date');
+            const endInput = document.getElementById('end_date');
+            const start = new Date(startInput.value);
+            const end = new Date(endInput.value);
             
             if (end < start) {
-                document.getElementById('end_date').value = document.getElementById('start_date').value;
+                endInput.value = startInput.value;
             }
             
             const diffTime = Math.abs(end - start);
             const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
             
-            document.getElementById('summary-days').textContent = diffDays;
+            // Update all displays
+            document.querySelectorAll('.summary-days-val').forEach(el => el.textContent = diffDays);
             document.getElementById('days-count').textContent = diffDays + (diffDays === 1 ? ' Day' : ' Days') + ' Selected';
             
-            const subtotal = profilePrice();
-            function profilePrice() { return diffDays * pricePerDay; }
-            
-            document.getElementById('summary-subtotal').textContent = subtotal;
+            const subtotal = diffDays * pricePerDay;
+            document.querySelectorAll('.summary-subtotal-val').forEach(el => el.textContent = subtotal);
             
             const isDelivery = document.getElementById('fulfillment_method').value === 'delivery';
             const deliveryFee = isDelivery ? baseDeliveryFee : 0;
             
             const total = subtotal + serviceFee + deliveryFee;
-            document.getElementById('summary-total').textContent = total;
+            document.querySelectorAll('.summary-total-val').forEach(el => el.textContent = total);
             
-            document.getElementById('summary-delivery-row').style.opacity = isDelivery ? '1' : '0.4';
-            document.getElementById('summary-delivery-row').querySelector('.font-bold').textContent = '₹' + deliveryFee + '.00';
+            document.querySelectorAll('.summary-delivery-row').forEach(el => {
+                el.style.opacity = isDelivery ? '1' : '0.4';
+                el.querySelector('.font-bold').textContent = '₹' + deliveryFee + '.00';
+            });
+
+            // Update dates display in Step 2
+            const options = { month: 'short', day: 'numeric', year: 'numeric' };
+            document.getElementById('summary-dates-display').textContent = 
+                `${start.toLocaleDateString('en-US', options)} - ${end.toLocaleDateString('en-US', options)}`;
         }
 
         function setFulfillment(method) {
@@ -409,6 +708,128 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirm_booking'])) {
             }
             
             updateSummary();
+        }
+
+        function showError(msg) {
+            const toast = document.getElementById('error-toast');
+            const text = document.getElementById('error-text');
+            text.textContent = msg;
+            toast.classList.remove('hidden');
+            toast.classList.add('animate-bounce-subtle');
+            
+            setTimeout(() => {
+                toast.classList.add('hidden');
+                toast.classList.remove('animate-bounce-subtle');
+            }, 3000);
+        }
+
+        function goToStep(step) {
+            const step1 = document.getElementById('step-1');
+            const step2 = document.getElementById('step-2');
+            const fulfillment = document.getElementById('fulfillment_method').value;
+            
+            if (step === 2) {
+                // Validate Step 1
+                if (fulfillment === 'delivery') {
+                    const addr = document.getElementById('delivery_address').value;
+                    const city = document.getElementById('delivery_city').value;
+                    const zip = document.getElementById('delivery_zip').value;
+                    
+                    if (!addr || !city || !zip) {
+                        showError('Please fill in your complete delivery address.');
+                        if (!addr) document.getElementById('delivery_address').classList.add('error-shake');
+                        return;
+                    }
+                }
+                
+                step1.classList.add('step-inactive');
+                step2.classList.remove('step-inactive');
+                window.scrollTo(0, 0);
+            } else {
+                step2.classList.add('step-inactive');
+                step1.classList.remove('step-inactive');
+                window.scrollTo(0, 0);
+            }
+        }
+
+        function setPaymentMethod(method) {
+            document.getElementById('payment_method_val').value = method;
+            // Update tabs
+            document.querySelectorAll('.payment-tab').forEach(tab => {
+                tab.classList.remove('border-primary', 'active');
+                tab.classList.add('border-[#e9e8ce]', 'dark:border-[#3e3d2a]');
+            });
+            document.getElementById('tab-' + method).classList.add('border-primary', 'active');
+            document.getElementById('tab-' + method).classList.remove('border-[#e9e8ce]', 'dark:border-[#3e3d2a]');
+
+            // Update forms
+            document.getElementById('payment-card-form').classList.add('hidden');
+            document.getElementById('payment-wallets-form').classList.add('hidden');
+            document.getElementById('payment-netbanking-form').classList.add('hidden');
+            document.getElementById('payment-' + method + '-form').classList.remove('hidden');
+        }
+
+        function validatePayment() {
+            const method = document.getElementById('payment_method_val').value;
+            const btn = document.querySelector('button[name="confirm_booking"]');
+
+            if (method === 'card') {
+                const name = document.getElementById('card_name').value;
+                const num = document.getElementById('card_number').value;
+                const exp = document.getElementById('card_expiry').value;
+                const cvv = document.getElementById('card_cvv').value;
+                
+                if (!name || !num || !exp || !cvv) {
+                    showError('Please fill all the required fields to verify payment.');
+                    return false;
+                }
+            } else if (method === 'wallets') {
+                const upiId = document.getElementById('upi_id').value;
+                if (!upiId || !upiId.includes('@')) {
+                    showError('Please enter a valid UPI ID (e.g., name@upi).');
+                    return false;
+                }
+            }
+
+            // Show Processing State
+            btn.disabled = true;
+            btn.innerHTML = `
+                <svg class="animate-spin h-5 w-5 text-black" xmlns="http://www.w3.org/2000/svg" fill="none" viewbox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Processing Payment...
+            `;
+            
+            // Allow form to submit
+            setTimeout(() => {
+                const form = document.getElementById('rental-form');
+                const submitInput = document.createElement('input');
+                submitInput.type = 'hidden';
+                submitInput.name = 'confirm_booking';
+                submitInput.value = '1';
+                form.appendChild(submitInput);
+                form.submit();
+            }, 1000);
+
+            return false; // We handle submission manually to show the spinner
+        }
+
+        function selectUpiApp(app) {
+            const upiAppMap = {
+                'gpay': 'Google Pay',
+                'phonepe': 'PhonePe',
+                'paytm': 'Paytm',
+                'other': 'Other UPI'
+            };
+            document.getElementById('upi_app').value = upiAppMap[app];
+
+            document.querySelectorAll('.upi-app-btn').forEach(btn => {
+                btn.classList.remove('border-primary', 'bg-primary/5');
+                btn.classList.add('border-gray-100', 'dark:border-gray-800');
+            });
+            event.currentTarget.classList.add('border-primary', 'bg-primary/5');
+            event.currentTarget.classList.remove('border-gray-100', 'dark:border-gray-800');
         }
 
         // Initialize

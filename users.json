@@ -45,9 +45,32 @@
         "name": "Agnus Sabu",
         "email": "agnussabu2028@mca.ajce.in",
         "phone": "6238337511",
-        "role": "owner",
-        "password_hash": "$2y$10$2AwgxvpgdFlBseprueQww.GThAeRXruv.CNjR\/s6bQpdvPpM4Gsdi",
-        "created_at": "2026-01-04 16:56:50"
+        "role": "delivery_partner",
+        "password_hash": "$2y$10$L3FM8LO2VYguE4Z7Xm1W7uyM8zMGxSxuXVXsUKuSKYSg6XjmiVJ\/q",
+        "created_at": "2026-01-04 16:56:50",
+        "delivery_application": {
+            "full_name": "Agnus Sabu",
+            "phone": "6238337511",
+            "email": "agnussabu2028@mca.ajce.in",
+            "date_of_birth": "2005-08-31",
+            "address": "xyz \r\nabc",
+            "city": "kannur",
+            "pincode": "685553",
+            "vehicle_type": "scooter",
+            "vehicle_number": "KL 07 AB 4567",
+            "license_number": "KL9876543009",
+            "license_expiry": "2028-05-04",
+            "license_photo": "uploads\/licenses\/license_696c7c4e540a6.jpg",
+            "service_areas": [
+                "Kaloor",
+                "Palarivattom"
+            ],
+            "availability_hours": "flexible",
+            "experience": "none",
+            "has_smartphone": true,
+            "applied_at": "2026-01-18 07:23:10",
+            "status": "pending"
+        }
     },
     {
         "id": "695a9a1b6d290",

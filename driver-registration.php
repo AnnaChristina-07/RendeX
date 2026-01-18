@@ -153,7 +153,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_application'])
                     $stmt = $pdo->prepare("
                         INSERT INTO driver_applications (
                             user_id, full_name, date_of_birth, phone, address, city, pincode,
-                            vehicle_type, vehicle_number, driving_license, license_expiry, license_photo, status, applied_at
+                            vehicle_type, vehicle_number, driving_license, license_expiry, license_document, status, applied_at
                         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', NOW())
                     ");
                     

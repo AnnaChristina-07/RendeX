@@ -342,7 +342,7 @@ if ($use_database && !empty($pending_driver_applications)) {
                 'experience' => 'none',
                 'applied_at' => $app['applied_at'],
                 'status' => $app['status'],
-                'license_photo' => $app['license_photo'] ?? ''
+                'license_photo' => $app['license_document'] ?? $app['license_photo'] ?? ''
             ]
         ];
     }
