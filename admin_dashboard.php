@@ -343,6 +343,7 @@ if ($use_database && !empty($pending_driver_applications)) {
                 'applied_at' => $app['applied_at'],
                 'status' => $app['status'],
                 'license_photo' => $app['license_document'] ?? $app['license_photo'] ?? ''
+
             ]
         ];
     }

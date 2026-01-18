@@ -224,6 +224,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirm_booking'])) {
         .date-input-custom::-webkit-calendar-picker-indicator {
             filter: invert(0);
         }
+
         .step-inactive { display: none; }
         .success-overlay {
             position: fixed;
@@ -250,6 +251,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirm_booking'])) {
             0%, 100% { transform: translateX(0); }
             25% { transform: translateX(-5px); }
             75% { transform: translateX(5px); }
+
         }
     </style>
 </head>
@@ -329,6 +331,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirm_booking'])) {
     </header>
 
     <main class="max-w-[1200px] mx-auto px-4 py-12">
+
         <div id="error-toast" class="hidden fixed top-24 left-1/2 -translate-x-1/2 bg-red-500 text-white px-6 py-4 rounded-2xl shadow-2xl font-bold flex items-center gap-3 z-50 transition-all">
             <span class="material-symbols-outlined">error</span>
             <span id="error-text">Please fill all fields</span>
@@ -694,6 +697,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirm_booking'])) {
                             </div>
                         </div>
                     </div>
+
                 </div>
             </div>
         </form>
@@ -705,6 +709,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirm_booking'])) {
         const baseDeliveryFee = 150;
 
         function updateSummary() {
+
             const startInput = document.getElementById('start_date');
             const endInput = document.getElementById('end_date');
             const start = new Date(startInput.value);
@@ -712,22 +717,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirm_booking'])) {
             
             if (end < start) {
                 endInput.value = startInput.value;
+
             }
             
             const diffTime = Math.abs(end - start);
             const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
             
+
             // Update all displays
             document.querySelectorAll('.summary-days-val').forEach(el => el.textContent = diffDays);
             document.getElementById('days-count').textContent = diffDays + (diffDays === 1 ? ' Day' : ' Days') + ' Selected';
             
             const subtotal = diffDays * pricePerDay;
             document.querySelectorAll('.summary-subtotal-val').forEach(el => el.textContent = subtotal);
+
             
             const isDelivery = document.getElementById('fulfillment_method').value === 'delivery';
             const deliveryFee = isDelivery ? baseDeliveryFee : 0;
             
             const total = subtotal + serviceFee + deliveryFee;
+
             document.querySelectorAll('.summary-total-val').forEach(el => el.textContent = total);
             
             document.querySelectorAll('.summary-delivery-row').forEach(el => {
@@ -739,6 +748,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirm_booking'])) {
             const options = { month: 'short', day: 'numeric', year: 'numeric' };
             document.getElementById('summary-dates-display').textContent = 
                 `${start.toLocaleDateString('en-US', options)} - ${end.toLocaleDateString('en-US', options)}`;
+
         }
 
         function setFulfillment(method) {
@@ -761,6 +771,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirm_booking'])) {
             
             updateSummary();
         }
+
 
         function showError(msg) {
             const toast = document.getElementById('error-toast');
@@ -883,6 +894,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirm_booking'])) {
             event.currentTarget.classList.add('border-primary', 'bg-primary/5');
             event.currentTarget.classList.remove('border-gray-100', 'dark:border-gray-800');
         }
+
 
         // Initialize
         updateSummary();

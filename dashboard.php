@@ -14,8 +14,8 @@ require_once 'config/database.php';
 $users_file = 'users.json';
 $items_file = 'items.json';
 
-$users = file_exists($users_file) ? json_decode(file_get_contents($users_file), true) : [];
-$items = file_exists($items_file) ? json_decode(file_get_contents($items_file), true) : [];
+$users = file_exists($users_file) ? (json_decode(file_get_contents($users_file), true) ?? []) : [];
+$items = file_exists($items_file) ? (json_decode(file_get_contents($items_file), true) ?? []) : [];
 
 $current_user = null;
 foreach ($users as $u) {

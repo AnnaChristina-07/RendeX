@@ -141,7 +141,7 @@
             "696338ce12cc3_r1.jpg"
         ],
         "created_at": "2026-01-11 06:44:46",
-        "status": "Pending Approval"
+        "status": "Active"
     },
     {
         "id": "item_6964ba6b5aaad",
@@ -160,6 +160,6 @@
             "6964ba6b4fc07_u1.avif"
         ],
         "created_at": "2026-01-12 10:10:03",
-        "status": "Pending Approval"
+        "status": "Active"
     }
 ]

@@ -211,8 +211,6 @@ $is_active = in_array(strtolower($item_status), ['active', 'approved']);
 // Availability Check
 $is_unavailable = (isset($item['availability_status']) && in_array(strtolower($item['availability_status']), ['rented', 'unavailable'])) || 
                   (isset($item['status']) && strtolower($item['status']) === 'unavailable');
-
-
 if (!$is_active && !$is_own_item && !$is_admin) {
     header("Location: dashboard.php?msg=item_pending");
     exit();

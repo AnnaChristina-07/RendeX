@@ -178,6 +178,7 @@ if (!isset($_SESSION['user_id'])) {
             if ($already_added) continue;
 
             if (isset($d_item['status']) && in_array($d_item['status'], ['Active', 'Unavailable'])) {
+
                 $item = $d_item;
             } else {
                 continue;
@@ -191,6 +192,7 @@ if (!isset($_SESSION['user_id'])) {
             $items_to_show[] = $d_item;
         }
     }
+
 
 
     ?>
@@ -498,6 +500,7 @@ if (!isset($_SESSION['user_id'])) {
                 btn.innerHTML = originalText;
             }, 800);
         }
+
 
         document.querySelectorAll('.item-card').forEach(card => {
             const images = JSON.parse(card.dataset.images);

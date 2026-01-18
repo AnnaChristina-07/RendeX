@@ -59,7 +59,7 @@ function migrate_json_to_mysql() {
                 $item['description'], 
                 $item['address'], // JSON has address, DB maps to location
                 $images_enc, 
-                $status, 
+                $status,
                 $item['created_at']
             );
             $stmt->execute();
