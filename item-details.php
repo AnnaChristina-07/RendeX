@@ -208,6 +208,11 @@ $is_own_item = (isset($item['user_id']) && $item['user_id'] === $_SESSION['user_
 $item_status = $item['status'] ?? ($item['admin_status'] ?? 'Active');
 $is_active = in_array(strtolower($item_status), ['active', 'approved']);
 
+// Availability Check
+$is_unavailable = (isset($item['availability_status']) && in_array(strtolower($item['availability_status']), ['rented', 'unavailable'])) || 
+                  (isset($item['status']) && strtolower($item['status']) === 'unavailable');
+
+
 if (!$is_active && !$is_own_item && !$is_admin) {
     header("Location: dashboard.php?msg=item_pending");
     exit();
@@ -427,7 +432,11 @@ if (isset($_POST['rent_now'])) {
             <div class="flex flex-col gap-8">
                 <div>
                     <div class="flex items-center gap-2 mb-4">
-                        <span class="bg-primary/20 text-primary-dark font-bold px-3 py-1 rounded-full text-xs uppercase tracking-wide">Available</span>
+                        <?php if (isset($is_unavailable) && $is_unavailable): ?>
+                            <span class="bg-red-100 text-red-700 font-bold px-3 py-1 rounded-full text-xs uppercase tracking-wide">Out of Stock</span>
+                        <?php else: ?>
+                            <span class="bg-primary/20 text-primary-dark font-bold px-3 py-1 rounded-full text-xs uppercase tracking-wide">Available</span>
+                        <?php endif; ?>
                         <div class="flex items-center gap-1 text-xs font-bold bg-[#f4f4e6] dark:bg-[#3e3d2a] px-2 py-1 rounded-full">
                             <span class="material-symbols-outlined text-sm text-yellow-600">star</span>
                             4.<?php echo rand(5, 9); ?> (<?php echo rand(10, 50); ?> reviews)
@@ -471,6 +480,17 @@ if (isset($_POST['rent_now'])) {
                  <hr class="border-[#e9e8ce] dark:border-[#3e3d2a]">
 
                  <!-- Actions -->
+                     <!-- Actions -->
+                     <?php if ($is_unavailable): ?>
+                        <div class="bg-red-50 dark:bg-red-900/10 border border-red-100 dark:border-red-900/30 p-6 rounded-2xl text-center">
+                            <span class="material-symbols-outlined text-4xl text-red-500 mb-2">remove_shopping_cart</span>
+                            <h3 class="text-xl font-black text-red-600 dark:text-red-400 mb-1">Currently Unavailable</h3>
+                            <p class="text-sm text-text-muted mb-6">This item has been rented and is currently out of stock.</p>
+                            <button disabled class="w-full bg-gray-200 dark:bg-gray-800 text-gray-400 font-black text-xl py-5 rounded-2xl cursor-not-allowed">
+                                Out of Stock
+                            </button>
+                        </div>
+                     <?php else: ?>
                      <form method="POST">
                          <div class="flex gap-4">
                              <div class="flex-1">
@@ -487,6 +507,7 @@ if (isset($_POST['rent_now'])) {
                          </button>
                          <p class="text-center text-xs text-text-muted mt-4">You won't be charged yet.</p>
                      </form>
+                     <?php endif; ?>
             </div>
         </div>
     </main>

@@ -177,7 +177,7 @@ if (!isset($_SESSION['user_id'])) {
             }
             if ($already_added) continue;
 
-            if (isset($d_item['status']) && $d_item['status'] === 'Active') {
+            if (isset($d_item['status']) && in_array($d_item['status'], ['Active', 'Unavailable'])) {
                 $item = $d_item;
             } else {
                 continue;
@@ -199,8 +199,28 @@ if (!isset($_SESSION['user_id'])) {
 
 
 
+        <!-- Redesigned Full Width Banner -->
+        <section class="mt-8 mb-12 rounded-[2.5rem] bg-black overflow-hidden shadow-2xl border border-gray-800 relative w-full">
+                <div class="relative p-12 md:p-16 flex flex-col justify-center min-h-[300px] text-left">
+                    <div class="absolute right-0 top-0 h-full w-1/3 bg-gradient-to-l from-primary/10 to-transparent"></div>
+                    <div class="flex items-center gap-6 mb-4 relative z-10">
+                        <div class="w-20 h-20 rounded-2xl bg-primary flex items-center justify-center shadow-lg shadow-primary/20">
+                            <span class="material-symbols-outlined text-5xl text-black"><?php echo $current_cat['icon']; ?></span>
+                        </div>
+                        <div>
+                            <h1 class="text-5xl md:text-6xl font-black tracking-tighter text-white uppercase leading-none">
+                                <?php echo $current_cat['title']; ?>
+                            </h1>
+                        </div>
+                    </div>
+                    <p class="text-primary font-bold text-xl max-w-2xl mt-4 relative z-10 pl-1">
+                        Premium selection of <?php echo strtolower($current_cat['title']); ?>. Verified & Ready for use.
+                    </p>
+                </div>
+        </section>
+
         <!-- Main Content with Sidebar -->
-        <div class="flex flex-col lg:flex-row gap-8 mt-12 mb-20">
+        <div class="flex flex-col lg:flex-row gap-8 mb-20">
             <!-- Sidebar Filters -->
             <!-- Sidebar Filters -->
             <aside class="w-full lg:w-1/4 lg:min-w-[300px]">
@@ -314,26 +334,7 @@ if (!isset($_SESSION['user_id'])) {
 
             <!-- Items Grid -->
             <div class="flex-1 w-full">
-                <!-- Redesigned Banner Moved Here -->
-                <section class="mb-8 rounded-[2.5rem] bg-black overflow-hidden shadow-2xl border border-gray-800 relative">
-                        <div class="relative p-10 flex flex-col justify-center min-h-[250px] text-left">
-                            <div class="absolute right-0 top-0 h-full w-1/3 bg-gradient-to-l from-primary/10 to-transparent"></div>
-                            <div class="flex items-center gap-6 mb-4 relative z-10">
-                                <div class="w-16 h-16 rounded-2xl bg-primary flex items-center justify-center shadow-lg shadow-primary/20">
-                                    <span class="material-symbols-outlined text-4xl text-black"><?php echo $current_cat['icon']; ?></span>
-                                </div>
-                                <div>
-                                    <!-- Use PHP to display title -->
-                                    <h1 class="text-4xl md:text-5xl font-black tracking-tighter text-white uppercase leading-none">
-                                        <?php echo $current_cat['title']; ?>
-                                    </h1>
-                                </div>
-                            </div>
-                            <p class="text-primary font-bold text-lg max-w-lg mt-2 relative z-10">
-                                Premium selection of <?php echo strtolower($current_cat['title']); ?>. Verified & Ready.
-                            </p>
-                        </div>
-                </section>
+
                 <div class="flex justify-between items-center mb-6 px-1">
                     <p class="font-bold text-text-muted dark:text-gray-400 text-sm">Showing <?php echo count($items_to_show); ?> items</p>
                     <div class="flex items-center gap-2">
@@ -350,9 +351,11 @@ if (!isset($_SESSION['user_id'])) {
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                     <?php foreach($items_to_show as $index => $item): 
                         $distance = rand(1, 15); 
+                        $is_rented = (isset($item['availability_status']) && strtolower($item['availability_status']) === 'rented') || 
+                                     (isset($item['status']) && strtolower($item['status']) === 'unavailable');
                     ?>
                     <a href="item-details.php?id=<?php echo $item['id']; ?>" 
-                       class="item-card block group bg-surface-light dark:bg-surface-dark rounded-2xl p-3 shadow-sm hover:shadow-xl hover:shadow-gray-200/50 dark:hover:shadow-black/50 transition-all duration-300 border border-transparent hover:border-[#e9e8ce] dark:hover:border-[#3e3d2a]"
+                       class="item-card block group bg-surface-light dark:bg-surface-dark rounded-2xl p-3 shadow-sm hover:shadow-xl hover:shadow-gray-200/50 dark:hover:shadow-black/50 transition-all duration-300 border border-transparent hover:border-[#e9e8ce] dark:hover:border-[#3e3d2a] <?php echo $is_rented ? 'opacity-75 grayscale' : ''; ?>"
                        data-price="<?php echo $item['price']; ?>"
                        data-distance="<?php echo $distance; ?>"
                        data-images='<?php echo json_encode($item['all_images'] ?? [(strpos($item['img'], 'uploads/') === 0 ? $item['img'] : 'https://source.unsplash.com/random/400x300?' . urlencode($item['img']) . '&sig=' . $index)]); ?>'>
@@ -361,6 +364,12 @@ if (!isset($_SESSION['user_id'])) {
                                  src="<?php echo (strpos($item['img'], 'uploads/') === 0) ? $item['img'] : 'https://source.unsplash.com/random/400x300?' . urlencode($item['img']) . '&sig=' . $index; ?>" 
                                  alt="<?php echo htmlspecialchars($item['name']); ?>">
                             
+                            <?php if ($is_rented): ?>
+                                <div class="absolute inset-0 bg-black/60 backdrop-blur-[2px] z-20 flex items-center justify-center">
+                                    <span class="bg-red-600 text-white font-black text-xs uppercase tracking-widest px-4 py-2 rounded-full border-2 border-white shadow-xl rotate-[-10deg]">Rented</span>
+                                </div>
+                            <?php endif; ?>
+
                             <?php if (!empty($item['all_images']) && count($item['all_images']) > 1): ?>
                             <div class="absolute bottom-2 right-2 z-10 bg-black/60 backdrop-blur-md text-white text-[10px] font-bold px-2 py-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
                                 1/<?php echo count($item['all_images']); ?>

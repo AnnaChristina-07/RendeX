@@ -98,6 +98,58 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirm_booking'])) {
     $delivery_fee = ($fulfillment === 'delivery') ? 150 : 0;
     $total = $subtotal + $service_fee + $delivery_fee;
 
+
+    // Update Items JSON to mark as Unavailable
+    foreach ($dynamic_items as &$d_i) {
+        if ($d_i['id'] === $item_id) {
+            $d_i['status'] = 'Unavailable';
+            $d_i['availability_status'] = 'rented';
+        }
+    }
+    file_put_contents($items_file, json_encode($dynamic_items, JSON_PRETTY_PRINT));
+
+    // Update Database if connection exists
+    try {
+        $pdo = getDBConnection();
+        if ($pdo) {
+            // 1. Insert into rentals table
+            $stmt = $pdo->prepare("
+                INSERT INTO rentals (
+                    item_id, renter_id, owner_id, start_date, end_date, total_days, 
+                    daily_rate, total_amount, status, payment_status, payment_method, 
+                    delivery_address, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'confirmed', 'paid', ?, ?, NOW())
+            ");
+            
+            // Map item_id to integer if possible, else handle string references if table allows (usually int)
+            // If item_id is from JSON (string), this might fail if DB forces INT FK. 
+            // Assuming DB items have INT ids, and JSON items might be string.
+            // But if we are renting a JSON item, we can't link it to DB FK unless we insert it first.
+            // For now, only insert into DB if the item exists in DB (determined by checking if ID is numeric or if we found it in DB earlier)
+            
+            if (isset($item['id']) && is_numeric($item['id'])) {
+                $stmt->execute([
+                    $item['id'],
+                    $_SESSION['user_id'],
+                    $owner_id,
+                    $start_date,
+                    $end_date,
+                    $days,
+                    $item['price'],
+                    $total,
+                    $_POST['payment_method_val'],
+                    $success_booking['delivery_address']
+                ]);
+                
+                // 2. Update items table status
+                $update_stmt = $pdo->prepare("UPDATE items SET availability_status = 'rented' WHERE id = ?");
+                $update_stmt->execute([$item['id']]);
+            }
+        }
+    } catch (Exception $e) {
+        // Log error or ignore if DB is optional
+    }
+
     $success_booking = [
         'id' => uniqid('RENT_'),
         'user_id' => $_SESSION['user_id'],
