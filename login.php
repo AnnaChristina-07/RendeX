@@ -29,6 +29,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['credential'])) {
         $user_found = false;
         $user = null;
         
+        // Check if user exists in either DB or JSON to give correct error message
+        $account_exists = false;
+
         // Try database first
         try {
             $pdo = getDBConnection();
@@ -37,46 +40,43 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['credential'])) {
                 $stmt->execute([$email]);
                 $user = $stmt->fetch();
                 
-                if ($user && password_verify($password, $user['password_hash'])) {
-                    $user_found = true;
-                } elseif ($user) {
-                    $error = "Invalid email or password.";
+                if ($user) {
+                    $account_exists = true;
+                    if (password_verify($password, $user['password_hash'])) {
+                        $user_found = true;
+                    }
                 }
             }
         } catch (PDOException $e) {
-            // Fallback to JSON
+            // Fallback
         }
         
-        // Fallback: Check JSON file
+        // Fallback: Check JSON file if not authenticated via DB
         if (!$user_found) {
-            // Reset error so we can check JSON without being blocked by previous DB failure message
-            $error = ''; 
             $users_file = 'users.json';
             if (file_exists($users_file)) {
                 $json_data = file_get_contents($users_file);
                 $users = json_decode($json_data, true) ?: [];
                 
                 foreach ($users as $u) {
-                    if ($u['email'] === $email) {
+                    if (strtolower(trim($u['email'])) === strtolower($email)) {
+                        $account_exists = true;
                         if (password_verify($password, $u['password_hash'])) {
                             $user_found = true;
                             $user = $u;
                             break;
-                        } else {
-                            $error = "Invalid email or password.";
-                            break;
                         }
                     }
                 }
-                
-                if (!$user_found && empty($error)) {
-                    $error = "User not found. Please sign up.";
-                }
+            }
+        }
+        
+        // Set error message if login failed
+        if (!$user_found) {
+            if ($account_exists) {
+                $error = "Invalid email or password.";
             } else {
-                // Database failed and no JSON, set error
-                if (empty($error)) {
-                    $error = "User not found. Please sign up.";
-                }
+                $error = "User not found. Please sign up.";
             }
         }
         

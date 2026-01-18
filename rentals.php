@@ -149,12 +149,9 @@ foreach ($rentals as $rental) {
                         </div>
                         <div class="text-right flex flex-col items-center md:items-end gap-2">
                              <span class="block font-black text-xl">₹<?php echo $rental['total_price']; ?></span>
-                             <form method="POST">
-                                 <input type="hidden" name="return_id" value="<?php echo $rental['id']; ?>">
-                                 <button type="submit" onclick="return confirm('Confirm return of this item?')" class="bg-black text-white text-xs font-bold px-4 py-2 rounded-full hover:bg-gray-800 transition-colors">
-                                     Return Item
-                                 </button>
-                             </form>
+                             <a href="return-rental.php?id=<?php echo $rental['id']; ?>" class="bg-black text-white text-xs font-bold px-4 py-2 rounded-full hover:bg-gray-800 transition-colors inline-block">
+                                 Return Item
+                             </a>
                         </div>
                     </div>
                     <?php endforeach; ?>

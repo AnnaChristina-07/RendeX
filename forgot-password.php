@@ -16,15 +16,33 @@
                     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
                         $error_message = "Please enter a valid email address.";
                     } else {
-                        // Check if email exists in users.json
-                        $users_file = 'users.json';
+                        // Check if email exists in Database first
+                        require_once 'config/database.php';
                         $email_exists = false;
-                        if (file_exists($users_file)) {
-                            $users = json_decode(file_get_contents($users_file), true) ?: [];
-                            foreach ($users as $user) {
-                                if ($user['email'] === $email) {
+                        
+                        try {
+                            $pdo = getDBConnection();
+                            if ($pdo) {
+                                $stmt = $pdo->prepare("SELECT id FROM users WHERE email = ?");
+                                $stmt->execute([$email]);
+                                if ($stmt->fetch()) {
                                     $email_exists = true;
-                                    break;
+                                }
+                            }
+                        } catch (Exception $e) {
+                            // Ignore DB error and fall back to file
+                        }
+
+                        // Check JSON if not found in DB
+                        if (!$email_exists) {
+                            $users_file = 'users.json';
+                            if (file_exists($users_file)) {
+                                $users = json_decode(file_get_contents($users_file), true) ?: [];
+                                foreach ($users as $user) {
+                                    if (strtolower(trim($user['email'])) === strtolower($email)) {
+                                        $email_exists = true;
+                                        break;
+                                    }
                                 }
                             }
                         }
