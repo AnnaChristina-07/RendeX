@@ -161,5 +161,25 @@
         ],
         "created_at": "2026-01-12 10:10:03",
         "status": "Active"
+    },
+    {
+        "id": "item_696d15c6ecf6b",
+        "user_id": "695a8dc1e017b",
+        "owner_name": "Agnus Sabu",
+        "title": "Yoga Mat",
+        "category": "fitness",
+        "price": "100",
+        "security_deposit": "",
+        "handover_methods": [
+            "pickup"
+        ],
+        "description": "Comfortable, non-slip yoga mat ideal for daily yoga, stretching, meditation, and home workouts. Lightweight and easy to carry, providing good grip and cushioning for all fitness levels.",
+        "address": "Kochi",
+        "images": [
+            "696d15c6e8662_folded-exercise-fitness-yoga-mat-grass.jpg",
+            "696d15c6eb246_close-up-rolled-exercise-mat-grass.jpg"
+        ],
+        "created_at": "2026-01-18 18:17:58",
+        "status": "Active"
     }
 ]

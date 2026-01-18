@@ -381,305 +381,85 @@ function toggleMoreCategories() {
 <section class="mt-12">
 <h2 class="text-2xl font-bold mb-6">Trending Near You</h2>
 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-<!-- Card 1: Student Essentials - Calculator -->
-<div class="group bg-surface-light dark:bg-surface-dark rounded-xl p-3 shadow-sm hover:shadow-md transition-all border border-transparent hover:border-[#e9e8ce] dark:hover:border-[#3e3d2a]">
-<div class="relative aspect-[4/3] rounded-lg overflow-hidden bg-gray-200">
-<img class="object-cover w-full h-full group-hover:scale-105 transition-transform duration-500" data-alt="Scientific Calculator" src="https://thumbs.dreamstime.com/b/notebook-calculator-study-table-back-to-school-concept-generated-image-open-scientific-simple-focused-academic-392115780.jpg"/>
-<button class="absolute top-2 right-2 p-2 bg-white/90 rounded-full text-black hover:bg-primary hover:text-black transition-colors">
-<span class="material-symbols-outlined text-xl block">favorite</span>
-</button>
-<div class="absolute bottom-2 left-2 bg-black/70 text-white text-xs font-bold px-2 py-1 rounded">
-                                2.1 km away
-                            </div>
-</div>
-<div class="pt-3 px-1">
-<div class="flex justify-between items-start">
-<div>
-<h3 class="font-bold text-lg leading-tight truncate">Scientific Calculator</h3>
-<p class="text-sm text-text-muted dark:text-gray-400 mt-1">Student Essentials</p>
-</div>
-<div class="flex items-center gap-1 text-xs font-bold bg-[#f4f4e6] dark:bg-[#3e3d2a] px-2 py-1 rounded-full">
-<span class="material-symbols-outlined text-sm text-yellow-600">star</span>
-                                    4.7
-                                </div>
-</div>
-<div class="flex items-end justify-between mt-4">
-<div class="flex items-baseline gap-1">
-<span class="text-xl font-bold">$5</span>
-<span class="text-sm text-text-muted">/ day</span>
-</div>
-                        <div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-black text-[10px] font-bold border border-white shadow-sm">
-                            O
-                        </div>
-</div>
-</div>
-</div>
+            <?php if (empty($items)): ?>
+                <div class="col-span-full flex flex-col items-center justify-center py-16 text-center">
+                    <div class="w-16 h-16 bg-gray-100 dark:bg-zinc-800 rounded-full flex items-center justify-center mb-4">
+                        <span class="material-symbols-outlined text-gray-400 text-3xl">inventory_2</span>
+                    </div>
+                    <h3 class="text-lg font-bold mb-2">No items found</h3>
+                    <p class="text-text-muted mb-6 max-w-md">There are currently no items listed in the marketplace. Be the first to list something!</p>
+                    <a href="lend-item.php" class="bg-primary hover:bg-yellow-300 text-black font-bold px-6 py-3 rounded-full transition-colors">
+                        List an Item
+                    </a>
+                </div>
+            <?php else: ?>
+                <?php foreach ($items as $item): 
+                    // Filter out own items if desired, or show all. User wants "real products".
+                    // Let's filter slightly to ensure valid data
+                    if (empty($item['title'])) continue;
 
-<!-- Card 3: Vintage Collections - Camera -->
-<div class="group bg-surface-light dark:bg-surface-dark rounded-xl p-3 shadow-sm hover:shadow-md transition-all border border-transparent hover:border-[#e9e8ce] dark:hover:border-[#3e3d2a]">
-<div class="relative aspect-[4/3] rounded-lg overflow-hidden bg-gray-200">
-<img class="object-cover w-full h-full group-hover:scale-105 transition-transform duration-500" data-alt="Vintage Film Camera" src="https://i0.wp.com/legionxstudios.com/wp-content/uploads/2022/10/nikon-f2-vintage-film-camera-e1666333556259.jpg?resize=1208%2C919&ssl=1"/>
-<button class="absolute top-2 right-2 p-2 bg-white/90 rounded-full text-black hover:bg-primary hover:text-black transition-colors">
-<span class="material-symbols-outlined text-xl block">favorite</span>
-</button>
-<div class="absolute bottom-2 left-2 bg-black/70 text-white text-xs font-bold px-2 py-1 rounded">
-                                1.8 km away
-                            </div>
-</div>
-<div class="pt-3 px-1">
-<div class="flex justify-between items-start">
-<div>
-<h3 class="font-bold text-lg leading-tight truncate">Vintage Film Camera</h3>
-<p class="text-sm text-text-muted dark:text-gray-400 mt-1">Vintage Collections</p>
-</div>
-<div class="flex items-center gap-1 text-xs font-bold bg-[#f4f4e6] dark:bg-[#3e3d2a] px-2 py-1 rounded-full">
-<span class="material-symbols-outlined text-sm text-yellow-600">star</span>
-                                    4.9
-                                </div>
-</div>
-<div class="flex items-end justify-between mt-4">
-<div class="flex items-baseline gap-1">
-<span class="text-xl font-bold">$25</span>
-<span class="text-sm text-text-muted">/ day</span>
-</div>
-<div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-black text-[10px] font-bold border border-white shadow-sm">
-O
-</div>
-</div>
-</div>
-</div>
-<!-- Card 4: Fitness Equipment - Yoga Mat -->
-<div class="group bg-surface-light dark:bg-surface-dark rounded-xl p-3 shadow-sm hover:shadow-md transition-all border border-transparent hover:border-[#e9e8ce] dark:hover:border-[#3e3d2a]">
-<div class="relative aspect-[4/3] rounded-lg overflow-hidden bg-gray-200">
-<img class="object-cover w-full h-full group-hover:scale-105 transition-transform duration-500" data-alt="Rolled Yoga Mat" src="https://thumbs.dreamstime.com/b/rolled-pink-yoga-mat-isolated-white-background-single-image-used-fitness-exercise-wellness-product-390995590.jpg"/>
-<button class="absolute top-2 right-2 p-2 bg-white/90 rounded-full text-black hover:bg-primary hover:text-black transition-colors">
-<span class="material-symbols-outlined text-xl block">favorite</span>
-</button>
-<div class="absolute bottom-2 left-2 bg-black/70 text-white text-xs font-bold px-2 py-1 rounded">
-                                0.9 km away
-                            </div>
-</div>
-<div class="pt-3 px-1">
-<div class="flex justify-between items-start">
-<div>
-<h3 class="font-bold text-lg leading-tight truncate">Yoga Mat</h3>
-<p class="text-sm text-text-muted dark:text-gray-400 mt-1">Fitness Equipment</p>
-</div>
-<div class="flex items-center gap-1 text-xs font-bold bg-[#f4f4e6] dark:bg-[#3e3d2a] px-2 py-1 rounded-full">
-<span class="material-symbols-outlined text-sm text-yellow-600">star</span>
-                                    4.6
-                                </div>
-</div>
-<div class="flex items-end justify-between mt-4">
-<div class="flex items-baseline gap-1">
-<span class="text-xl font-bold">$8</span>
-<span class="text-sm text-text-muted">/ day</span>
-</div>
-<div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-black text-[10px] font-bold border border-white shadow-sm">
-O
-</div>
-</div>
-</div>
-</div>
-<!-- Card 5: Agricultural Tools - Grass Trimmer -->
-<div class="group bg-surface-light dark:bg-surface-dark rounded-xl p-3 shadow-sm hover:shadow-md transition-all border border-transparent hover:border-[#e9e8ce] dark:hover:border-[#3e3d2a]">
-<div class="relative aspect-[4/3] rounded-lg overflow-hidden bg-gray-200">
-<img class="object-cover w-full h-full group-hover:scale-105 transition-transform duration-500" data-alt="Cordless Grass Trimmer" src="https://cdn.thewirecutter.com/wp-content/media/2025/06/BEST-STRING-TRIMMER-0052.jpg?auto=webp&quality=60&width=570"/>
-<button class="absolute top-2 right-2 p-2 bg-white/90 rounded-full text-black hover:bg-primary hover:text-black transition-colors">
-<span class="material-symbols-outlined text-xl block">favorite</span>
-</button>
-<div class="absolute bottom-2 left-2 bg-black/70 text-white text-xs font-bold px-2 py-1 rounded">
-                                4.5 km away
-                            </div>
-</div>
-<div class="pt-3 px-1">
-<div class="flex justify-between items-start">
-<div>
-<h3 class="font-bold text-lg leading-tight truncate">Grass Trimmer</h3>
-<p class="text-sm text-text-muted dark:text-gray-400 mt-1">Agricultural Tools</p>
-</div>
-<div class="flex items-center gap-1 text-xs font-bold bg-[#f4f4e6] dark:bg-[#3e3d2a] px-2 py-1 rounded-full">
-<span class="material-symbols-outlined text-sm text-yellow-600">star</span>
-                                    4.8
-                                </div>
-</div>
-<div class="flex items-end justify-between mt-4">
-<div class="flex items-baseline gap-1">
-<span class="text-xl font-bold">$18</span>
-<span class="text-sm text-text-muted">/ day</span>
-</div>
-                        <div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-black text-[10px] font-bold border border-white shadow-sm">
-                            O
+                    $image_path = 'assets/placeholder-image.jpg'; // Default
+                    if (!empty($item['images']) && is_array($item['images']) && count($item['images']) > 0) {
+                        $image_path = 'uploads/' . $item['images'][0];
+                    } elseif (!empty($item['img'])) {
+                         // Fallback for older items if any
+                        $image_path = $item['img'];
+                    }
+
+                    // Status Badge Logic
+                    $is_rented = (isset($item['availability_status']) && $item['availability_status'] === 'rented');
+                    $status_badge = '';
+                    if ($is_rented) {
+                         $status_badge = '<div class="absolute top-2 left-2 bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wide">Rented</div>';
+                    } else {
+                         //$status_badge = '<div class="absolute top-2 left-2 bg-green-500 text-white text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wide">Available</div>';
+                    }
+                ?>
+                <a href="item-details.php?id=<?php echo $item['id']; ?>" class="group block bg-surface-light dark:bg-surface-dark rounded-xl p-3 shadow-sm hover:shadow-md transition-all border border-transparent hover:border-[#e9e8ce] dark:hover:border-[#3e3d2a]">
+                    <div class="relative aspect-[4/3] rounded-lg overflow-hidden bg-gray-200">
+                        <img class="object-cover w-full h-full group-hover:scale-105 transition-transform duration-500" 
+                             src="<?php echo htmlspecialchars($image_path); ?>" 
+                             alt="<?php echo htmlspecialchars($item['title']); ?>"
+                             onerror="this.src='https://via.placeholder.com/400x300?text=No+Image'">
+                        
+                        <?php echo $status_badge; ?>
+
+                        <div class="absolute top-2 right-2 p-2 bg-white/90 rounded-full text-black hover:bg-primary hover:text-black transition-colors z-10">
+                            <span class="material-symbols-outlined text-xl block">favorite</span>
                         </div>
-</div>
-</div>
-</div>
-<!-- Card 6: Medical Items - Wheelchair -->
-<div class="group bg-surface-light dark:bg-surface-dark rounded-xl p-3 shadow-sm hover:shadow-md transition-all border border-transparent hover:border-[#e9e8ce] dark:hover:border-[#3e3d2a]">
-<div class="relative aspect-[4/3] rounded-lg overflow-hidden bg-gray-200">
-<img class="object-cover w-full h-full group-hover:scale-105 transition-transform duration-500" data-alt="Foldable Wheelchair" src="https://images.squarespace-cdn.com/content/v1/5f58f6b0e418950766874381/c2a8abc6-e985-47a4-b002-cd10a4365f23/LightGlide_Plus.jpg"/>
-<button class="absolute top-2 right-2 p-2 bg-white/90 rounded-full text-black hover:bg-primary hover:text-black transition-colors">
-<span class="material-symbols-outlined text-xl block">favorite</span>
-</button>
-<div class="absolute bottom-2 left-2 bg-black/70 text-white text-xs font-bold px-2 py-1 rounded">
-                                2.7 km away
-                            </div>
-</div>
-<div class="pt-3 px-1">
-<div class="flex justify-between items-start">
-<div>
-<h3 class="font-bold text-lg leading-tight truncate">Wheelchair</h3>
-<p class="text-sm text-text-muted dark:text-gray-400 mt-1">Medical Items</p>
-</div>
-<div class="flex items-center gap-1 text-xs font-bold bg-[#f4f4e6] dark:bg-[#3e3d2a] px-2 py-1 rounded-full">
-<span class="material-symbols-outlined text-sm text-yellow-600">star</span>
-                                    5.0
-                                </div>
-</div>
-<div class="flex items-end justify-between mt-4">
-<div class="flex items-baseline gap-1">
-<span class="text-xl font-bold">$30</span>
-<span class="text-sm text-text-muted">/ day</span>
-</div>
-<div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-black text-[10px] font-bold border border-white shadow-sm">
-O
-</div>
-</div>
-</div>
-</div>
-<!-- Card 7: Electronic Devices - Speaker -->
-<div class="group bg-surface-light dark:bg-surface-dark rounded-xl p-3 shadow-sm hover:shadow-md transition-all border border-transparent hover:border-[#e9e8ce] dark:hover:border-[#3e3d2a]">
-<div class="relative aspect-[4/3] rounded-lg overflow-hidden bg-gray-200">
-<img class="object-cover w-full h-full group-hover:scale-105 transition-transform duration-500" data-alt="Portable Bluetooth Speaker" src="https://cdn.thewirecutter.com/wp-content/media/2024/11/portablebluetoothspeakers-2048px-9119.jpg?auto=webp&quality=75&width=1024"/>
-<button class="absolute top-2 right-2 p-2 bg-white/90 rounded-full text-black hover:bg-primary hover:text-black transition-colors">
-<span class="material-symbols-outlined text-xl block">favorite</span>
-</button>
-<div class="absolute bottom-2 left-2 bg-black/70 text-white text-xs font-bold px-2 py-1 rounded">
-                                1.2 km away
-                            </div>
-</div>
-<div class="pt-3 px-1">
-<div class="flex justify-between items-start">
-<div>
-<h3 class="font-bold text-lg leading-tight truncate">Bluetooth Speaker</h3>
-<p class="text-sm text-text-muted dark:text-gray-400 mt-1">Electronic Devices</p>
-</div>
-<div class="flex items-center gap-1 text-xs font-bold bg-[#f4f4e6] dark:bg-[#3e3d2a] px-2 py-1 rounded-full">
-<span class="material-symbols-outlined text-sm text-yellow-600">star</span>
-                                    4.9
-                                </div>
-</div>
-<div class="flex items-end justify-between mt-4">
-<div class="flex items-baseline gap-1">
-<span class="text-xl font-bold">$15</span>
-<span class="text-sm text-text-muted">/ day</span>
-</div>
-<div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-black text-[10px] font-bold border border-white shadow-sm">
-O
-</div>
-</div>
-</div>
-</div>
-<!-- Card 8: Travel/Outdoor Gear - Tent -->
-<div class="group bg-surface-light dark:bg-surface-dark rounded-xl p-3 shadow-sm hover:shadow-md transition-all border border-transparent hover:border-[#e9e8ce] dark:hover:border-[#3e3d2a]">
-<div class="relative aspect-[4/3] rounded-lg overflow-hidden bg-gray-200">
-<img class="object-cover w-full h-full group-hover:scale-105 transition-transform duration-500" data-alt="Lightweight Camping Tent" src="https://tbo-media.sfo2.digitaloceanspaces.com/wp-content/uploads/2023/11/06224622/Hyperlite-Mountain-Gear-Mid-1-lead.jpg"/>
-<button class="absolute top-2 right-2 p-2 bg-white/90 rounded-full text-black hover:bg-primary hover:text-black transition-colors">
-<span class="material-symbols-outlined text-xl block">favorite</span>
-</button>
-<div class="absolute bottom-2 left-2 bg-black/70 text-white text-xs font-bold px-2 py-1 rounded">
-                                5.1 km away
-                            </div>
-</div>
-<div class="pt-3 px-1">
-<div class="flex justify-between items-start">
-<div>
-<h3 class="font-bold text-lg leading-tight truncate">Camping Tent</h3>
-<p class="text-sm text-text-muted dark:text-gray-400 mt-1">Travel/Outdoor Gear</p>
-</div>
-<div class="flex items-center gap-1 text-xs font-bold bg-[#f4f4e6] dark:bg-[#3e3d2a] px-2 py-1 rounded-full">
-<span class="material-symbols-outlined text-sm text-yellow-600">star</span>
-                                    4.7
-                                </div>
-</div>
-<div class="flex items-end justify-between mt-4">
-<div class="flex items-baseline gap-1">
-<span class="text-xl font-bold">$35</span>
-<span class="text-sm text-text-muted">/ day</span>
-</div>
-<div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-black text-[10px] font-bold border border-white shadow-sm">
-O
-</div>
-</div>
-</div>
-</div>
-<!-- Card 9: Home-Daily Essentials - Fan -->
-<div class="group bg-surface-light dark:bg-surface-dark rounded-xl p-3 shadow-sm hover:shadow-md transition-all border border-transparent hover:border-[#e9e8ce] dark:hover:border-[#3e3d2a]">
-<div class="relative aspect-[4/3] rounded-lg overflow-hidden bg-gray-200">
-<img class="object-cover w-full h-full group-hover:scale-105 transition-transform duration-500" data-alt="Standing Electric Fan" src="https://static.vecteezy.com/system/resources/thumbnails/065/407/837/small_2x/white-simple-electric-fan-standing-in-front-of-the-sideboard-cabinet-in-the-room-photo.jpg"/>
-<button class="absolute top-2 right-2 p-2 bg-white/90 rounded-full text-black hover:bg-primary hover:text-black transition-colors">
-<span class="material-symbols-outlined text-xl block">favorite</span>
-</button>
-<div class="absolute bottom-2 left-2 bg-black/70 text-white text-xs font-bold px-2 py-1 rounded">
-                                0.5 km away
-                            </div>
-</div>
-<div class="pt-3 px-1">
-<div class="flex justify-between items-start">
-<div>
-<h3 class="font-bold text-lg leading-tight truncate">Standing Electric Fan</h3>
-<p class="text-sm text-text-muted dark:text-gray-400 mt-1">Home-Daily Essentials</p>
-</div>
-<div class="flex items-center gap-1 text-xs font-bold bg-[#f4f4e6] dark:bg-[#3e3d2a] px-2 py-1 rounded-full">
-<span class="material-symbols-outlined text-sm text-yellow-600">star</span>
-                                    4.8
-                                </div>
-</div>
-<div class="flex items-end justify-between mt-4">
-<div class="flex items-baseline gap-1">
-<span class="text-xl font-bold">$12</span>
-<span class="text-sm text-text-muted">/ day</span>
-</div>
-                        <div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-black text-[10px] font-bold border border-white shadow-sm">
-                            O
+                        
+                        <div class="absolute bottom-2 left-2 bg-black/70 text-white text-xs font-bold px-2 py-1 rounded backdrop-blur-sm">
+                            <?php echo htmlspecialchars($item['address'] ?? 'Nearby'); ?>
                         </div>
-</div>
-</div>
-</div>
-<!-- Card 10: Furniture - Bed Frame -->
-<div class="group bg-surface-light dark:bg-surface-dark rounded-xl p-3 shadow-sm hover:shadow-md transition-all border border-transparent hover:border-[#e9e8ce] dark:hover:border-[#3e3d2a]">
-<div class="relative aspect-[4/3] rounded-lg overflow-hidden bg-gray-200">
-<img class="object-cover w-full h-full group-hover:scale-105 transition-transform duration-500" data-alt="Modern Wooden Bed Frame" src="https://cdn.thewirecutter.com/wp-content/media/2025/08/BEST-MODERN-BED-FRAMES-SUB-2048px-4379.jpg"/>
-<button class="absolute top-2 right-2 p-2 bg-white/90 rounded-full text-black hover:bg-primary hover:text-black transition-colors">
-<span class="material-symbols-outlined text-xl block">favorite</span>
-</button>
-<div class="absolute bottom-2 left-2 bg-black/70 text-white text-xs font-bold px-2 py-1 rounded">
-                                6.3 km away
+                    </div>
+                    
+                    <div class="pt-3 px-1">
+                        <div class="flex justify-between items-start mb-2">
+                            <div class="min-w-0 pr-2">
+                                <h3 class="font-bold text-lg leading-tight truncate"><?php echo htmlspecialchars($item['title']); ?></h3>
+                                <p class="text-sm text-text-muted dark:text-gray-400 mt-1 truncate">
+                                    <?php echo ucwords(str_replace('-', ' ', $item['category'] ?? 'General')); ?>
+                                </p>
                             </div>
-</div>
-<div class="pt-3 px-1">
-<div class="flex justify-between items-start">
-<div>
-<h3 class="font-bold text-lg leading-tight truncate">Modern Bed Frame</h3>
-<p class="text-sm text-text-muted dark:text-gray-400 mt-1">Furniture</p>
-</div>
-<div class="flex items-center gap-1 text-xs font-bold bg-[#f4f4e6] dark:bg-[#3e3d2a] px-2 py-1 rounded-full">
-<span class="material-symbols-outlined text-sm text-yellow-600">star</span>
-                                    4.9
-                                </div>
-</div>
-<div class="flex items-end justify-between mt-4">
-<div class="flex items-baseline gap-1">
-<span class="text-xl font-bold">$50</span>
-<span class="text-sm text-text-muted">/ day</span>
-</div>
-                        <div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-black text-[10px] font-bold border border-white shadow-sm">
-                            O
+                            <div class="flex items-center gap-1 text-xs font-bold bg-[#f4f4e6] dark:bg-[#3e3d2a] px-2 py-1 rounded-full shrink-0">
+                                <span class="material-symbols-outlined text-sm text-yellow-600">star</span>
+                                5.0
+                            </div>
                         </div>
-</div>
-</div>
-</div>
-</div>
+                        
+                        <div class="flex items-end justify-between mt-4">
+                            <div class="flex items-baseline gap-1">
+                                <span class="text-xl font-bold">₹<?php echo htmlspecialchars($item['price']); ?></span>
+                                <span class="text-sm text-text-muted">/ day</span>
+                            </div>
+                            <div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-black text-[10px] font-bold border border-white shadow-sm">
+                                <span class="material-symbols-outlined text-sm">arrow_outward</span>
+                            </div>
+                        </div>
+                    </div>
+                </a>
+                <?php endforeach; ?>
+            <?php endif; ?>
 </section>
 <!-- How it Works -->
 <section class="mt-24 py-12 bg-white dark:bg-surface-dark rounded-2xl border border-[#e9e8ce] dark:border-[#3e3d2a]">
