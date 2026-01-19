@@ -181,5 +181,25 @@
         ],
         "created_at": "2026-01-18 18:17:58",
         "status": "Active"
+    },
+    {
+        "id": "item_696e5aa701dc0",
+        "user_id": "696e57fc247b3",
+        "owner_name": "Rincy Joseph",
+        "title": "Iron box",
+        "category": "home-essentials",
+        "price": "200",
+        "security_deposit": "",
+        "handover_methods": [
+            "pickup"
+        ],
+        "description": "Efficient and easy-to-use iron box suitable for daily clothes ironing. Provides even heat distribution for smooth and wrinkle-free results.",
+        "address": "Idukki",
+        "images": [
+            "696e5aa6f0057_How to Clean a Front-Loading Washing Machine With These Easy Steps.jpg",
+            "696e5aa6f354f_download (2).jpg"
+        ],
+        "created_at": "2026-01-19 17:24:07",
+        "status": "Pending Approval"
     }
 ]

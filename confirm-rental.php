@@ -198,6 +198,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirm_booking'])) {
     <link href="https://fonts.googleapis.com/css2?family=Spline+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
     <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
     <script>
       tailwind.config = {
         darkMode: "class",
@@ -403,12 +404,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirm_booking'])) {
                                                value="<?php echo date('Y-m-d', strtotime('+' . ($duration_days - 1) . ' days')); ?>" min="<?php echo date('Y-m-d'); ?>">
                                     </div>
                                 </div>
-                                <div class="md:col-span-2 pt-4">
-                                    <div class="flex items-center gap-3 p-4 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 rounded-2xl text-sm">
-                                        <span class="material-symbols-outlined">info</span>
-                                        <p>The owner requires at least 2 days rental for this item.</p>
-                                    </div>
-                                </div>
+
                             </div>
                         </section>
 
@@ -512,129 +508,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirm_booking'])) {
 
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-12 items-start">
                     <div class="lg:col-span-2 space-y-8">
-                        <!-- Payment Tabs -->
-                        <div class="flex gap-4 overflow-x-auto pb-2">
-                            <button type="button" onclick="setPaymentMethod('card')" id="tab-card" class="payment-tab active bg-white dark:bg-surface-dark border-2 border-primary rounded-2xl p-6 flex flex-col items-center justify-center min-w-[140px] shadow-sm transition-all">
-                                <span class="material-symbols-outlined text-3xl mb-2">credit_card</span>
-                                <span class="font-bold">Card</span>
-                            </button>
-                            <button type="button" onclick="setPaymentMethod('wallets')" id="tab-wallets" class="payment-tab bg-white dark:bg-surface-dark border border-[#e9e8ce] dark:border-[#3e3d2a] rounded-2xl p-6 flex flex-col items-center justify-center min-w-[140px] shadow-sm transition-all hover:border-gray-300">
-                                <span class="material-symbols-outlined text-3xl mb-2">account_balance_wallet</span>
-                                <span class="font-bold">Wallets</span>
-                            </button>
-                            <button type="button" onclick="setPaymentMethod('netbanking')" id="tab-netbanking" class="payment-tab bg-white dark:bg-surface-dark border border-[#e9e8ce] dark:border-[#3e3d2a] rounded-2xl p-6 flex flex-col items-center justify-center min-w-[140px] shadow-sm transition-all hover:border-gray-300">
-                                <span class="material-symbols-outlined text-3xl mb-2">account_balance</span>
-                                <span class="font-bold">Net Banking</span>
-                            </button>
-                            <input type="hidden" name="payment_method_val" id="payment_method_val" value="card">
-                        </div>
-
-                        <!-- Card Details Form -->
-                        <div id="payment-card-form" class="bg-white dark:bg-surface-dark rounded-3xl p-8 border border-[#e9e8ce] dark:border-[#3e3d2a] shadow-sm space-y-6">
-                            <div class="flex justify-between items-center mb-4">
-                                <h3 class="text-xl font-bold">Card Details</h3>
-                                <div class="flex gap-2">
-                                    <img src="https://upload.wikimedia.org/wikipedia/commons/5/5e/Visa_Inc._logo.svg" class="h-4 opacity-50 grayscale hover:grayscale-0 transition-all">
-                                    <img src="https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg" class="h-6 opacity-50 grayscale hover:grayscale-0 transition-all">
-                                </div>
+                        <!-- Razorpay Info Section -->
+                        <div class="bg-white dark:bg-surface-dark rounded-3xl p-8 border border-[#e9e8ce] dark:border-[#3e3d2a] shadow-sm text-center py-16">
+                            <div class="w-24 h-24 bg-blue-50 dark:bg-blue-900/20 rounded-full flex items-center justify-center mx-auto mb-6">
+                                 <span class="material-symbols-outlined text-blue-600 text-5xl">secure</span>
                             </div>
-
-                            <div class="space-y-4">
-                                <div>
-                                    <label class="block text-[10px] font-black text-text-muted uppercase tracking-widest mb-2 ml-1">Cardholder Name</label>
-                                    <input type="text" name="card_name" id="card_name" placeholder="John Doe" class="w-full px-6 py-4 rounded-2xl border-none bg-gray-50 dark:bg-[#1e2019] focus:ring-2 focus:ring-primary font-medium">
-                                </div>
-                                <div>
-                                    <label class="block text-[10px] font-black text-text-muted uppercase tracking-widest mb-2 ml-1">Card Number</label>
-                                    <div class="relative">
-                                        <span class="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-gray-400">credit_card</span>
-                                        <input type="text" name="card_number" id="card_number" placeholder="0000 0000 0000 0000" class="w-full pl-12 pr-6 py-4 rounded-2xl border-none bg-gray-50 dark:bg-[#1e2019] focus:ring-2 focus:ring-primary font-medium">
-                                    </div>
-                                </div>
-                                <div class="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <label class="block text-[10px] font-black text-text-muted uppercase tracking-widest mb-2 ml-1">Expiry Date</label>
-                                        <input type="text" name="card_expiry" id="card_expiry" placeholder="MM/YY" class="w-full px-6 py-4 rounded-2xl border-none bg-gray-50 dark:bg-[#1e2019] focus:ring-2 focus:ring-primary font-medium">
-                                    </div>
-                                    <div>
-                                        <label class="block text-[10px] font-black text-text-muted uppercase tracking-widest mb-2 ml-1">CVV</label>
-                                        <div class="relative">
-                                            <input type="password" name="card_cvv" id="card_cvv" placeholder="123" class="w-full px-6 py-4 rounded-2xl border-none bg-gray-50 dark:bg-[#1e2019] focus:ring-2 focus:ring-primary font-medium">
-                                            <span class="absolute right-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-gray-400 cursor-help" title="3-digit security code on the back of your card">help</span>
-                                        </div>
-                                    </div>
-                                </div>
-                                <label class="flex items-center gap-3 cursor-pointer pt-2 group">
-                                    <div class="w-6 h-6 rounded-full border-2 border-primary flex items-center justify-center text-primary group-hover:bg-primary/10 transition-all">
-                                        <span class="material-symbols-outlined scale-75 hidden group-active:block">check</span>
-                                    </div>
-                                    <span class="text-sm font-bold text-text-muted">Save this card for faster future checkouts</span>
-                                    <input type="checkbox" class="hidden">
-                                </label>
-                            </div>
-                        </div>
-
-                         <!-- Wallets / UPI Form -->
-                        <div id="payment-wallets-form" class="hidden bg-white dark:bg-surface-dark rounded-3xl p-8 border border-[#e9e8ce] dark:border-[#3e3d2a] shadow-sm space-y-6">
-                            <div class="flex justify-between items-center">
-                                <h3 class="text-xl font-bold">Pay via UPI</h3>
-                                <div class="flex gap-2 items-center">
-                                    <img src="https://upload.wikimedia.org/wikipedia/commons/e/e1/UPI-Logo-vector.svg" class="h-6 opacity-70">
-                                </div>
-                            </div>
+                            <h3 class="text-2xl font-black mb-2">Secure Payment via Razorpay</h3>
+                            <p class="text-text-muted mb-8 max-w-md mx-auto">Click the button to complete your payment securely. We support Credit/Debit Cards, UPI, Netbanking, and Wallets via Razorpay.</p>
                             
-                            <div class="grid grid-cols-2 gap-4 mb-6">
-                                <button type="button" onclick="selectUpiApp('gpay')" class="upi-app-btn p-4 rounded-2xl border-2 border-gray-100 dark:border-gray-800 flex items-center gap-3 hover:border-primary transition-all">
-                                    <div class="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm">
-                                        <span class="material-symbols-outlined text-2xl">g_mobiledata</span>
-                                    </div>
-                                    <span class="font-bold">Google Pay</span>
-                                </button>
-                                <button type="button" onclick="selectUpiApp('phonepe')" class="upi-app-btn p-4 rounded-2xl border-2 border-gray-100 dark:border-gray-800 flex items-center gap-3 hover:border-primary transition-all">
-                                    <div class="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center">
-                                        <span class="material-symbols-outlined text-2xl text-purple-600">smartphone</span>
-                                    </div>
-                                    <span class="font-bold">PhonePe</span>
-                                </button>
-                                <button type="button" onclick="selectUpiApp('paytm')" class="upi-app-btn p-4 rounded-2xl border-2 border-gray-100 dark:border-gray-800 flex items-center gap-3 hover:border-primary transition-all">
-                                    <div class="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
-                                        <span class="material-symbols-outlined text-2xl text-blue-600">account_balance_wallet</span>
-                                    </div>
-                                    <span class="font-bold">Paytm</span>
-                                </button>
-                                <button type="button" onclick="selectUpiApp('other')" class="upi-app-btn p-4 rounded-2xl border-2 border-gray-100 dark:border-gray-800 flex items-center gap-3 hover:border-primary transition-all">
-                                    <div class="w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center">
-                                        <span class="material-symbols-outlined text-2xl">more_horiz</span>
-                                    </div>
-                                    <span class="font-bold">Other UPI</span>
-                                </button>
-                                <input type="hidden" name="upi_app" id="upi_app" value="Other UPI">
+                            <div class="flex items-center justify-center gap-4 opacity-50 grayscale pb-8">
+                                <img src="https://upload.wikimedia.org/wikipedia/commons/5/5e/Visa_Inc._logo.svg" class="h-8">
+                                <img src="https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg" class="h-8">
+                                <img src="https://upload.wikimedia.org/wikipedia/commons/e/e1/UPI-Logo-vector.svg" class="h-8">
                             </div>
-
-                            <div class="pt-4 border-t border-gray-100 dark:border-gray-800">
-                                <label class="block text-[10px] font-black text-text-muted uppercase tracking-widest mb-2 ml-1">Enter Your UPI ID</label>
-                                <div class="relative">
-                                    <span class="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-gray-400">alternate_email</span>
-                                    <input type="text" name="upi_id" id="upi_id" placeholder="yourname@upi" class="w-full pl-12 pr-6 py-4 rounded-2xl border-none bg-gray-50 dark:bg-[#1e2019] focus:ring-2 focus:ring-primary font-medium">
-                                </div>
-                                <p class="text-xs text-text-muted mt-2 ml-1">Example: 9876543210@ybl, username@oksbi</p>
-                            </div>
-
-                            <div class="flex items-center gap-3 p-4 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 rounded-2xl text-sm">
-                                <span class="material-symbols-outlined">verified_user</span>
-                                <p>Your UPI transaction is secured with 256-bit encryption.</p>
-                            </div>
-                        </div>
-
-                         <!-- Net Banking Form (Placeholder) -->
-                        <div id="payment-netbanking-form" class="hidden bg-white dark:bg-surface-dark rounded-3xl p-8 border border-[#e9e8ce] dark:border-[#3e3d2a] shadow-sm space-y-6">
-                            <h3 class="text-xl font-bold">Select Your Bank</h3>
-                            <select class="w-full px-6 py-4 rounded-2xl border-none bg-gray-50 dark:bg-[#1e2019] focus:ring-2 focus:ring-primary font-medium">
-                                <option>HDFC Bank</option>
-                                <option>ICICI Bank</option>
-                                <option>State Bank of India</option>
-                                <option>Axis Bank</option>
-                            </select>
                         </div>
                     </div>
 
@@ -676,9 +562,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirm_booking'])) {
                             </div>
                             
                             <div class="p-8 bg-gray-50 dark:bg-[#1e2019]/50">
-                                <button type="submit" name="confirm_booking" onclick="return validatePayment()" class="w-full bg-primary hover:bg-yellow-300 text-black font-black py-5 rounded-2xl text-lg flex items-center justify-center gap-3 shadow-lg shadow-primary/20 transition-all hover:scale-[1.02] active:scale-95">
+                                <button type="button" name="confirm_booking" onclick="startRazorpayPayment()" class="w-full bg-primary hover:bg-yellow-300 text-black font-black py-5 rounded-2xl text-lg flex items-center justify-center gap-3 shadow-lg shadow-primary/20 transition-all hover:scale-[1.02] active:scale-95">
                                     <span class="material-symbols-outlined font-black">lock</span>
-                                    Confirm and Pay
+                                    Pay Now
                                 </button>
                                 
                                 <div class="flex items-center justify-center gap-2 mt-4 text-[10px] font-black text-text-muted uppercase tracking-widest">
@@ -815,84 +701,73 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirm_booking'])) {
             }
         }
 
-        function setPaymentMethod(method) {
-            document.getElementById('payment_method_val').value = method;
-            // Update tabs
-            document.querySelectorAll('.payment-tab').forEach(tab => {
-                tab.classList.remove('border-primary', 'active');
-                tab.classList.add('border-[#e9e8ce]', 'dark:border-[#3e3d2a]');
-            });
-            document.getElementById('tab-' + method).classList.add('border-primary', 'active');
-            document.getElementById('tab-' + method).classList.remove('border-[#e9e8ce]', 'dark:border-[#3e3d2a]');
-
-            // Update forms
-            document.getElementById('payment-card-form').classList.add('hidden');
-            document.getElementById('payment-wallets-form').classList.add('hidden');
-            document.getElementById('payment-netbanking-form').classList.add('hidden');
-            document.getElementById('payment-' + method + '-form').classList.remove('hidden');
-        }
-
-        function validatePayment() {
-            const method = document.getElementById('payment_method_val').value;
+        function startRazorpayPayment() {
             const btn = document.querySelector('button[name="confirm_booking"]');
-
-            if (method === 'card') {
-                const name = document.getElementById('card_name').value;
-                const num = document.getElementById('card_number').value;
-                const exp = document.getElementById('card_expiry').value;
-                const cvv = document.getElementById('card_cvv').value;
-                
-                if (!name || !num || !exp || !cvv) {
-                    showError('Please fill all the required fields to verify payment.');
-                    return false;
-                }
-            } else if (method === 'wallets') {
-                const upiId = document.getElementById('upi_id').value;
-                if (!upiId || !upiId.includes('@')) {
-                    showError('Please enter a valid UPI ID (e.g., name@upi).');
-                    return false;
-                }
-            }
-
-            // Show Processing State
-            btn.disabled = true;
-            btn.innerHTML = `
-                <svg class="animate-spin h-5 w-5 text-black" xmlns="http://www.w3.org/2000/svg" fill="none" viewbox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                Processing Payment...
-            `;
             
-            // Allow form to submit
-            setTimeout(() => {
-                const form = document.getElementById('rental-form');
-                const submitInput = document.createElement('input');
-                submitInput.type = 'hidden';
-                submitInput.name = 'confirm_booking';
-                submitInput.value = '1';
-                form.appendChild(submitInput);
-                form.submit();
-            }, 1000);
+            // Calculate Total from the inputs or use logic similar to updateSummary()
+            const startInput = document.getElementById('start_date');
+            const endInput = document.getElementById('end_date');
+            const start = new Date(startInput.value);
+            const end = new Date(endInput.value);
+            
+            const diffTime = Math.abs(end - start);
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+            
+            const subtotal = diffDays * pricePerDay;
+            const isDelivery = document.getElementById('fulfillment_method').value === 'delivery';
+            const deliveryFee = isDelivery ? baseDeliveryFee : 0;
+            const total = subtotal + serviceFee + deliveryFee;
 
-            return false; // We handle submission manually to show the spinner
-        }
-
-        function selectUpiApp(app) {
-            const upiAppMap = {
-                'gpay': 'Google Pay',
-                'phonepe': 'PhonePe',
-                'paytm': 'Paytm',
-                'other': 'Other UPI'
+            const options = {
+                "key": "rzp_test_S5grQ46aeBtXrF",
+                "amount": total * 100, // Amount in paise
+                "currency": "INR",
+                "name": "RendeX",
+                "description": "Rental Booking Payment",
+                "image": "https://rendex.com/logo.png", // Replace with valid logo if available
+                "handler": function (response){
+                    // Prepare form for submission
+                    btn.disabled = true;
+                    btn.innerHTML = `
+                        <svg class="animate-spin h-5 w-5 text-black" xmlns="http://www.w3.org/2000/svg" fill="none" viewbox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Processing...
+                    `;
+                    
+                    const form = document.getElementById('rental-form');
+                    
+                    // Add Payment ID
+                    const payInput = document.createElement('input');
+                    payInput.type = 'hidden';
+                    payInput.name = 'payment_method_val';
+                    payInput.value = 'Razorpay (ID: ' + response.razorpay_payment_id + ')';
+                    form.appendChild(payInput);
+                    
+                    const submitInput = document.createElement('input');
+                    submitInput.type = 'hidden';
+                    submitInput.name = 'confirm_booking';
+                    submitInput.value = '1';
+                    form.appendChild(submitInput);
+                    
+                    form.submit();
+                },
+                "prefill": {
+                    "name": "<?php echo isset($_SESSION['user_name']) ? $_SESSION['user_name'] : ''; ?>",
+                    "email": "<?php echo isset($_SESSION['email']) ? $_SESSION['email'] : ''; ?>",
+                    "contact": "<?php echo isset($_SESSION['phone']) ? $_SESSION['phone'] : ''; ?>"
+                },
+                "theme": {
+                    "color": "#f9f506"
+                }
             };
-            document.getElementById('upi_app').value = upiAppMap[app];
-
-            document.querySelectorAll('.upi-app-btn').forEach(btn => {
-                btn.classList.remove('border-primary', 'bg-primary/5');
-                btn.classList.add('border-gray-100', 'dark:border-gray-800');
+            
+            var rzp1 = new Razorpay(options);
+            rzp1.on('payment.failed', function (response){
+                showError('Payment Failed: ' + response.error.description);
             });
-            event.currentTarget.classList.add('border-primary', 'bg-primary/5');
-            event.currentTarget.classList.remove('border-gray-100', 'dark:border-gray-800');
+            rzp1.open();
         }
 
 

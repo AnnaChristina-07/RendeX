@@ -347,7 +347,7 @@ if (empty($display_items)):
             
             <div class="flex items-end justify-between mt-4">
                 <div class="flex items-baseline gap-1">
-                    <span class="text-xl font-bold">$<?php echo htmlspecialchars($item['price']); ?></span>
+                    <span class="text-xl font-bold">₹<?php echo htmlspecialchars($item['price']); ?></span>
                     <span class="text-sm text-text-muted">/ day</span>
                 </div>
                  <a href="item-details.php?id=<?php echo $item['id']; ?>" class="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-black hover:bg-yellow-400 transition-colors shadow-sm">
