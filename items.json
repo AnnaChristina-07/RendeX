@@ -201,5 +201,25 @@
         ],
         "created_at": "2026-01-19 17:24:07",
         "status": "Pending Approval"
+    },
+    {
+        "id": "item_696f074bb7a0b",
+        "user_id": "696e57fc247b3",
+        "owner_name": "Rincy Joseph",
+        "title": "Rain coat",
+        "category": "outdoor-gear",
+        "price": "200",
+        "security_deposit": "",
+        "handover_methods": [
+            "pickup"
+        ],
+        "description": "Stay dry during sudden rains with our high-quality raincoat for rent. Designed for comfort and full coverage, this raincoat is lightweight, waterproof, and easy to carry\u2014perfect for daily travel, bike rides, and outdoor use.",
+        "address": "Mundakkayam",
+        "images": [
+            "696f074bae303_JOULES Portwell Yellow Waterproof Raincoat With Hood and Adjustable Waist 6 Womens.jpg",
+            "696f074bb2dbe_Yellow Raincoat.jpg"
+        ],
+        "created_at": "2026-01-20 05:40:43",
+        "status": "Pending Approval"
     }
 ]

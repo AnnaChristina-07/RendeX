@@ -139,7 +139,7 @@ if (!isset($_SESSION['user_id'])) {
                 SELECT i.*, u.name as owner_name 
                 FROM items i 
                 JOIN users u ON i.owner_id = u.id 
-                WHERE i.category = ? AND i.admin_status = 'approved'
+                WHERE i.category = ? AND i.admin_status = 'approved' AND (i.active_until IS NULL OR i.active_until > NOW())
             ");
             $stmt->execute([$cat_slug]);
             $db_items = $stmt->fetchAll();
@@ -158,7 +158,21 @@ if (!isset($_SESSION['user_id'])) {
                 $item['all_images'] = array_map(function($img) { return 'uploads/' . $img; }, $images);
                 $item['img'] = !empty($item['all_images']) ? $item['all_images'][0] : $db_item['category'];
                 $item['type'] = 'dynamic';
-                $items_to_show[] = $item;
+
+                // Deduplicate: Check if exactly the same item (by title and owner) is already in the list
+                $is_duplicate = false;
+                foreach ($items_to_show as $existing_item) {
+                    if ($existing_item['title'] === $item['title'] && 
+                        $existing_item['owner_id'] === $item['owner_id'] && 
+                        $existing_item['price'] == $item['price']) { // Price loose check
+                        $is_duplicate = true;
+                        break;
+                    }
+                }
+
+                if (!$is_duplicate) {
+                    $items_to_show[] = $item;
+                }
             }
         }
     } catch (Exception $e) {}
@@ -178,7 +192,8 @@ if (!isset($_SESSION['user_id'])) {
             if ($already_added) continue;
 
             if (isset($d_item['status']) && in_array($d_item['status'], ['Active', 'Unavailable'])) {
-
+                // Check expiry
+                if (isset($d_item['active_until']) && strtotime($d_item['active_until']) < time()) continue;
                 $item = $d_item;
             } else {
                 continue;
@@ -353,8 +368,10 @@ if (!isset($_SESSION['user_id'])) {
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                     <?php foreach($items_to_show as $index => $item): 
                         $distance = rand(1, 15); 
-                        $is_rented = (isset($item['availability_status']) && strtolower($item['availability_status']) === 'rented') || 
-                                     (isset($item['status']) && strtolower($item['status']) === 'unavailable');
+                        $avail_status = isset($item['availability_status']) ? strtolower($item['availability_status']) : '';
+                        $main_status = isset($item['status']) ? strtolower($item['status']) : '';
+                        
+                        $is_rented = ($avail_status === 'rented' || $avail_status === 'unavailable' || $main_status === 'unavailable');
                     ?>
                     <a href="item-details.php?id=<?php echo $item['id']; ?>" 
                        class="item-card block group bg-surface-light dark:bg-surface-dark rounded-2xl p-3 shadow-sm hover:shadow-xl hover:shadow-gray-200/50 dark:hover:shadow-black/50 transition-all duration-300 border border-transparent hover:border-[#e9e8ce] dark:hover:border-[#3e3d2a] <?php echo $is_rented ? 'opacity-75 grayscale' : ''; ?>"

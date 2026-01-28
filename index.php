@@ -296,8 +296,8 @@ usort($active_items, function($a, $b) {
     return strtotime($b['created_at']) - strtotime($a['created_at']);
 });
 
-// Limit to 8 items for the homepage
-$display_items = array_slice($active_items, 0, 8);
+// Limit to 4 items for the homepage
+$display_items = array_slice($active_items, 0, 4);
 
 if (empty($display_items)): 
 ?>

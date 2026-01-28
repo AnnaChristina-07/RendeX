@@ -208,12 +208,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reject_partner_id']))
 }
 
 // 2.9 Approve Item
+// 2.9 Approve Item
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['approve_item_id'])) {
     $item_id = $_POST['approve_item_id'];
+    $duration = isset($_POST['listing_duration']) ? (int)$_POST['listing_duration'] : 30; // Default 30 days
+    
     if ($use_database) {
         try {
-            $stmt = $pdo->prepare("UPDATE items SET admin_status = 'approved', availability_status = 'available' WHERE id = ?");
-            $stmt->execute([$item_id]);
+            // Calculate expiry
+            $active_until = date('Y-m-d H:i:s', strtotime("+$duration days"));
+            
+            $stmt = $pdo->prepare("UPDATE items SET admin_status = 'approved', availability_status = 'available', active_until = ?, listing_duration = ? WHERE id = ?");
+            $stmt->execute([$active_until, $duration, $item_id]);
         } catch (PDOException $e) {}
     }
     
@@ -221,6 +227,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['approve_item_id'])) {
     foreach ($items as &$i) {
         if ($i['id'] == $item_id || (isset($i['id']) && $i['id'] == $item_id)) {
             $i['status'] = 'Active';
+            $i['active_until'] = date('Y-m-d H:i:s', strtotime("+$duration days"));
+            $i['listing_duration'] = $duration;
             break;
         }
     }
@@ -1254,6 +1262,16 @@ foreach ($rentals as $rental) {
                                         Description text...
                                     </div>
                                 </div>
+
+                                <!-- Duration Input -->
+                                <div class="mt-6 p-4 bg-yellow-50 rounded-xl border border-yellow-100">
+                                    <label class="block text-xs font-bold text-yellow-800 uppercase mb-2">Approved Listing Duration</label>
+                                    <div class="flex items-center gap-2">
+                                        <input type="number" id="approval-duration" value="30" min="1" class="w-full bg-white border-gray-200 rounded-lg text-sm focus:ring-yellow-500 focus:border-yellow-500 p-2" placeholder="Days">
+                                        <span class="text-sm font-bold text-gray-500">Days</span>
+                                    </div>
+                                    <p class="text-[10px] text-gray-400 mt-1">Product will automatically expire after this period.</p>
+                                </div>
                             </div>
                             
                             <!-- Modal Footer -->
@@ -1330,9 +1348,10 @@ foreach ($rentals as $rental) {
 
                         function submitApprovalFromModal() {
                             if (!window.currentReviewId) return;
+                            const duration = document.getElementById('approval-duration').value || 30;
                             const form = document.createElement('form');
                             form.method = 'POST';
-                            form.innerHTML = `<input type="hidden" name="approve_item_id" value="${window.currentReviewId}">`;
+                            form.innerHTML = `<input type="hidden" name="approve_item_id" value="${window.currentReviewId}"><input type="hidden" name="listing_duration" value="${duration}">`;
                             document.body.appendChild(form);
                             form.submit();
                         }

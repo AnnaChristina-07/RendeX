@@ -242,7 +242,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <p class="text-lg text-gray-500 dark:text-gray-400">Share your gear with the community. It takes seconds.</p>
         </div>
 
-        <form id="lendItemForm" class="space-y-10" method="POST" enctype="multipart/form-data">
+        <form id="lendItemForm" class="space-y-10" method="POST" enctype="multipart/form-data" onsubmit="const btn = this.querySelector('button[type=submit]'); if(btn.disabled) return false; btn.disabled = true; btn.classList.add('opacity-50', 'cursor-not-allowed');">
             
             <!-- Section 1: Item Details -->
             <div class="bg-white dark:bg-[#1e1e1e] p-8 md:p-10 rounded-[2.5rem] shadow-xl shadow-gray-200/50 dark:shadow-none space-y-6">

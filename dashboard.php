@@ -393,11 +393,25 @@ function toggleMoreCategories() {
                     </a>
                 </div>
             <?php else: ?>
-                <?php foreach ($items as $item): 
-                    // Filter out own items if desired, or show all. User wants "real products".
-                    // Let's filter slightly to ensure valid data
-                    if (empty($item['title'])) continue;
+                <?php 
+                    // Filter and limit items to show only 4 "nearby" trending items
+                    $valid_items = array_filter($items, function($item) {
+                        return !empty($item['title']) && 
+                               (!isset($item['active_until']) || strtotime($item['active_until']) >= time());
+                    });
+                    
+                    // Sort by newest first
+                    usort($valid_items, function($a, $b) {
+                        $t1 = isset($a['created_at']) ? strtotime($a['created_at']) : 0;
+                        $t2 = isset($b['created_at']) ? strtotime($b['created_at']) : 0;
+                        return $t2 - $t1;
+                    });
 
+                    // Limit to 4 items
+                    $display_items = array_slice($valid_items, 0, 4);
+                ?>
+
+                <?php foreach ($display_items as $item): 
                     $image_path = 'assets/placeholder-image.jpg'; // Default
                     if (!empty($item['images']) && is_array($item['images']) && count($item['images']) > 0) {
                         $image_path = 'uploads/' . $item['images'][0];
@@ -407,15 +421,15 @@ function toggleMoreCategories() {
                     }
 
                     // Status Badge Logic
-                    $is_rented = (isset($item['availability_status']) && $item['availability_status'] === 'rented');
+                    $is_rented = (isset($item['availability_status']) && ($item['availability_status'] === 'rented' || $item['availability_status'] === 'unavailable')) || (isset($item['status']) && $item['status'] === 'unavailable');
                     $status_badge = '';
                     if ($is_rented) {
-                         $status_badge = '<div class="absolute top-2 left-2 bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wide">Rented</div>';
+                         $status_badge = '<div class="absolute top-2 left-2 bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wide z-10">Rented</div>';
                     } else {
                          //$status_badge = '<div class="absolute top-2 left-2 bg-green-500 text-white text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wide">Available</div>';
                     }
                 ?>
-                <a href="item-details.php?id=<?php echo $item['id']; ?>" class="group block bg-surface-light dark:bg-surface-dark rounded-xl p-3 shadow-sm hover:shadow-md transition-all border border-transparent hover:border-[#e9e8ce] dark:hover:border-[#3e3d2a]">
+                <a href="item-details.php?id=<?php echo $item['id']; ?>" class="group block bg-surface-light dark:bg-surface-dark rounded-xl p-3 shadow-sm hover:shadow-md transition-all border border-transparent hover:border-[#e9e8ce] dark:hover:border-[#3e3d2a] <?php echo $is_rented ? 'opacity-75 grayscale' : ''; ?>">
                     <div class="relative aspect-[4/3] rounded-lg overflow-hidden bg-gray-200">
                         <img class="object-cover w-full h-full group-hover:scale-105 transition-transform duration-500" 
                              src="<?php echo htmlspecialchars($image_path); ?>" 
