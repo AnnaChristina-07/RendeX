@@ -544,7 +544,7 @@ function toggleMoreCategories() {
 <div class="inline-block bg-black text-white text-xs font-bold px-3 py-1 rounded-full mb-4">FOR OWNERS</div>
 <h3 class="text-3xl font-black mb-4">Monetize your clutter</h3>
 <p class="text-gray-800 max-w-xs mb-8">Got gear gathering dust? List it safely on RendeX and start earning.</p>
-<button class="bg-black text-white font-bold px-6 py-3 rounded-full hover:bg-gray-800 transition-colors">Start Listing</button>
+<a href="lend-item.php" class="inline-block bg-black text-white font-bold px-6 py-3 rounded-full hover:bg-gray-800 transition-colors">Start Listing</a>
 </div>
 <div class="absolute -right-10 -bottom-10 w-64 h-64 bg-white/30 rounded-full blur-3xl"></div>
 </div>

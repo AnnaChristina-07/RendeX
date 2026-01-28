@@ -373,7 +373,7 @@ foreach ($users as $u) {
     $is_owner_role = (isset($u['role']) && $u['role'] === 'owner');
     
     // Classification Logic
-    // 1. Owners: Listed items OR special owner OR role is 'owner'
+// 1. Owners: Listed items OR special owner OR role is 'owner'
     if (in_array($u['id'], $owner_ids) || $is_special_owner || $is_owner_role) {
         $owners[] = $u;
     }
@@ -381,10 +381,35 @@ foreach ($users as $u) {
     elseif (isset($u['role']) && $u['role'] === 'delivery_partner') {
         $delivery_partners[] = $u;
     }
-    // 4. Renters: Default - If you are signed up, you are at least a renter
+    // Fallback: Check if they have an approved application in the pending list but skipped
     else {
-        $renters[] = $u;
+        // Special check: sometimes sync misses, if they have an approved app, show them
+         $is_approved_partner = false;
+         // We can't easily check 'driver_applications' here without querying loop, but we can rely on role.
+         // If role failed, we rely on the sync script we just ran.
+         $renters[] = $u;
     }
+}
+// RE-CHECK: If we have approved applications, ensure those users are in delivery_partners list
+if ($use_database) {
+    try {
+        $stmt_partners = $pdo->query("SELECT u.* FROM users u JOIN driver_applications da ON u.id = da.user_id WHERE da.status = 'approved'");
+        $db_partners = $stmt_partners->fetchAll(PDO::FETCH_ASSOC);
+        
+        // Merge into delivery_partners if not already there
+        foreach ($db_partners as $dbp) {
+            $exists = false;
+            foreach ($delivery_partners as $dp) {
+                if ($dp['id'] === $dbp['id']) { $exists = true; break; }
+            }
+            if (!$exists) {
+                // Remove from renters if present
+                $renters = array_filter($renters, function($r) use ($dbp) { return $r['id'] !== $dbp['id']; });
+                // Add to partners
+                $delivery_partners[] = $dbp;
+            }
+        }
+    } catch (Exception $e) {}
 }
 
 // Helper for Rental display: User Name Map
@@ -1375,7 +1400,31 @@ foreach ($rentals as $rental) {
                             <?php foreach($items as $item): ?>
                             <div class="product-card group relative bg-gray-50 rounded-xl p-3 border border-gray-200 hover:shadow-md transition-all">
                                 <div class="aspect-video bg-gray-200 rounded-lg overflow-hidden mb-3">
-                                     <img src="<?php echo (strpos($item['images'][0], 'uploads/') === 0) ? $item['images'][0] : 'https://source.unsplash.com/random/300x200?' . urlencode($item['category']); ?>" class="w-full h-full object-cover">
+                                     <?php 
+                                        $img_src = 'https://source.unsplash.com/random/300x200?' . urlencode($item['category']);
+                                        $images_data = isset($item['images']) ? $item['images'] : [];
+                                        
+                                        // Handle JSON string from DB
+                                        if (is_string($images_data)) {
+                                            $decoded = json_decode($images_data, true);
+                                            if (is_array($decoded)) $images_data = $decoded;
+                                        }
+
+                                        if (is_array($images_data) && !empty($images_data)) {
+                                            // Take first image
+                                            $first_img = $images_data[0];
+                                            // Prepend uploads/ if not present
+                                            if (strpos($first_img, 'uploads/') !== 0) {
+                                                $img_src = 'uploads/' . $first_img;
+                                            } else {
+                                                $img_src = $first_img;
+                                            }
+                                        } elseif (isset($item['img']) && !empty($item['img'])) {
+                                            // Fallback to old 'img' field 
+                                            $img_src = $item['img'];
+                                        }
+                                     ?>
+                                     <img src="<?php echo htmlspecialchars($img_src); ?>" class="w-full h-full object-cover" onerror="this.src='https://placehold.co/400x300?text=No+Image'">
                                 </div>
                                 <h3 class="font-bold text-sm truncate"><?php echo htmlspecialchars($item['title']); ?></h3>
                                 <p class="text-xs text-gray-500 mb-2"><?php echo htmlspecialchars($item['category']); ?></p>
