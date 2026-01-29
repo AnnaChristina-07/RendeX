@@ -142,24 +142,17 @@
 <label class="block text-sm font-bold mb-2 ml-1">What?</label>
 <div class="flex items-center bg-background-light dark:bg-background-dark rounded-full px-4 py-3 border border-transparent focus-within:border-primary transition-colors">
 <span class="material-symbols-outlined text-text-muted">search</span>
-<input class="bg-transparent border-none w-full ml-2 outline-none focus:ring-0 text-text-main dark:text-white placeholder:text-text-muted text-sm md:text-base" placeholder="Search items..." type="text"/>
-</div>
-</div>
-<div class="flex-1 w-full">
-<label class="block text-sm font-bold mb-2 ml-1">Where?</label>
-<div class="flex items-center bg-background-light dark:bg-background-dark rounded-full px-4 py-3 border border-transparent focus-within:border-primary transition-colors">
-<span class="material-symbols-outlined text-text-muted">location_on</span>
-<input class="bg-transparent border-none w-full ml-2 outline-none focus:ring-0 text-text-main dark:text-white placeholder:text-text-muted text-sm md:text-base" placeholder="Zip code or City" type="text"/>
+<input id="hero-search-input" class="bg-transparent border-none w-full ml-2 outline-none focus:ring-0 text-text-main dark:text-white placeholder:text-text-muted text-sm md:text-base" placeholder="Search items..." type="text"/>
 </div>
 </div>
 <div class="flex-1 w-full">
 <label class="block text-sm font-bold mb-2 ml-1">When?</label>
 <div class="flex items-center bg-background-light dark:bg-background-dark rounded-full px-4 py-3 border border-transparent focus-within:border-primary transition-colors">
 <span class="material-symbols-outlined text-text-muted">calendar_today</span>
-<input class="bg-transparent border-none w-full ml-2 outline-none focus:ring-0 text-text-main dark:text-white placeholder:text-text-muted text-sm md:text-base" placeholder="Add dates" type="text"/>
+<input class="bg-transparent border-none w-full ml-2 outline-none focus:ring-0 text-text-main dark:text-white placeholder:text-text-muted text-sm md:text-base" placeholder="Add dates" type="text" onfocus="(this.type='date')" onblur="(this.type='text')"/>
 </div>
 </div>
-<button class="w-full md:w-auto bg-black dark:bg-white text-white dark:text-black font-bold h-[48px] px-8 rounded-full flex items-center justify-center hover:opacity-90 transition-opacity">
+<button onclick="window.location.href='category.php?q='+encodeURIComponent(document.getElementById('hero-search-input').value)" class="w-full md:w-auto bg-black dark:bg-white text-white dark:text-black font-bold h-[48px] px-8 rounded-full flex items-center justify-center hover:opacity-90 transition-opacity">
                             Search
                         </button>
 </div>

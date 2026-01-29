@@ -107,6 +107,8 @@ if (!isset($_SESSION['user_id'])) {
 <main class="flex-1 w-full max-w-[1400px] mx-auto px-4 md:px-10 pb-20">
     <?php
     $cat_slug = isset($_GET['cat']) ? $_GET['cat'] : '';
+    $search_query = isset($_GET['q']) ? trim($_GET['q']) : '';
+    
     $categories = [
         'student-essentials' => ['title' => 'Student Essentials', 'icon' => 'school'],
         'clothing' => ['title' => 'Clothing', 'icon' => 'checkroom'],
@@ -122,26 +124,50 @@ if (!isset($_SESSION['user_id'])) {
 
     $current_cat = isset($categories[$cat_slug]) ? $categories[$cat_slug] : null;
 
+    // Override for Global Search
+    if (!empty($search_query)) {
+        $current_cat = [
+            'title' => 'Search Results',
+            'icon' => 'search'
+        ];
+    }
+
     // Load Dynamic Items
     $items_file = 'items.json';
     $dynamic_items = file_exists($items_file) ? json_decode(file_get_contents($items_file), true) : [];
     if (!is_array($dynamic_items)) $dynamic_items = [];
 
-
-
     $items_to_show = [];
     
-    // 1. Add Dynamic Items from Database (if available)
+    // 1. Add Dynamic Items from Database
     try {
         $pdo = getDBConnection();
         if ($pdo) {
-            $stmt = $pdo->prepare("
-                SELECT i.*, u.name as owner_name 
-                FROM items i 
-                JOIN users u ON i.owner_id = u.id 
-                WHERE i.category = ? AND i.admin_status = 'approved' AND (i.active_until IS NULL OR i.active_until > NOW())
-            ");
-            $stmt->execute([$cat_slug]);
+            if (!empty($search_query)) {
+                // Global Search
+                $stmt = $pdo->prepare("
+                    SELECT i.*, u.name as owner_name 
+                    FROM items i 
+                    JOIN users u ON i.owner_id = u.id 
+                    WHERE (i.title LIKE ? OR i.description LIKE ?) 
+                    AND i.admin_status = 'approved' 
+                    AND (i.active_until IS NULL OR i.active_until > NOW())
+                ");
+                $search_term = "%$search_query%";
+                $stmt->execute([$search_term, $search_term]);
+            } else {
+                // Category Filter
+                $stmt = $pdo->prepare("
+                    SELECT i.*, u.name as owner_name 
+                    FROM items i 
+                    JOIN users u ON i.owner_id = u.id 
+                    WHERE i.category = ? 
+                    AND i.admin_status = 'approved' 
+                    AND (i.active_until IS NULL OR i.active_until > NOW())
+                ");
+                $stmt->execute([$cat_slug]);
+            }
+            
             $db_items = $stmt->fetchAll();
             
             foreach ($db_items as $db_item) {
@@ -159,12 +185,12 @@ if (!isset($_SESSION['user_id'])) {
                 $item['img'] = !empty($item['all_images']) ? $item['all_images'][0] : $db_item['category'];
                 $item['type'] = 'dynamic';
 
-                // Deduplicate: Check if exactly the same item (by title and owner) is already in the list
+                // Deduplicate
                 $is_duplicate = false;
                 foreach ($items_to_show as $existing_item) {
                     if ($existing_item['title'] === $item['title'] && 
                         $existing_item['owner_id'] === $item['owner_id'] && 
-                        $existing_item['price'] == $item['price']) { // Price loose check
+                        $existing_item['price'] == $item['price']) {
                         $is_duplicate = true;
                         break;
                     }
@@ -177,10 +203,26 @@ if (!isset($_SESSION['user_id'])) {
         }
     } catch (Exception $e) {}
 
-    // 2. Add Dynamic Items from JSON (for fallback or those not in DB)
+    // 2. Add Dynamic Items from JSON
     foreach ($dynamic_items as $d_item) {
-        if (isset($d_item['category']) && $d_item['category'] === $cat_slug) {
-            // Avoid duplicates if already added from DB (match by title and owner if ID differs)
+        $match = false;
+        
+        if (!empty($search_query)) {
+            // Check Search Term
+            $title = isset($d_item['title']) ? $d_item['title'] : '';
+            $desc = isset($d_item['description']) ? $d_item['description'] : '';
+            if (stripos($title, $search_query) !== false || stripos($desc, $search_query) !== false) {
+                $match = true;
+            }
+        } else {
+            // Check Category
+            if (isset($d_item['category']) && $d_item['category'] === $cat_slug) {
+                $match = true;
+            }
+        }
+
+        if ($match) {
+            // Avoid duplicates
             $already_added = false;
             foreach ($items_to_show as $existing) {
                 if (isset($existing['title']) && $existing['title'] === $d_item['title'] && 
@@ -192,7 +234,6 @@ if (!isset($_SESSION['user_id'])) {
             if ($already_added) continue;
 
             if (isset($d_item['status']) && in_array($d_item['status'], ['Active', 'Unavailable'])) {
-                // Check expiry
                 if (isset($d_item['active_until']) && strtotime($d_item['active_until']) < time()) continue;
                 $item = $d_item;
             } else {
@@ -207,14 +248,9 @@ if (!isset($_SESSION['user_id'])) {
             $items_to_show[] = $d_item;
         }
     }
-
-
-
     ?>
     
     <?php if ($current_cat): ?>
-
-
 
         <!-- Redesigned Full Width Banner -->
         <section class="mt-8 mb-12 rounded-[2.5rem] bg-black overflow-hidden shadow-2xl border border-gray-800 relative w-full">
@@ -231,7 +267,11 @@ if (!isset($_SESSION['user_id'])) {
                         </div>
                     </div>
                     <p class="text-primary font-bold text-xl max-w-2xl mt-4 relative z-10 pl-1">
-                        Premium selection of <?php echo strtolower($current_cat['title']); ?>. Verified & Ready for use.
+                        <?php if(!empty($search_query)): ?>
+                            Found <?php echo count($items_to_show); ?> results for "<?php echo htmlspecialchars($search_query); ?>"
+                        <?php else: ?>
+                            Premium selection of <?php echo strtolower($current_cat['title']); ?>. Verified & Ready for use.
+                        <?php endif; ?>
                     </p>
                 </div>
         </section>

@@ -488,18 +488,18 @@ if (isset($_POST['rent_now'])) {
                                 Out of Stock
                             </button>
                         </div>
+                     <?php elseif ($is_own_item): ?>
+                        <div class="bg-primary/10 border border-primary/20 p-6 rounded-2xl text-center">
+                            <span class="material-symbols-outlined text-4xl text-primary-dark mb-2">inventory_2</span>
+                            <h3 class="text-xl font-black text-primary-dark mb-1">Pass it On!</h3>
+                            <p class="text-sm text-text-muted mb-6">You're the proud owner of this item.</p>
+                            <a href="dashboard.php" class="block w-full bg-primary hover:bg-yellow-300 text-black font-black text-xl py-5 rounded-2xl shadow-xl shadow-primary/20 transition-all hover:-translate-y-1">
+                                Go to Dashboard
+                            </a>
+                        </div>
                      <?php else: ?>
                      <form method="POST">
-                         <div class="flex gap-4">
-                             <div class="flex-1">
-                                 <label class="block text-sm font-bold mb-2 ml-1">Rent Duration</label>
-                                 <select name="duration" class="w-full bg-surface-light dark:bg-surface-dark border-transparent focus:border-primary focus:ring-0 rounded-xl px-4 py-3 font-bold border border-[#e9e8ce]">
-                                     <option value="1">1 Day</option>
-                                     <option value="3" selected>3 Days (Most Popular)</option>
-                                     <option value="7">1 Week (Save 10%)</option>
-                                 </select>
-                             </div>
-                         </div>
+
                          <button type="submit" name="rent_now" class="w-full bg-primary hover:bg-yellow-300 text-black font-black text-xl py-5 rounded-2xl shadow-xl shadow-primary/20 transition-all hover:-translate-y-1 mt-6">
                              Rent Now
                          </button>

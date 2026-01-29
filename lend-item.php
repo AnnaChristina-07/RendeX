@@ -32,7 +32,7 @@ if (!is_array($items)) $items = [];
 if (isset($_GET['edit_id'])) {
     $edit_id = $_GET['edit_id'];
     foreach ($items as $item) {
-        if ($item['id'] === $edit_id && $item['user_id'] === $_SESSION['user_id']) {
+        if ((string)$item['id'] === (string)$edit_id && (string)$item['user_id'] === (string)$_SESSION['user_id']) {
             $title = $item['title'];
             $category = $item['category'];
             $price = $item['price'];
@@ -43,6 +43,33 @@ if (isset($_GET['edit_id'])) {
             $images = $item['images']; // Keep existing images
             $is_edit = true;
             break;
+        }
+    }
+
+    // Fallback to Database if not found in JSON
+    if (!$is_edit) {
+        try {
+            require_once 'config/database.php';
+            $pdo = getDBConnection();
+            if ($pdo) {
+                $stmt = $pdo->prepare("SELECT * FROM items WHERE id = ? AND owner_id = ?");
+                $stmt->execute([$edit_id, $_SESSION['user_id']]);
+                $db_item = $stmt->fetch();
+                
+                if ($db_item) {
+                    $title = $db_item['title'];
+                    $category = $db_item['category'];
+                    $price = $db_item['price_per_day'];
+                    $security_deposit = $db_item['security_deposit'];
+                    $handover_methods = json_decode($db_item['handover_methods'], true) ?: ['pickup'];
+                    $description = $db_item['description'];
+                    $address = $db_item['location'];
+                    $images = json_decode($db_item['images'], true) ?: [];
+                    $is_edit = true;
+                }
+            }
+        } catch (Exception $e) {
+            // Error handling if DB fails
         }
     }
 }
