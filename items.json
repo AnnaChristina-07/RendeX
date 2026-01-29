@@ -8,7 +8,7 @@
         "price_per_day": "50.00",
         "security_deposit": "0.00",
         "condition_status": "good",
-        "availability_status": "unavailable",
+        "availability_status": "available",
         "active_until": null,
         "listing_duration": null,
         "location": "kanjirappally",
@@ -22,7 +22,7 @@
         "is_active": 1,
         "views_count": 0,
         "created_at": "2026-01-06 17:32:01",
-        "updated_at": "2026-01-19 21:59:39",
+        "updated_at": "2026-01-30 00:17:53",
         "handover_methods": null,
         "admin_status": "approved",
         "price": "50.00",
@@ -38,7 +38,7 @@
         "price_per_day": "150.00",
         "security_deposit": "0.00",
         "condition_status": "good",
-        "availability_status": "unavailable",
+        "availability_status": "available",
         "active_until": null,
         "listing_duration": null,
         "location": "kanjirappally",
@@ -52,7 +52,7 @@
         "is_active": 1,
         "views_count": 0,
         "created_at": "2026-01-11 06:44:46",
-        "updated_at": "2026-01-19 21:59:39",
+        "updated_at": "2026-01-30 00:17:53",
         "handover_methods": null,
         "admin_status": "approved",
         "price": "150.00",
@@ -68,7 +68,7 @@
         "price_per_day": "150.00",
         "security_deposit": "0.00",
         "condition_status": "good",
-        "availability_status": "unavailable",
+        "availability_status": "available",
         "active_until": null,
         "listing_duration": null,
         "location": "kanjirappally",
@@ -81,7 +81,7 @@
         "is_active": 1,
         "views_count": 0,
         "created_at": "2026-01-12 10:10:03",
-        "updated_at": "2026-01-19 21:59:39",
+        "updated_at": "2026-01-30 00:17:53",
         "handover_methods": null,
         "admin_status": "approved",
         "price": "150.00",
@@ -97,7 +97,7 @@
         "price_per_day": "150.00",
         "security_deposit": "0.00",
         "condition_status": "good",
-        "availability_status": "unavailable",
+        "availability_status": "available",
         "active_until": null,
         "listing_duration": null,
         "location": "kanjirappally",
@@ -111,7 +111,7 @@
         "is_active": 1,
         "views_count": 0,
         "created_at": "2026-01-11 06:44:46",
-        "updated_at": "2026-01-19 21:59:39",
+        "updated_at": "2026-01-30 00:17:53",
         "handover_methods": null,
         "admin_status": "approved",
         "price": "150.00",
@@ -127,7 +127,7 @@
         "price_per_day": "150.00",
         "security_deposit": "0.00",
         "condition_status": "good",
-        "availability_status": "unavailable",
+        "availability_status": "available",
         "active_until": null,
         "listing_duration": null,
         "location": "kanjirappally",
@@ -140,7 +140,7 @@
         "is_active": 1,
         "views_count": 0,
         "created_at": "2026-01-12 10:10:03",
-        "updated_at": "2026-01-19 21:59:39",
+        "updated_at": "2026-01-30 00:17:53",
         "handover_methods": null,
         "admin_status": "approved",
         "price": "150.00",
@@ -156,7 +156,7 @@
         "price_per_day": "150.00",
         "security_deposit": "0.00",
         "condition_status": "good",
-        "availability_status": "unavailable",
+        "availability_status": "available",
         "active_until": null,
         "listing_duration": null,
         "location": "kanjirappally",
@@ -170,7 +170,7 @@
         "is_active": 1,
         "views_count": 0,
         "created_at": "2026-01-11 06:44:46",
-        "updated_at": "2026-01-19 21:59:39",
+        "updated_at": "2026-01-30 00:17:53",
         "handover_methods": null,
         "admin_status": "approved",
         "price": "150.00",
@@ -186,7 +186,7 @@
         "price_per_day": "150.00",
         "security_deposit": "0.00",
         "condition_status": "good",
-        "availability_status": "unavailable",
+        "availability_status": "available",
         "active_until": null,
         "listing_duration": null,
         "location": "kanjirappally",
@@ -199,7 +199,7 @@
         "is_active": 1,
         "views_count": 0,
         "created_at": "2026-01-12 10:10:03",
-        "updated_at": "2026-01-19 21:59:39",
+        "updated_at": "2026-01-30 00:17:53",
         "handover_methods": null,
         "admin_status": "approved",
         "price": "150.00",
@@ -414,5 +414,366 @@
         "price": "250.00",
         "address": "Nedumkandam",
         "status": "Active"
+    },
+    {
+        "id": "item_697bb3cba6ded",
+        "user_id": "697bb26600c09",
+        "owner_name": "Aninta Johny",
+        "title": "Desk lamp",
+        "category": "student-essentials",
+        "price": "50",
+        "security_deposit": "",
+        "handover_methods": [
+            "pickup"
+        ],
+        "description": "Brighten your workspace with our sleek desk lamp, available for rent. Adjustable, energy-efficient, and perfect for study or office use",
+        "address": "pala",
+        "images": [
+            "697bb3cba343d_desk_lamp.jpg",
+            "697bb3cba4d20_Kandem \u2013 Mod_ 967.jpg"
+        ],
+        "created_at": "2026-01-29 20:23:55",
+        "status": "Pending Approval"
+    },
+    {
+        "id": "item_697bb5bee5da0",
+        "user_id": "697bb26600c09",
+        "owner_name": "Aninta Johny",
+        "title": "Whiteboard",
+        "category": "student-essentials",
+        "price": "100",
+        "security_deposit": "",
+        "handover_methods": [
+            "pickup"
+        ],
+        "description": "Make your ideas visible with our portable whiteboard. Perfect for meetings, classes, and brainstorming sessions.",
+        "address": "Kattappana",
+        "images": [
+            "697bb5bee14fa_Luxor Mobile Dry Erase Double-Sided Magnetic Whiteboard with Aluminum Frame and Stand - 96_W x 40_H.jpg",
+            "697bb5bee2b41_VIZ-PRO Double-Sided Magnetic Mobile Whiteboard, 48 x 36 Inches, Steel Stand.jpg"
+        ],
+        "created_at": "2026-01-29 20:32:14",
+        "status": "Pending Approval"
+    },
+    {
+        "id": "item_697bb6b53f3e2",
+        "user_id": "697bb26600c09",
+        "owner_name": "Aninta Johny",
+        "title": "Geometry Box",
+        "category": "student-essentials",
+        "price": "30",
+        "security_deposit": "",
+        "handover_methods": [
+            "pickup"
+        ],
+        "description": "Get all your measuring tools in one! Geometry box available for rent perfect for students and drawing tasks",
+        "address": "kattappana",
+        "images": [
+            "697bb6b53ab31_download (6).jpg",
+            "697bb6b53bc96_Small drafting set.jpg"
+        ],
+        "created_at": "2026-01-29 20:36:21",
+        "status": "Pending Approval"
+    },
+    {
+        "id": "item_697bb891d29d3",
+        "user_id": "697bb26600c09",
+        "owner_name": "Aninta Johny",
+        "title": "Foldable camping chairs",
+        "category": "outdoor-gear",
+        "price": "150",
+        "security_deposit": "",
+        "handover_methods": [
+            "pickup"
+        ],
+        "description": "Lightweight foldable camping chair in great condition. Comfortable seating for camping, beach, or travel breaks",
+        "address": "Kattappana",
+        "images": [
+            "697bb891ce6e2_download (7).jpg",
+            "697bb891d1793_LEADALLWAY Folding Camping Chair Oversized Collapsible Camp Chair with Cup Holder and Removable Storage Bag, Heavy Duty Support 350 LBS, Portable Lawn.jpg"
+        ],
+        "created_at": "2026-01-29 20:44:17",
+        "status": "Pending Approval"
+    },
+    {
+        "id": "item_697bb928f304f",
+        "user_id": "697bb26600c09",
+        "owner_name": "Aninta Johny",
+        "title": "Tents",
+        "category": "outdoor-gear",
+        "price": "300",
+        "security_deposit": "",
+        "handover_methods": [
+            "pickup"
+        ],
+        "description": "Tent in good condition. Clean, waterproof, and well-maintained. Suitable for camping and outdoor stays",
+        "address": "Kattappana",
+        "images": [
+            "697bb928f165c_download (8).jpg",
+            "697bb928f2761_Outdoor 2-4 Persons Camping Tent Double Layer Waterproof Windproof Anti-Uv Sunshade Canopy.gif"
+        ],
+        "created_at": "2026-01-29 20:46:48",
+        "status": "Pending Approval"
+    },
+    {
+        "id": "item_697bba1b29748",
+        "user_id": "696e57fc247b3",
+        "owner_name": "Rincy Joseph",
+        "title": "Camping stove & cookware",
+        "category": "outdoor-gear",
+        "price": "180",
+        "security_deposit": "",
+        "handover_methods": [
+            "pickup"
+        ],
+        "description": "Camping stove and cookware set in good condition. Clean, fully functional, and safe for outdoor cooking",
+        "address": "Kumily",
+        "images": [
+            "697bba1b230b6_Cookware Set,Person Pot Set Pot Set With Dishes Utensils 5-8 Set Portable Portable Dishes Kettle Pan Picnic Set With Kettle 5-8 Person Pot Cookware Set Portable.jpg",
+            "697bba1b263e8_Camping cookware.jpg"
+        ],
+        "created_at": "2026-01-29 20:50:51",
+        "status": "Pending Approval"
+    },
+    {
+        "id": "item_697bbaf6b06d0",
+        "user_id": "696e57fc247b3",
+        "owner_name": "Rincy Joseph",
+        "title": "Microwave ovens",
+        "category": "home-essentials",
+        "price": "300",
+        "security_deposit": "",
+        "handover_methods": [
+            "pickup"
+        ],
+        "description": "Microwave oven in good condition. Clean, fully functional, and suitable for daily heating and cooking needs.",
+        "address": "Kumily",
+        "images": [
+            "697bbaf6acf8a_Micro-ondas 32 Litros Panasonic ST66LBRUN Preto 110V - Micro-ondas - Magazine Luiza.jpg",
+            "697bbaf6aec32_Top microwave oven.jpg"
+        ],
+        "created_at": "2026-01-29 20:54:30",
+        "status": "Pending Approval"
+    },
+    {
+        "id": "item_697bbb5e67f92",
+        "user_id": "696e57fc247b3",
+        "owner_name": "Rincy Joseph",
+        "title": "Electric kettles",
+        "category": "home-essentials",
+        "price": "100",
+        "security_deposit": "",
+        "handover_methods": [
+            "pickup"
+        ],
+        "description": "Electric kettle in good condition. Clean, heats quickly, and fully functional",
+        "address": "Kumily",
+        "images": [
+            "697bbb5e63f5f_Cord-Free Serving.jpg",
+            "697bbb5e6628f_download (9).jpg"
+        ],
+        "created_at": "2026-01-29 20:56:14",
+        "status": "Pending Approval"
+    },
+    {
+        "id": "item_697bbc993841f",
+        "user_id": "696e57fc247b3",
+        "owner_name": "Rincy Joseph",
+        "title": "Yoga mats",
+        "category": "fitness",
+        "price": "50",
+        "security_deposit": "",
+        "handover_methods": [
+            "pickup"
+        ],
+        "description": "Yoga mat in good condition. Clean, non-slip, and comfortable for daily workouts",
+        "address": "Kumily",
+        "images": [
+            "697bbc9930694_PROlite Yoga Mat - Black Sage.jpg",
+            "697bbc993480d_HUSL Esterilla Yoga Antideslizante, Alfombrilla Deportiva para Fitness Grosor Extra, Yoga Colchoneta Antideslizante para Yoga, Pilates, Deporte, Gimnasia, Fitness, meditaci\u00f3n_ 183cm x 61cm (P\u00farpura).jpg"
+        ],
+        "created_at": "2026-01-29 21:01:29",
+        "status": "Pending Approval"
+    },
+    {
+        "id": "item_697bbd1294961",
+        "user_id": "696e57fc247b3",
+        "owner_name": "Rincy Joseph",
+        "title": "Treadmills",
+        "category": "fitness",
+        "price": "800",
+        "security_deposit": "",
+        "handover_methods": [
+            "delivery"
+        ],
+        "description": "Treadmill in good condition. Smooth running belt, fully functional, and well-maintained",
+        "address": "Kumily",
+        "images": [
+            "697bbd1290c89_Tapis de course Hammer Life Runner LR20.jpg",
+            "697bbd1292165_These 9 Budget Treadmills Work Just as Well as $1,000+ Models.jpg"
+        ],
+        "created_at": "2026-01-29 21:03:30",
+        "status": "Pending Approval"
+    },
+    {
+        "id": "item_697bbe2b621a1",
+        "user_id": "695a8dc1e017b",
+        "owner_name": "Agnus Sabu",
+        "title": "Skipping ropes",
+        "category": "fitness",
+        "price": "25",
+        "security_deposit": "",
+        "handover_methods": [
+            "pickup"
+        ],
+        "description": "Well-maintained skipping rope in proper working condition with comfortable handles. Suitable for fitness training",
+        "address": "pala",
+        "images": [
+            "697bbe2b5c702_download (10).jpg",
+            "697bbe2b5fdc8_Fitness Rope Skipping Steel Wire Rope Weight Loss Equipment - Green.jpg"
+        ],
+        "created_at": "2026-01-29 21:08:11",
+        "status": "Pending Approval"
+    },
+    {
+        "id": "item_697bbefe08c1c",
+        "user_id": "695a8dc1e017b",
+        "owner_name": "Agnus Sabu",
+        "title": "Stretching straps",
+        "category": "fitness",
+        "price": "30",
+        "security_deposit": "",
+        "handover_methods": [
+            "pickup"
+        ],
+        "description": "Stretching strap in good working condition. Clean, strong, and flexible\u2014perfect for stretching and yoga exercises.",
+        "address": "pala",
+        "images": [
+            "697bbefdc6367_Yoga straps.jpg",
+            "697bbefde630e_Freely Yoga Training Strap _ Academy.jpg"
+        ],
+        "created_at": "2026-01-29 21:11:42",
+        "status": "Pending Approval"
+    },
+    {
+        "id": "item_697bbfed1bfa4",
+        "user_id": "695a8dc1e017b",
+        "owner_name": "Agnus Sabu",
+        "title": "Water pumps",
+        "category": "agriculture",
+        "price": "400",
+        "security_deposit": "",
+        "handover_methods": [
+            "pickup"
+        ],
+        "description": "Water pump in good working condition. Clean, fully functional, and efficient for irrigation and farm use",
+        "address": "pala",
+        "images": [
+            "697bbfed132d6_{productName}.jpg",
+            "697bbfed19fdb_download (11).jpg"
+        ],
+        "created_at": "2026-01-29 21:15:41",
+        "status": "Pending Approval"
+    },
+    {
+        "id": "item_697bc09a3658b",
+        "user_id": "695a8dc1e017b",
+        "owner_name": "Agnus Sabu",
+        "title": "Crop sprayer",
+        "category": "agriculture",
+        "price": "300",
+        "security_deposit": "",
+        "handover_methods": [
+            "pickup"
+        ],
+        "description": "Crop sprayer in good working condition. Clean, fully functional, and efficient for spraying pesticides, herbicides, and fertilizers",
+        "address": "pala",
+        "images": [
+            "697bc09a2d206_Jacto PJB-8c Backpack Sprayer, Blue.jpg",
+            "697bc09a2f8d6_Battery-Powered Shoulder-Carry Sprayer.jpg"
+        ],
+        "created_at": "2026-01-29 21:18:34",
+        "status": "Pending Approval"
+    },
+    {
+        "id": "item_697bc153170ff",
+        "user_id": "697ad695ad641",
+        "owner_name": "Krishnaveni",
+        "title": "Tillers",
+        "category": "agriculture",
+        "price": "700",
+        "security_deposit": "",
+        "handover_methods": [
+            "delivery"
+        ],
+        "description": "Tiller in good working condition. Clean, fully functional, and efficient for soil preparation",
+        "address": "kanjirappally",
+        "images": [
+            "697bc152b9dbf_MAXLANDER Cordless Tiller Cultivator Review.jpg",
+            "697bc152da413_Vevor Tiller Cultivator 43CC 2-Stroke Engine with 4 Adjustable Steel T.jpg"
+        ],
+        "created_at": "2026-01-29 21:21:39",
+        "status": "Pending Approval"
+    },
+    {
+        "id": "item_697bc21b09bb3",
+        "user_id": "697ad695ad641",
+        "owner_name": "Krishnaveni",
+        "title": "Wheelchairs",
+        "category": "medical",
+        "price": "350",
+        "security_deposit": "",
+        "handover_methods": [
+            "delivery"
+        ],
+        "description": "Well-maintained manual wheelchair in proper working condition. Reliable and safe for patient use in hospitals or home settings",
+        "address": "kanjirappally",
+        "images": [
+            "697bc21a6d619_Logotipo.jpg",
+            "697bc21ac3d70_#Excel-G5-Modular-Self-Propelled-Lightweight-Wheelchair.jpg"
+        ],
+        "created_at": "2026-01-29 21:24:59",
+        "status": "Pending Approval"
+    },
+    {
+        "id": "item_697bc31caf39b",
+        "user_id": "697ad695ad641",
+        "owner_name": "Krishnaveni",
+        "title": "Blood pressure monitors",
+        "category": "medical",
+        "price": "120",
+        "security_deposit": "",
+        "handover_methods": [
+            "pickup"
+        ],
+        "description": "Blood pressure monitor in good working condition. Clean, accurate, and fully functional for home or clinical use",
+        "address": "kanjirappally",
+        "images": [
+            "697bc31bed799_download (13).jpg",
+            "697bc31c2c0fd_download (12).jpg",
+            "697bc31c88192_Electronic Automatic Upper Arm Blood Pressure Monitor Electric Digital Bp Machine Sphygmomanometer With English Voice.jpg"
+        ],
+        "created_at": "2026-01-29 21:29:16",
+        "status": "Pending Approval"
+    },
+    {
+        "id": "item_697bc3c779bd5",
+        "user_id": "697ad695ad641",
+        "owner_name": "Krishnaveni",
+        "title": "walkers",
+        "category": "medical",
+        "price": "170",
+        "security_deposit": "",
+        "handover_methods": [
+            "pickup"
+        ],
+        "description": "Well-maintained walker in proper working condition. Reliable, safe, and ready for home or clinical use",
+        "address": "kanjirappally",
+        "images": [
+            "697bc3c7725ee_Economy Manual Folding Manual Lightweight Standing Frame Aluminum Folding Walkers For Elderly People.jpg",
+            "697bc3c775f3f_Single Release Walker.jpg"
+        ],
+        "created_at": "2026-01-29 21:32:07",
+        "status": "Pending Approval"
     }
 ]

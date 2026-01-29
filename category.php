@@ -226,7 +226,7 @@ if (!isset($_SESSION['user_id'])) {
             $already_added = false;
             foreach ($items_to_show as $existing) {
                 if (isset($existing['title']) && $existing['title'] === $d_item['title'] && 
-                    isset($existing['owner_id']) && $existing['owner_id'] === $d_item['user_id']) {
+                    isset($existing['owner_id']) && $existing['owner_id'] === ($d_item['owner_id'] ?? $d_item['user_id'] ?? '')) {
                     $already_added = true;
                     break;
                 }
@@ -512,6 +512,16 @@ if (!isset($_SESSION['user_id'])) {
             
             // Distance
             const distInput = document.querySelector('input[type="range"]');
+            
+            // Add live update listener if not already added
+            if (!distInput.hasAttribute('data-init')) {
+                 distInput.setAttribute('data-init', 'true');
+                 const distDisplay = distInput.previousElementSibling.querySelector('span'); // The "15 km" badge
+                 distInput.addEventListener('input', function() {
+                     distDisplay.textContent = this.value + ' km';
+                 });
+            }
+            
             const maxDistance = distInput ? parseFloat(distInput.value) : 50;
 
 
@@ -577,6 +587,17 @@ if (!isset($_SESSION['user_id'])) {
                     }
                 }, 1200);
             });
+
+        // Initialize Slider Immediately
+        document.addEventListener('DOMContentLoaded', function() {
+            const distInput = document.querySelector('input[type="range"]');
+            if (distInput) {
+                 const distDisplay = distInput.previousElementSibling.querySelector('span');
+                 distInput.addEventListener('input', function() {
+                     distDisplay.textContent = this.value + ' km';
+                 });
+            }
+        });
 
             card.addEventListener('mouseleave', () => {
                 clearInterval(interval);

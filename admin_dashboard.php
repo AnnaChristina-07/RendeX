@@ -314,7 +314,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['assign_delivery'])) {
 // --- DATA PREPARATION ---
 
 // Identify Owners and Renters
-$owner_ids = array_unique(array_column($items, 'user_id'));
+$owner_ids = array_unique(array_merge(array_column($items, 'owner_id'), array_column($items, 'user_id')));
 $renter_ids = array_unique(array_column($rentals, 'user_id'));
 
 $owners = [];
@@ -375,11 +375,25 @@ foreach ($users as $u) {
     // Classification Logic
 // 1. Owners: Listed items OR special owner OR role is 'owner'
     if (in_array($u['id'], $owner_ids) || $is_special_owner || $is_owner_role) {
-        $owners[] = $u;
+        // Avoid duplicates if already added
+        $exists = false;
+        foreach ($owners as $o) {
+            if ($o['id'] === $u['id']) { $exists = true; break; }
+        }
+        if (!$exists) {
+            $owners[] = $u;
+        }
     }
     // 3. Delivery Partners
     elseif (isset($u['role']) && $u['role'] === 'delivery_partner') {
-        $delivery_partners[] = $u;
+         // Avoid duplicates
+        $exists = false;
+        foreach ($delivery_partners as $dp) {
+            if ($dp['id'] === $u['id']) { $exists = true; break; }
+        }
+        if (!$exists) {
+            $delivery_partners[] = $u;
+        }
     }
     // Fallback: Check if they have an approved application in the pending list but skipped
     else {
