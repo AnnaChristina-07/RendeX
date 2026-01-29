@@ -604,4 +604,185 @@ function toggleMoreCategories() {
 </div>
 </footer>
 </div>
+<!-- Chatbot Widget -->
+<div id="chatbot-widget" class="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-4">
+    <!-- Chat Window -->
+    <div id="chat-window" class="hidden w-[350px] h-[500px] bg-white dark:bg-surface-dark rounded-2xl shadow-2xl border border-[#e9e8ce] dark:border-[#3e3d2a] flex flex-col overflow-hidden transition-all duration-300 origin-bottom-right transform scale-95 opacity-0">
+        <!-- Header -->
+        <div class="bg-primary p-4 flex justify-between items-center">
+            <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-black">smart_toy</span>
+                <h3 class="font-bold text-black">RendeX Assistant</h3>
+            </div>
+            <button onclick="toggleChat()" class="text-black hover:bg-black/10 rounded-full p-1 transition-colors">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+        
+        <!-- Messages -->
+        <div id="chat-messages" class="flex-1 p-4 overflow-y-auto space-y-4 bg-background-light dark:bg-zinc-900">
+            <!-- Welcome Message -->
+            <div class="flex items-start gap-2">
+                <div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center shrink-0">
+                    <span class="material-symbols-outlined text-black text-sm">smart_toy</span>
+                </div>
+                <div class="bg-white dark:bg-surface-dark border border-[#e9e8ce] dark:border-[#3e3d2a] p-3 rounded-2xl rounded-tl-none shadow-sm max-w-[80%]">
+                    <p class="text-sm">Hi! I'm here to help. Ask me anything about RendeX!</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Input -->
+        <div class="p-3 bg-white dark:bg-surface-dark border-t border-[#e9e8ce] dark:border-[#3e3d2a]">
+            <form id="chat-form" onsubmit="handleChatSubmit(event)" class="flex gap-2">
+                <input type="text" id="chat-input" placeholder="Type a message..." class="flex-1 bg-background-light dark:bg-zinc-900 border-none rounded-full px-4 py-2 text-sm focus:ring-2 focus:ring-primary outline-none text-text-main dark:text-white">
+                <button type="submit" class="bg-primary text-black w-10 h-10 rounded-full flex items-center justify-center hover:bg-yellow-300 transition-colors shrink-0">
+                    <span class="material-symbols-outlined text-xl">send</span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Toggle Button -->
+    <button onclick="toggleChat()" class="w-14 h-14 bg-primary text-black rounded-full shadow-lg flex items-center justify-center hover:scale-110 transition-transform duration-200 group border-2 border-white dark:border-zinc-800">
+        <span class="material-symbols-outlined text-2xl group-hover:hidden">chat</span>
+        <span class="material-symbols-outlined text-2xl hidden group-hover:block">expand_less</span>
+    </button>
+</div>
+
+<script>
+    function toggleChat() {
+        const window = document.getElementById('chat-window');
+        const isHidden = window.classList.contains('hidden');
+        
+        if (isHidden) {
+            window.classList.remove('hidden');
+            setTimeout(() => {
+                window.classList.remove('scale-95', 'opacity-0');
+            }, 10);
+            // Auto focus input
+            setTimeout(() => {
+                document.getElementById('chat-input').focus();
+            }, 300);
+        } else {
+            window.classList.add('scale-95', 'opacity-0');
+            setTimeout(() => {
+                window.classList.add('hidden');
+            }, 300);
+        }
+    }
+
+    function handleChatSubmit(e) {
+        e.preventDefault();
+        const input = document.getElementById('chat-input');
+        const message = input.value.trim();
+        if (!message) return;
+
+        // Add User Message
+        addMessage(message, 'user');
+        input.value = '';
+
+        // Simulate Bot Response
+        const responseDelay = Math.random() * 800 + 400;
+        
+        setTimeout(() => {
+            const response = getBotResponse(message);
+            addMessage(response, 'bot');
+        }, responseDelay);
+    }
+
+    function getBotResponse(msg) {
+        const m = msg.toLowerCase();
+        
+        // Greetings
+        if (m.match(/^(hi|hello|hey|yo|greetings)/)) {
+            return "Hello! Ready to find a great item or list one of your own?";
+        }
+        
+        // Renting logic
+        if (m.includes('rent') || m.includes('book') || m.includes('search') || m.includes('find')) {
+            if (m.includes('how')) return "To rent an item, simply browse the categories or use the search bar. Click on an item you like, select your dates, and click 'Request Rental'.";
+            return "You can find items to rent by using the search bar above or browsing categories like Electronics, Outdoor Gear, and more.";
+        }
+        
+        // Lending/Listing logic
+        if (m.includes('lend') || m.includes('list') || m.includes('sell') || m.includes('post')) {
+            if (m.includes('how')) return "Listing is easy! Just click the 'Lend Items' button, upload a few photos, set your price, and you're good to go.";
+            if (m.includes('money') || m.includes('earn')) return "You keep 90% of the rental fee. We take a small 10% commission to cover platform maintenance and insurance.";
+            return "got something lying around? Click 'Lend Items' in the menu to start earning money from your unused gear.";
+        }
+
+        // Delivery logic
+        if (m.includes('delivery') || m.includes('driver') || m.includes('ship') || m.includes('pickup')) {
+            if (m.includes('partner') || m.includes('job') || m.includes('work')) return "You can apply to become a Delivery Partner! Check the 'Earn on the go' section on the dashboard to apply.";
+            return "We offer flexible delivery options. You can either pick up the item yourself or choose a Delivery Partner during checkout for a small fee.";
+        }
+
+        // Account/Login
+        if (m.includes('login') || m.includes('signup') || m.includes('account') || m.includes('password')) {
+            return "You can manage your account settings in the Profile page. If you're having trouble logging in, try the 'Forgot Password' link on the login page.";
+        }
+
+        // Pricing/Cost
+        if (m.includes('price') || m.includes('cost') || m.includes('fee') || m.includes('pay')) {
+            return "Rental prices are set by the owners. RendeX charges a small service fee on transactions to ensure secure payments and user verification.";
+        }
+
+        // Safety/Trust
+        if (m.includes('safe') || m.includes('scam') || m.includes('trust') || m.includes('insurance') || m.includes('verify')) {
+            return "Safety is our priority. We verify all users and offer protection plans for rented items. Always communicate through the platform for your safety.";
+        }
+
+        // Contact
+        if (m.includes('contact') || m.includes('support') || m.includes('email') || m.includes('human')) {
+            return "You can reach our support team at support@rendex.com or call us at 1-800-RENDEX. We're available 24/7!";
+        }
+
+        // Return policy
+        if (m.includes('return') || m.includes('late')) {
+            return "Items should be returned by the agreed time. Late returns may incur additional fees as set by the owner. Please coordinate with the owner or delivery partner.";
+        }
+
+        // Generic catch-all
+        return "I'm not sure about that specific detail. You can browse our FAQ section or try asking about renting, lending, or delivery services!";
+    }
+
+    function addMessage(text, sender) {
+        const container = document.getElementById('chat-messages');
+        const div = document.createElement('div');
+        div.className = sender === 'user' ? 'flex items-end justify-end gap-2' : 'flex items-start gap-2';
+        
+        // Escape HTML to prevent XSS (basic)
+        const safeText = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        
+        let html = '';
+        if (sender === 'bot') {
+            html += `
+                <div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center shrink-0">
+                    <span class="material-symbols-outlined text-black text-sm">smart_toy</span>
+                </div>
+                <div class="bg-white dark:bg-surface-dark border border-[#e9e8ce] dark:border-[#3e3d2a] p-3 rounded-2xl rounded-tl-none shadow-sm max-w-[80%]">
+                    <p class="text-sm">${safeText}</p>
+                </div>
+            `;
+        } else {
+            html += `
+                <div class="bg-black text-white dark:bg-white dark:text-black p-3 rounded-2xl rounded-tr-none shadow-sm max-w-[80%]">
+                    <p class="text-sm">${safeText}</p>
+                </div>
+            `;
+        }
+        
+        div.innerHTML = html;
+        container.appendChild(div);
+        
+        // Smooth scroll to bottom
+        setTimeout(() => {
+            container.scrollTo({
+                top: container.scrollHeight,
+                behavior: 'smooth'
+            });
+        }, 10);
+    }
+</script>
 </body></html>
