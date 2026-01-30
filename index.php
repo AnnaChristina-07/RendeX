@@ -149,20 +149,46 @@
 <label class="block text-sm font-bold mb-2 ml-1">When?</label>
 <div class="flex items-center bg-background-light dark:bg-background-dark rounded-full px-4 py-3 border border-transparent focus-within:border-primary transition-colors">
 <span class="material-symbols-outlined text-text-muted">calendar_today</span>
-<input class="bg-transparent border-none w-full ml-2 outline-none focus:ring-0 text-text-main dark:text-white placeholder:text-text-muted text-sm md:text-base" placeholder="Add dates" type="text" onfocus="(this.type='date')" onblur="(this.type='text')"/>
+<input id="hero-date-input" class="bg-transparent border-none w-full ml-2 outline-none focus:ring-0 text-text-main dark:text-white placeholder:text-text-muted text-sm md:text-base" placeholder="Add dates" type="text" onfocus="(this.type='date')" onblur="(this.type='text')"/>
 </div>
 </div>
-<button onclick="window.location.href='category.php?q='+encodeURIComponent(document.getElementById('hero-search-input').value)" class="w-full md:w-auto bg-black dark:bg-white text-white dark:text-black font-bold h-[48px] px-8 rounded-full flex items-center justify-center hover:opacity-90 transition-opacity">
+<button onclick="validateAndSearch()" class="w-full md:w-auto bg-black dark:bg-white text-white dark:text-black font-bold h-[48px] px-8 rounded-full flex items-center justify-center hover:opacity-90 transition-opacity">
                             Search
                         </button>
 </div>
+<div id="search-error" class="hidden text-red-500 text-xs font-bold mt-2 ml-2 flex items-center gap-1">
+    <span class="material-symbols-outlined text-sm">error</span> Please enter both an item name and a date.
 </div>
 </div>
+</div>
+
+<script>
+function validateAndSearch() {
+    const query = document.getElementById('hero-search-input').value.trim();
+    const date = document.getElementById('hero-date-input').value.trim();
+    const errorMsg = document.getElementById('search-error');
+    
+    if (!query || !date) {
+        errorMsg.classList.remove('hidden');
+        if (!query) document.getElementById('hero-search-input').parentElement.classList.add('border-red-500');
+        if (!date) document.getElementById('hero-date-input').parentElement.classList.add('border-red-500');
+        
+        setTimeout(() => {
+            errorMsg.classList.add('hidden');
+            document.getElementById('hero-search-input').parentElement.classList.remove('border-red-500');
+            document.getElementById('hero-date-input').parentElement.classList.remove('border-red-500');
+        }, 3000);
+        return;
+    }
+    
+    window.location.href = 'category.php?q=' + encodeURIComponent(query) + '&date=' + encodeURIComponent(date);
+}
+</script>
 <!-- Categories -->
 <section class="mt-16">
 <div class="flex items-center justify-between mb-6">
 <h2 class="text-2xl font-bold">Browse by Category</h2>
-<a class="text-sm font-bold underline decoration-primary decoration-2 underline-offset-4 hover:text-text-muted" href="dashboard.php">View All</a>
+
 </div>
 <div class="flex gap-4 overflow-x-auto pb-4 scrollbar-hide snap-x">
 <!-- Category Item - Student Essentials -->
@@ -172,13 +198,7 @@
 </div>
 <span class="text-sm font-medium text-center">Student Essentials</span>
 </a>
-<!-- Category Item - Clothing -->
-<a class="snap-start shrink-0 flex flex-col items-center gap-3 min-w-[100px] group cursor-pointer" href="dashboard.php">
-<div class="w-20 h-20 rounded-full bg-surface-light dark:bg-surface-dark border border-[#e9e8ce] dark:border-[#3e3d2a] flex items-center justify-center group-hover:border-primary group-hover:bg-primary/10 transition-all">
-<span class="material-symbols-outlined text-3xl group-hover:scale-110 transition-transform">checkroom</span>
-</div>
-<span class="text-sm font-medium text-center">Clothing</span>
-</a>
+
 <!-- Category Item - Electronic Devices -->
 <a class="snap-start shrink-0 flex flex-col items-center gap-3 min-w-[100px] group cursor-pointer" href="dashboard.php">
 <div class="w-20 h-20 rounded-full bg-surface-light dark:bg-surface-dark border border-[#e9e8ce] dark:border-[#3e3d2a] flex items-center justify-center group-hover:border-primary group-hover:bg-primary/10 transition-all">

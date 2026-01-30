@@ -987,6 +987,11 @@ foreach ($rentals as $rental) {
                 // Identify Unassigned
                 $unassigned_rentals = [];
                 foreach ($active_rentals as $r) {
+                    // Skip if fulfillment is explicitly set to pickup
+                    if (isset($r['fulfillment']) && $r['fulfillment'] === 'pickup') {
+                        continue;
+                    }
+                    
                     if (!isset($delivery_map[$r['id']])) {
                         $unassigned_rentals[] = $r;
                     }

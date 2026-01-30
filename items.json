@@ -775,5 +775,66 @@
         ],
         "created_at": "2026-01-29 21:32:07",
         "status": "Pending Approval"
+    },
+    {
+        "id": "item_697c37ac33eed",
+        "user_id": "697c3680ea72f",
+        "owner_name": "Jinonse Roy",
+        "title": "Typewriter",
+        "category": "vintage",
+        "price": "350",
+        "security_deposit": "",
+        "handover_methods": [
+            "pickup"
+        ],
+        "description": "Well-preserved vintage typewriter with classic design. Ideal for display, shoots, and period themes",
+        "address": "Erumeli",
+        "images": [
+            "697c37ac2d2aa_@cemeterydoggs.jpg",
+            "697c37ac31166_download (14).jpg"
+        ],
+        "created_at": "2026-01-30 05:46:36",
+        "status": "Pending Approval"
+    },
+    {
+        "id": "item_697c393730baf",
+        "user_id": "697c3680ea72f",
+        "owner_name": "Jinonse Roy",
+        "title": "Old sewing machines",
+        "category": "vintage",
+        "price": "300",
+        "security_deposit": "",
+        "handover_methods": [
+            "delivery"
+        ],
+        "description": "Vintage sewing machine in good working condition, suitable for regular use",
+        "address": "Erumeli",
+        "images": [
+            "697c39372bf5d_\ud83e\udea1.jpg",
+            "697c39372da36_download (15).jpg"
+        ],
+        "created_at": "2026-01-30 05:53:11",
+        "status": "Pending Approval"
+    },
+    {
+        "id": "item_697c4efd89e60",
+        "user_id": "697c3680ea72f",
+        "owner_name": "Jinonse Roy",
+        "title": "Table fan",
+        "category": "home-essentials",
+        "price": "120",
+        "security_deposit": "",
+        "handover_methods": [
+            "pickup"
+        ],
+        "description": "Table fan in good working condition. Clean and efficient for daily use.",
+        "address": "Erumeli",
+        "images": [
+            "697c4efd2b300_Fan.jpg",
+            "697c4efd3fb36_download (16).jpg",
+            "697c4efd5c230_This item is unavailable - Etsy.jpg"
+        ],
+        "created_at": "2026-01-30 07:26:05",
+        "status": "Pending Approval"
     }
 ]
