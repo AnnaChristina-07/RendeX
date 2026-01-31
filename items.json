@@ -836,5 +836,209 @@
         ],
         "created_at": "2026-01-30 07:26:05",
         "status": "Pending Approval"
+    },
+    {
+        "id": "item_697e2b2c9d24f",
+        "user_id": "697c3680ea72f",
+        "owner_name": "Jinonse Roy",
+        "title": "Scientific calculator",
+        "category": "student-essentials",
+        "price": "40",
+        "security_deposit": "",
+        "handover_methods": [
+            "pickup"
+        ],
+        "description": "Fully functional scientific calculator in good condition for academic use.",
+        "address": "Erumeli",
+        "images": [
+            "697e2b2c7bca6_Scientific Calculator with 2-line display, best for Engineering Calculations with 240 plus function.jpg",
+            "697e2b2c87cac_Scientific calculator 240 functions _ Suitable for School Students, Engineer, Teachers, and Business.jpg"
+        ],
+        "created_at": "2026-01-31 17:17:48",
+        "status": "Pending Approval"
+    },
+    {
+        "id": "item_697e2c8a4e729",
+        "user_id": "697c3680ea72f",
+        "owner_name": "Jinonse Roy",
+        "title": "Helmet",
+        "category": "outdoor-gear",
+        "price": "80",
+        "security_deposit": "",
+        "handover_methods": [
+            "pickup"
+        ],
+        "description": "Helmet in good condition, clean and safe to use.",
+        "address": "Erumeli",
+        "images": [
+            "697e2c8a4274f_Helmet Biltwell Gringo S Agave Blue Gloss  - X-Large.jpg",
+            "697e2c8a4b7a2_Casco Integral JD One Frozen Blue - John Doe  - SMALL.jpg"
+        ],
+        "created_at": "2026-01-31 17:23:38",
+        "status": "Pending Approval"
+    },
+    {
+        "id": "item_697e2df6277c2",
+        "user_id": "697e2d046713b",
+        "owner_name": "Benta Biju",
+        "title": "Extension board",
+        "category": "electronics",
+        "price": "45",
+        "security_deposit": "",
+        "handover_methods": [
+            "pickup"
+        ],
+        "description": "Extension board in good working condition, safe and useful for daily use.",
+        "address": "pathanamthitta",
+        "images": [
+            "697e2df621a47_Extension lead (UK) 4 gang, 2 metre long cable!.jpg",
+            "697e2df625191_Festive 4 Gang Extension Cable.jpg"
+        ],
+        "created_at": "2026-01-31 17:29:42",
+        "status": "Pending Approval"
+    },
+    {
+        "id": "item_697e2ecebfe2a",
+        "user_id": "697e2d046713b",
+        "owner_name": "Benta Biju",
+        "title": "Trolley bag",
+        "category": "outdoor-gear",
+        "price": "150",
+        "security_deposit": "",
+        "handover_methods": [
+            "pickup"
+        ],
+        "description": "Trolley bag for travel and storage use.",
+        "address": "pathanamthitta",
+        "images": [
+            "697e2ecebc1e4_Suitcase.jpg",
+            "697e2ecebefe1_download (17).jpg"
+        ],
+        "created_at": "2026-01-31 17:33:18",
+        "status": "Pending Approval"
+    },
+    {
+        "id": "item_697e305fd856c",
+        "user_id": "697e2d046713b",
+        "owner_name": "Benta Biju",
+        "title": "Umbrella",
+        "category": "outdoor-gear",
+        "price": "20",
+        "security_deposit": "",
+        "handover_methods": [
+            "pickup"
+        ],
+        "description": "Umbrella for daily use and travel",
+        "address": "pathanamthitta",
+        "images": [
+            "697e305fd470c_Large 120 cm Wooden Handle Premium Umbrella - Navy.jpg",
+            "697e305fd5967_Dark minimalist umbrella.jpg"
+        ],
+        "created_at": "2026-01-31 17:39:59",
+        "status": "Pending Approval"
+    },
+    {
+        "id": "item_697e31d9d9bdc",
+        "user_id": "697e2d046713b",
+        "owner_name": "Benta Biju",
+        "title": "Study Table",
+        "category": "student-essentials",
+        "price": "170",
+        "security_deposit": "",
+        "handover_methods": [
+            "delivery"
+        ],
+        "description": "Study table for reading, writing, and laptop use.",
+        "address": "pathanamthitta",
+        "images": [
+            "697e31d9d3761_download (18).jpg",
+            "697e31d9d6ca4_Desks You'll Love _ Wayfair.jpg"
+        ],
+        "created_at": "2026-01-31 17:46:17",
+        "status": "Pending Approval"
+    },
+    {
+        "id": "item_697e35c78c4c8",
+        "user_id": "697e2d046713b",
+        "owner_name": "Benta Biju",
+        "title": "Thermometer",
+        "category": "medical",
+        "price": "30",
+        "security_deposit": "",
+        "handover_methods": [
+            "pickup"
+        ],
+        "description": "Thermometer for checking body temperature, easy to use at home",
+        "address": "pathanamthitta",
+        "images": [
+            "697e35c788714_Thermom\u00e8tre (1).jpg",
+            "697e35c78b512_Thermom\u00e8tre.jpg"
+        ],
+        "created_at": "2026-01-31 18:03:03",
+        "updated_at": "2026-01-31 18:03:03",
+        "status": "Pending Approval"
+    },
+    {
+        "id": "item_697e3639a5226",
+        "user_id": "697e2d046713b",
+        "owner_name": "Benta Biju",
+        "title": "Walking stick",
+        "category": "medical",
+        "price": "80",
+        "security_deposit": "",
+        "handover_methods": [
+            "pickup"
+        ],
+        "description": "Walking stick to help with balance and support while walking",
+        "address": "pathanamthitta",
+        "images": [
+            "697e3639a2cfa_Made by rollatorshopping.jpg",
+            "697e3639a416b_Wooden Walking Sticks Solid Wood Cane Old Man Walking Stick 92cm14cm Mobi.jpg"
+        ],
+        "created_at": "2026-01-31 18:04:57",
+        "updated_at": "2026-01-31 18:04:57",
+        "status": "Pending Approval"
+    },
+    {
+        "id": "item_697e37215c616",
+        "user_id": "697e2d046713b",
+        "owner_name": "Benta Biju",
+        "title": "Clothes rack",
+        "category": "home-essentials",
+        "price": "120",
+        "security_deposit": "",
+        "handover_methods": [
+            "pickup"
+        ],
+        "description": "Clothes rack for hanging and organizing clothes at home or hostel.",
+        "address": "pathanamthitta",
+        "images": [
+            "697e372159f1a_Egon Clothes Rack.jpg",
+            "697e37215b35f_Home D\u00e9cor + Apartment Sale.jpg"
+        ],
+        "created_at": "2026-01-31 18:08:49",
+        "updated_at": "2026-01-31 18:08:49",
+        "status": "Pending Approval"
+    },
+    {
+        "id": "item_697e38ae71c35",
+        "user_id": "697e2d046713b",
+        "owner_name": "Benta Biju",
+        "title": "Mixer grinder",
+        "category": "home-essentials",
+        "price": "150",
+        "security_deposit": "",
+        "handover_methods": [
+            "pickup"
+        ],
+        "description": "Mixer grinder for grinding, blending, and cooking needs at home.",
+        "address": "pathanamthitta",
+        "images": [
+            "697e38ae6aabd_Buy Philips HL7756_01 Mixer Grinder 750 Watt.jpg",
+            "697e38ae6ca9c_Buy Mixer Grinder Online for Kitchen with Up to 65% OFF on Amazon.jpg"
+        ],
+        "created_at": "2026-01-31 18:15:26",
+        "updated_at": "2026-01-31 18:15:26",
+        "status": "Pending Approval"
     }
 ]

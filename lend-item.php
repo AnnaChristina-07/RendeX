@@ -23,6 +23,7 @@ $address = '';
 $images = [];
 $edit_id = null;
 $is_edit = false;
+$errors = []; // Initialize errors array
 
 // Load existing items
 $items = file_exists($items_file) ? json_decode(file_get_contents($items_file), true) : [];
@@ -76,118 +77,187 @@ if (isset($_GET['edit_id'])) {
 
 // Handle Form Submission (POST)
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $title = $_POST['title'];
-    $category = $_POST['category'];
-    $price = $_POST['price'];
-    $security_deposit = $_POST['security_deposit'] ?? 0;
-    $handover_methods = $_POST['handover_methods'] ?? ['pickup'];
-    $description = $_POST['description'];
-    $address = $_POST['address'];
+    $errors = [];
+
+    // 1. Sanitize and Validate Basic Fields
+    $title = trim($_POST['title']);
+    $category = trim($_POST['category']);
+    $price = trim($_POST['price']);
+    $security_deposit = trim($_POST['security_deposit'] ?? 0);
+    $handover_methods = $_POST['handover_methods'] ?? [];
+    $description = trim($_POST['description']);
+    $address = trim($_POST['address']);
+
+    if (empty($title)) $errors[] = "Item Name is required.";
+    if (empty($category)) $errors[] = "Please select a Category.";
+    if (empty($description)) $errors[] = "Description is required.";
+    if (empty($address)) {
+        $errors[] = "Pickup Location is required.";
+    } elseif (!preg_match("/^[a-zA-Z\s,.-]+$/", $address)) {
+        $errors[] = "Pickup Location must specific place name(letters only).";
+    }
     
-    // Handle File Uploads
+    // Validate Price
+    if (!is_numeric($price) || $price <= 0) {
+        $errors[] = "Price must be a valid number greater than 0.";
+    }
+    
+    // Validate Security Deposit
+    if ($security_deposit !== '' && (!is_numeric($security_deposit) || $security_deposit < 0)) {
+        $errors[] = "Security Deposit must be a valid non-negative number.";
+    }
+
+    // Validate Handover Methods
+    if (empty($handover_methods) || !is_array($handover_methods)) {
+        $errors[] = "Please select at least one Handover Method.";
+    }
+
+    // 2. Handle File Uploads with Validation
     $uploaded_images = [];
     if (isset($_FILES['item_images']) && !empty($_FILES['item_images']['name'][0])) {
+        // Create directory if not exists
         if (!is_dir($uploads_dir)) mkdir($uploads_dir, 0777, true);
         
         $file_count = count($_FILES['item_images']['name']);
+        
+        // Allowed types
+        $allowed_types = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+        $max_size = 5 * 1024 * 1024; // 5 MB
+
         for ($i = 0; $i < $file_count; $i++) {
             if ($_FILES['item_images']['error'][$i] === UPLOAD_ERR_OK) {
                 $tmp_name = $_FILES['item_images']['tmp_name'][$i];
                 $name = basename($_FILES['item_images']['name'][$i]);
+                $size = $_FILES['item_images']['size'][$i];
+                $type = mime_content_type($tmp_name);
+
+                // Validate Type
+                if (!in_array($type, $allowed_types)) {
+                    $errors[] = "File '$name' is not a valid image. Allowed types: JPG, PNG, GIF, WEBP.";
+                    continue;
+                }
+
+                // Validate Size
+                if ($size > $max_size) {
+                    $errors[] = "File '$name' is too large. Maximum size is 5MB.";
+                    continue;
+                }
+
                 $new_name = uniqid() . '_' . $name;
                 if (move_uploaded_file($tmp_name, $uploads_dir . $new_name)) {
                     $uploaded_images[] = $new_name;
+                } else {
+                    $errors[] = "Failed to upload file '$name'.";
                 }
+            } elseif ($_FILES['item_images']['error'][$i] !== UPLOAD_ERR_NO_FILE) {
+                $errors[] = "Error uploading file '$name'. Code: " . $_FILES['item_images']['error'][$i];
             }
         }
     }
     
     // If Editing: merge new images or keep old if no new ones (flexible logic)
     if (!empty($uploaded_images)) {
+        // Validated new images
         $final_images = $uploaded_images;
+        // Optionally, merge with old ones if needed, but usually upload replaces or appends. 
+        // Here we'll treat new uploads as replacing the set or appending. 
+        // For simplicity/standard behavior: New uploads replace active set? Or append?
+        // User requirements usually imply adding, but logic above replaced. 
+        // Let's stick to: If new files uploaded, use them. If not, use old.
+        // If we wanted to Append: $final_images = array_merge($images, $uploaded_images);
+        // Current logic: New overrides old.
     } else {
         $final_images = $images; // existing images from GET load
     }
 
-    $item_data = [
-        'id' => $is_edit ? $edit_id : uniqid('item_'),
-        'user_id' => $_SESSION['user_id'],
-        'owner_name' => $_SESSION['user_name'] ?? 'Verified Owner',
-        'title' => $title,
-        'category' => $category,
-        'price' => $price,
-        'security_deposit' => $security_deposit,
-        'handover_methods' => $handover_methods,
-        'description' => $description,
-        'address' => $address,
-        'images' => $final_images,
-        'created_at' => $is_edit ? ($item['created_at'] ?? date('Y-m-d H:i:s')) : date('Y-m-d H:i:s'),
-        'status' => 'Pending Approval'
-    ];
-
-    if ($is_edit) {
-        // Update existing
-        foreach ($items as &$item) {
-            if ($item['id'] === $edit_id) {
-                $item = array_merge($item, $item_data);
-                break;
-            }
-        }
-    } else {
-        // Add new
-        $items[] = $item_data;
+    // Require at least one image for new listings
+    if (!$is_edit && empty($final_images)) {
+        $errors[] = "Please upload at least one photo of your item.";
     }
 
-    // Save to file
-    file_put_contents($items_file, json_encode($items, JSON_PRETTY_PRINT));
+    // 3. Process if No Errors
+    if (empty($errors)) {
+        $item_data = [
+            'id' => $is_edit ? $edit_id : uniqid('item_'),
+            'user_id' => $_SESSION['user_id'],
+            'owner_name' => $_SESSION['user_name'] ?? 'Verified Owner',
+            'title' => $title,
+            'category' => $category,
+            'price' => $price,
+            'security_deposit' => $security_deposit,
+            'handover_methods' => $handover_methods,
+            'description' => $description,
+            'address' => $address,
+            'images' => $final_images,
+            'created_at' => $is_edit ? ($item['created_at'] ?? date('Y-m-d H:i:s')) : date('Y-m-d H:i:s'),
+            'updated_at' => date('Y-m-d H:i:s'),
+            'status' => 'Pending Approval'
+        ];
+
+        if ($is_edit) {
+            // Update existing
+            foreach ($items as &$item) {
+                if ($item['id'] === $edit_id) {
+                    $item = array_merge($item, $item_data);
+                    break;
+                }
+            }
+        } else {
+            // Add new
+            $items[] = $item_data;
+        }
+
+        // Save to file
+        file_put_contents($items_file, json_encode($items, JSON_PRETTY_PRINT));
+        
+        // Also save to database
+        try {
+            require_once 'config/database.php';
+            $pdo = getDBConnection();
+            if ($pdo) {
+                $images_json = json_encode($final_images);
+                $handover_json = json_encode($handover_methods);
+                
+                if ($is_edit) {
+                    $stmt = $pdo->prepare("UPDATE items SET 
+                        title = ?, description = ?, category = ?, 
+                        price_per_day = ?, security_deposit = ?, 
+                        handover_methods = ?, location = ?, images = ?,
+                        admin_status = 'pending', updated_at = NOW() 
+                        WHERE id = ? AND owner_id = ?");
+                    $stmt->execute([
+                        $title, $description, $category, 
+                        $price, $security_deposit, 
+                        $handover_json, $address, $images_json,
+                        $edit_id, $_SESSION['user_id']
+                    ]);
+                } else {
+                    $stmt = $pdo->prepare("INSERT INTO items (
+                        owner_id, title, description, category, 
+                        price_per_day, security_deposit, handover_methods, 
+                        location, images, admin_status, created_at
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', NOW())");
+                    $stmt->execute([
+                        $_SESSION['user_id'], $title, $description, $category, 
+                        $price, $security_deposit, $handover_json, 
+                        $address, $images_json
+                    ]);
     
-    // Also save to database
-    try {
-        require_once 'config/database.php';
-        $pdo = getDBConnection();
-        if ($pdo) {
-            $images_json = json_encode($final_images);
-            $handover_json = json_encode($handover_methods);
-            
-            if ($is_edit) {
-                $stmt = $pdo->prepare("UPDATE items SET 
-                    title = ?, description = ?, category = ?, 
-                    price_per_day = ?, security_deposit = ?, 
-                    handover_methods = ?, location = ?, images = ?,
-                    admin_status = 'pending', updated_at = NOW() 
-                    WHERE id = ? AND owner_id = ?");
-                $stmt->execute([
-                    $title, $description, $category, 
-                    $price, $security_deposit, 
-                    $handover_json, $address, $images_json,
-                    $edit_id, $_SESSION['user_id']
-                ]);
-            } else {
-                $stmt = $pdo->prepare("INSERT INTO items (
-                    owner_id, title, description, category, 
-                    price_per_day, security_deposit, handover_methods, 
-                    location, images, admin_status, created_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', NOW())");
-                $stmt->execute([
-                    $_SESSION['user_id'], $title, $description, $category, 
-                    $price, $security_deposit, $handover_json, 
-                    $address, $images_json
-                ]);
-
-                // Add Admin Notification
-                $item_id = $pdo->lastInsertId();
-                $notif_stmt = $pdo->prepare("INSERT INTO admin_notifications (type, reference_id, title, message) VALUES ('item_listing', ?, ?, ?)");
-                $notif_title = "New Item Listing: " . $title;
-                $notif_msg = "A new item '" . $title . "' has been listed by " . ($_SESSION['user_name'] ?? 'User') . " and is awaiting approval.";
-                $notif_stmt->execute([$item_id, $notif_title, $notif_msg]);
+                    // Add Admin Notification
+                    $item_id = $pdo->lastInsertId();
+                    $notif_stmt = $pdo->prepare("INSERT INTO admin_notifications (type, reference_id, title, message) VALUES ('item_listing', ?, ?, ?)");
+                    $notif_title = "New Item Listing: " . $title;
+                    $notif_msg = "A new item '" . $title . "' has been listed by " . ($_SESSION['user_name'] ?? 'User') . " and is awaiting approval.";
+                    $notif_stmt->execute([$item_id, $notif_title, $notif_msg]);
+                }
             }
+        } catch (Exception $e) {
+            // Log error or ignore if DB not fully setup - JSON is still saved
         }
-    } catch (Exception $e) {
-        // Log error or ignore if DB not fully setup - JSON is still saved
+    
+        header("Location: dashboard.php?msg=item_listed");
+        exit();
     }
-
-    header("Location: dashboard.php?msg=item_listed");
-    exit();
 }
 ?>
 <!DOCTYPE html>
@@ -269,6 +339,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <p class="text-lg text-gray-500 dark:text-gray-400">Share your gear with the community. It takes seconds.</p>
         </div>
 
+        <?php if (!empty($errors)): ?>
+        <div class="bg-red-50 border-l-4 border-red-500 p-4 mb-8 rounded-lg">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <span class="material-symbols-outlined text-red-500">error</span>
+                </div>
+                <div class="ml-3">
+                    <h3 class="text-sm font-bold text-red-800">Please fix the following errors:</h3>
+                    <ul class="mt-2 list-disc list-inside text-sm text-red-700">
+                        <?php foreach ($errors as $error): ?>
+                            <li><?php echo htmlspecialchars($error); ?></li>
+                        <?php endforeach; ?>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <?php endif; ?>
+
         <form id="lendItemForm" class="space-y-10" method="POST" enctype="multipart/form-data" onsubmit="const btn = this.querySelector('button[type=submit]'); if(btn.disabled) return false; btn.disabled = true; btn.classList.add('opacity-50', 'cursor-not-allowed');">
             
             <!-- Section 1: Item Details -->
@@ -279,13 +367,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
                 
                 <div>
-                    <label class="block text-sm font-bold mb-2 ml-1 text-gray-700 dark:text-gray-300">Item Name</label>
+                    <label class="block text-sm font-bold mb-2 ml-1 text-gray-700 dark:text-gray-300">Item Name <span class="text-red-500">*</span></label>
                     <input type="text" name="title" value="<?php echo htmlspecialchars($title); ?>" placeholder="e.g. GoPro Hero 10 Black" class="w-full bg-gray-50 dark:bg-gray-800 border-none focus:bg-white dark:focus:bg-gray-700 focus:ring-2 focus:ring-yellow-400 rounded-2xl px-5 py-4 font-medium transition-all" required>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                        <label class="block text-sm font-bold mb-2 ml-1 text-gray-700 dark:text-gray-300">Category</label>
+                        <label class="block text-sm font-bold mb-2 ml-1 text-gray-700 dark:text-gray-300">Category <span class="text-red-500">*</span></label>
                         <div class="relative">
                             <select name="category" class="w-full bg-gray-50 dark:bg-gray-800 border-none focus:bg-white dark:focus:bg-gray-700 focus:ring-2 focus:ring-yellow-400 rounded-2xl px-5 py-4 font-medium appearance-none transition-all cursor-pointer" required>
                                 <option value="">Select Category</option>
@@ -307,7 +395,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 
                 <div>
-                    <label class="block text-sm font-bold mb-2 ml-1 text-gray-700 dark:text-gray-300">Description</label>
+                    <label class="block text-sm font-bold mb-2 ml-1 text-gray-700 dark:text-gray-300">Description <span class="text-red-500">*</span></label>
                     <textarea name="description" rows="4" placeholder="Describe the condition, features, and what's included..." class="w-full bg-gray-50 dark:bg-gray-800 border-none focus:bg-white dark:focus:bg-gray-700 focus:ring-2 focus:ring-yellow-400 rounded-2xl px-5 py-4 font-medium transition-all resize-none" required><?php echo htmlspecialchars($description); ?></textarea>
                 </div>
             </div>
@@ -316,7 +404,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class="bg-white dark:bg-[#1e1e1e] p-8 md:p-10 rounded-[2.5rem] shadow-xl shadow-gray-200/50 dark:shadow-none space-y-6">
                 <div class="flex items-center gap-3 pb-2">
                     <span class="w-10 h-10 rounded-full bg-yellow-100 flex items-center justify-center text-yellow-700 font-bold">2</span>
-                    <h3 class="text-xl font-bold text-gray-900 dark:text-white">Photos</h3>
+                    <h3 class="text-xl font-bold text-gray-900 dark:text-white">Photos <span class="text-red-500">*</span></h3>
                 </div>
                 
                 <div id="dropzone" class="border-3 border-dashed border-gray-200 dark:border-gray-700 rounded-3xl p-10 text-center hover:bg-yellow-50 dark:hover:bg-yellow-900/10 hover:border-yellow-400 transition-all cursor-pointer group" onclick="document.getElementById('fileInput').click()">
@@ -324,8 +412,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <div class="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform shadow-sm">
                             <span class="material-symbols-outlined text-3xl text-yellow-700">add_a_photo</span>
                         </div>
-                        <p class="font-bold text-lg text-gray-900 dark:text-white">Click to upload photos</p>
-                        <p class="text-xs text-gray-500 mt-1">Supports JPG, PNG, GIF</p>
+                        <p class="font-bold text-lg text-gray-900 dark:text-white">Click to upload photos (Add multiple)</p>
+                        <p class="text-xs text-gray-500 mt-1">Supports JPG, PNG, GIF, WEBP (Max 5MB)</p>
                     </div>
                     
                     <div id="previewContainer" class="<?php echo empty($images) ? 'hidden' : ''; ?> grid grid-cols-2 sm:grid-cols-3 gap-4 mt-4">
@@ -340,6 +428,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                     <input type="file" id="fileInput" name="item_images[]" class="hidden" multiple accept="image/*" onchange="handleFileSelect(this)">
                 </div>
+                <?php if(!$is_edit): ?>
+                    <p class="text-xs text-gray-400 ml-2">Please upload at least one photo.</p>
+                <?php endif; ?>
             </div>
 
             <!-- Section 3: Pricing & Terms -->
@@ -361,10 +452,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
-                                <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 ml-1">Daily Rate (₹)</label>
+                                <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 ml-1">Daily Rate (₹) <span class="text-red-500">*</span></label>
                                 <div class="relative group">
                                     <span class="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 font-bold text-lg group-focus-within:text-yellow-600 transition-colors">₹</span>
-                                    <input type="number" name="price" value="<?php echo htmlspecialchars($price); ?>" placeholder="500.00" class="w-full bg-gray-50 dark:bg-gray-800 border-2 border-transparent focus:border-yellow-400 focus:bg-white dark:focus:bg-gray-700 rounded-2xl pl-10 pr-5 py-4 font-bold text-lg transition-all" required>
+                                    <input type="number" name="price" value="<?php echo htmlspecialchars($price); ?>" placeholder="500.00" min="0" step="0.01" class="w-full bg-gray-50 dark:bg-gray-800 border-2 border-transparent focus:border-yellow-400 focus:bg-white dark:focus:bg-gray-700 rounded-2xl pl-10 pr-5 py-4 font-bold text-lg transition-all" required>
                                 </div>
                                 <p class="text-[11px] text-gray-400 mt-2 ml-1 flex items-center gap-1">
                                     <span class="material-symbols-outlined text-sm text-yellow-600">auto_awesome</span>
@@ -378,7 +469,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 </label>
                                 <div class="relative group">
                                     <span class="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 font-bold text-lg group-focus-within:text-yellow-600 transition-colors">₹</span>
-                                    <input type="number" name="security_deposit" value="<?php echo htmlspecialchars($security_deposit); ?>" placeholder="0.00" class="w-full bg-gray-50 dark:bg-gray-800 border-2 border-transparent focus:border-yellow-400 focus:bg-white dark:focus:bg-gray-700 rounded-2xl pl-10 pr-5 py-4 font-bold text-lg transition-all">
+                                    <input type="number" name="security_deposit" value="<?php echo htmlspecialchars($security_deposit); ?>" placeholder="0.00" min="0" step="0.01" class="w-full bg-gray-50 dark:bg-gray-800 border-2 border-transparent focus:border-yellow-400 focus:bg-white dark:focus:bg-gray-700 rounded-2xl pl-10 pr-5 py-4 font-bold text-lg transition-all">
                                 </div>
                             </div>
                         </div>
@@ -390,7 +481,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <div class="space-y-4">
                         <div class="flex items-center gap-2 text-gray-900 dark:text-white">
                             <span class="material-symbols-outlined text-yellow-600">local_shipping</span>
-                            <h4 class="font-bold">Handover Method</h4>
+                            <h4 class="font-bold">Handover Method <span class="text-red-500">*</span></h4>
                         </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <!-- Option 1 -->
@@ -426,6 +517,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 </div>
                             </label>
                         </div>
+                        <?php if(in_array('Please select at least one Handover Method.', $errors)): ?>
+                            <p class="text-xs text-red-500">Please select at least one method.</p>
+                        <?php endif; ?>
                     </div>
 
                     <div class="pt-4">
@@ -442,21 +536,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             <!-- Photos JS -->
             <script>
+            const dt = new DataTransfer(); // Store files globally
+
             function handleFileSelect(input) {
                 const previewContainer = document.getElementById('previewContainer');
                 const initialContent = document.getElementById('initialContent');
                 
                 if (input.files && input.files.length > 0) {
+                    // Add new files to the DataTransfer object
+                    for(let i = 0; i < input.files.length; i++) {
+                        dt.items.add(input.files[i]);
+                    }
+                    
+                    // Update input files to include accumulated files
+                    input.files = dt.files;
+
+                    // Update UI
                     initialContent.classList.add('hidden');
                     previewContainer.classList.remove('hidden');
                     previewContainer.innerHTML = '';
                     
-                    Array.from(input.files).forEach(file => {
+                    // Render all files from DataTransfer
+                    Array.from(dt.files).forEach(file => {
                         const reader = new FileReader();
                         reader.onload = function(e) {
                             const imgDiv = document.createElement('div');
-                            imgDiv.className = 'relative aspect-square rounded-2xl overflow-hidden shadow-sm';
-                            imgDiv.innerHTML = `<img src="${e.target.result}" class="w-full h-full object-cover">`;
+                            imgDiv.className = 'relative aspect-square rounded-2xl overflow-hidden shadow-sm group/img';
+                            imgDiv.innerHTML = `
+                                <img src="${e.target.result}" class="w-full h-full object-cover">
+                            `;
                             previewContainer.appendChild(imgDiv);
                         }
                         reader.readAsDataURL(file);
@@ -474,7 +582,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 
                 <div class="relative">
                     <span class="absolute left-5 top-1/2 -translate-y-1/2 material-symbols-outlined text-gray-400">location_on</span>
-                    <input type="text" name="address" value="<?php echo htmlspecialchars($address); ?>" placeholder="Enter city or area (e.g. Indiranagar, Bangalore)" class="w-full bg-gray-50 dark:bg-gray-800 border-none focus:bg-white dark:focus:bg-gray-700 focus:ring-2 focus:ring-yellow-400 rounded-2xl pl-12 pr-5 py-4 font-medium transition-all" required>
+                    <input type="text" name="address" value="<?php echo htmlspecialchars($address); ?>" placeholder="Enter city or area (e.g. Indiranagar, Bangalore)" class="w-full bg-gray-50 dark:bg-gray-800 border-none focus:bg-white dark:focus:bg-gray-700 focus:ring-2 focus:ring-yellow-400 rounded-2xl pl-12 pr-5 py-4 font-medium transition-all" required oninput="this.value = this.value.replace(/[^a-zA-Z\s,.-]/g, '')">
                 </div>
             </div>
 

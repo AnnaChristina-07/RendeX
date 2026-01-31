@@ -420,6 +420,7 @@ function toggleMoreCategories() {
                     // Filter and limit items to show only 4 "nearby" trending items
                     $valid_items = array_filter($items, function($item) {
                         return !empty($item['title']) && 
+                               isset($item['status']) && $item['status'] === 'Active' &&
                                (!isset($item['active_until']) || strtotime($item['active_until']) >= time());
                     });
                     
