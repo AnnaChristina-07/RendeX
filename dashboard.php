@@ -696,7 +696,7 @@ function toggleMoreCategories() {
         }
     }
 
-    function handleChatSubmit(e) {
+    async function handleChatSubmit(e) {
         e.preventDefault();
         const input = document.getElementById('chat-input');
         const message = input.value.trim();
@@ -706,69 +706,59 @@ function toggleMoreCategories() {
         addMessage(message, 'user');
         input.value = '';
 
-        // Simulate Bot Response
-        const responseDelay = Math.random() * 800 + 400;
-        
-        setTimeout(() => {
-            const response = getBotResponse(message);
-            addMessage(response, 'bot');
-        }, responseDelay);
+        // Show Typing Indicator
+        const typingId = showTypingIndicator();
+
+        try {
+            const response = await fetch('chat_api.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: message })
+            });
+
+            if (!response.ok) throw new Error('Network response was not ok');
+            
+            const data = await response.json();
+            
+            // Remove typing indicator and show response
+            removeTypingIndicator(typingId);
+            addMessage(data.reply, 'bot');
+            
+        } catch (error) {
+            console.error('Chat Error:', error);
+            removeTypingIndicator(typingId);
+            addMessage("I'm having a bit of trouble connecting right now. Please try again.", 'bot');
+        }
     }
 
-    function getBotResponse(msg) {
-        const m = msg.toLowerCase();
-        
-        // Greetings
-        if (m.match(/^(hi|hello|hey|yo|greetings)/)) {
-            return "Hello! Ready to find a great item or list one of your own?";
-        }
-        
-        // Renting logic
-        if (m.includes('rent') || m.includes('book') || m.includes('search') || m.includes('find')) {
-            if (m.includes('how')) return "To rent an item, simply browse the categories or use the search bar. Click on an item you like, select your dates, and click 'Request Rental'.";
-            return "You can find items to rent by using the search bar above or browsing categories like Electronics, Outdoor Gear, and more.";
-        }
-        
-        // Lending/Listing logic
-        if (m.includes('lend') || m.includes('list') || m.includes('sell') || m.includes('post')) {
-            if (m.includes('how')) return "Listing is easy! Just click the 'Lend Items' button, upload a few photos, set your price, and you're good to go.";
-            if (m.includes('money') || m.includes('earn')) return "You keep 90% of the rental fee. We take a small 10% commission to cover platform maintenance and insurance.";
-            return "got something lying around? Click 'Lend Items' in the menu to start earning money from your unused gear.";
-        }
+    // Removed client-side getBotResponse as we now use the server API
+    
+    function showTypingIndicator() {
+        const id = 'typing-' + Date.now();
+        const container = document.getElementById('chat-messages');
+        const div = document.createElement('div');
+        div.id = id;
+        div.className = 'flex items-start gap-2';
+        div.innerHTML = `
+            <div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center shrink-0">
+                <span class="material-symbols-outlined text-black text-sm">smart_toy</span>
+            </div>
+            <div class="bg-white dark:bg-surface-dark border border-[#e9e8ce] dark:border-[#3e3d2a] p-3 rounded-2xl rounded-tl-none shadow-sm">
+                <div class="flex gap-1">
+                    <span class="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></span>
+                    <span class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0.2s"></span>
+                    <span class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0.4s"></span>
+                </div>
+            </div>
+        `;
+        container.appendChild(div);
+        container.scrollTop = container.scrollHeight;
+        return id;
+    }
 
-        // Delivery logic
-        if (m.includes('delivery') || m.includes('driver') || m.includes('ship') || m.includes('pickup')) {
-            if (m.includes('partner') || m.includes('job') || m.includes('work')) return "You can apply to become a Delivery Partner! Check the 'Earn on the go' section on the dashboard to apply.";
-            return "We offer flexible delivery options. You can either pick up the item yourself or choose a Delivery Partner during checkout for a small fee.";
-        }
-
-        // Account/Login
-        if (m.includes('login') || m.includes('signup') || m.includes('account') || m.includes('password')) {
-            return "You can manage your account settings in the Profile page. If you're having trouble logging in, try the 'Forgot Password' link on the login page.";
-        }
-
-        // Pricing/Cost
-        if (m.includes('price') || m.includes('cost') || m.includes('fee') || m.includes('pay')) {
-            return "Rental prices are set by the owners. RendeX charges a small service fee on transactions to ensure secure payments and user verification.";
-        }
-
-        // Safety/Trust
-        if (m.includes('safe') || m.includes('scam') || m.includes('trust') || m.includes('insurance') || m.includes('verify')) {
-            return "Safety is our priority. We verify all users and offer protection plans for rented items. Always communicate through the platform for your safety.";
-        }
-
-        // Contact
-        if (m.includes('contact') || m.includes('support') || m.includes('email') || m.includes('human')) {
-            return "You can reach our support team at support@rendex.com or call us at 1-800-RENDEX. We're available 24/7!";
-        }
-
-        // Return policy
-        if (m.includes('return') || m.includes('late')) {
-            return "Items should be returned by the agreed time. Late returns may incur additional fees as set by the owner. Please coordinate with the owner or delivery partner.";
-        }
-
-        // Generic catch-all
-        return "I'm not sure about that specific detail. You can browse our FAQ section or try asking about renting, lending, or delivery services!";
+    function removeTypingIndicator(id) {
+        const el = document.getElementById(id);
+        if (el) el.remove();
     }
 
     function addMessage(text, sender) {
