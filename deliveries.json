@@ -3,12 +3,20 @@
         "id": "del_695d3792bfbe6",
         "rental_id": "rent_6959224f31bcb",
         "partner_id": "695a9a1b6d290",
-        "status": "assigned",
+        "status": "delivered",
         "assigned_at": "2026-01-06 17:25:54",
         "history": [
             {
                 "status": "assigned",
                 "timestamp": "2026-01-06 17:25:54"
+            },
+            {
+                "status": "picked_up",
+                "timestamp": "2026-02-12 16:00:35"
+            },
+            {
+                "status": "delivered",
+                "timestamp": "2026-02-12 16:00:37"
             }
         ]
     },
@@ -22,6 +30,27 @@
             {
                 "status": "assigned",
                 "timestamp": "2026-01-07 06:43:07"
+            }
+        ]
+    },
+    {
+        "id": "del_698de9f10a270",
+        "rental_id": "RENT_698de9c7ec6be",
+        "partner_id": "695a9a1b6d290",
+        "status": "delivered",
+        "assigned_at": "2026-02-12 15:55:45",
+        "history": [
+            {
+                "status": "assigned",
+                "timestamp": "2026-02-12 15:55:45"
+            },
+            {
+                "status": "picked_up",
+                "timestamp": "2026-02-12 16:05:36"
+            },
+            {
+                "status": "delivered",
+                "timestamp": "2026-02-12 16:05:43"
             }
         ]
     }

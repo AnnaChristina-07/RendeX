@@ -86,6 +86,67 @@ if (isset($_POST['delete_listing_id'])) {
     exit();
 }
 
+// Confirm Return (Owner Action)
+if (isset($_POST['confirm_return_id'])) {
+    $r_id = $_POST['confirm_return_id'];
+    
+    // 1. Update Rental JSON
+    $updated_rentals = [];
+    $item_id = null;
+    $rental_found = false;
+
+    foreach($all_rentals as $r) {
+        if ($r['id'] === $r_id) {
+            // Verify ownership
+            if (isset($r['item']['user_id']) && $r['item']['user_id'] === $user_id) {
+                // Determine if it was pending inspection
+                if (isset($r['return_status']) && $r['return_status'] === 'pending_inspection') {
+                     $r['status'] = 'returned';
+                     $r['return_status'] = 'completed';
+                     $r['owner_confirm_at'] = date('Y-m-d H:i:s');
+                     $r['actual_end_date'] = date('Y-m-d'); // Set actual end date
+                     $item_id = $r['item']['id'];
+                     $rental_found = true;
+                }
+            }
+        }
+        $updated_rentals[] = $r;
+    }
+    
+    if ($rental_found) {
+        file_put_contents($rentals_file, json_encode($updated_rentals, JSON_PRETTY_PRINT));
+        
+        // 2. Update Items JSON (Make available)
+        if ($item_id) {
+            $updated_items = [];
+            foreach($all_items_json as $item) {
+                if ($item['id'] === $item_id) {
+                    $item['availability_status'] = 'available';
+                    $item['status'] = 'Active'; // Ensure it's active
+                }
+                $updated_items[] = $item;
+            }
+            file_put_contents($items_file, json_encode($updated_items, JSON_PRETTY_PRINT));
+        }
+
+        // 3. Update Database
+        if ($pdo) {
+            try {
+                // Update Rental
+                $stmt = $pdo->prepare("UPDATE rentals SET status = 'returned', return_status = 'completed', owner_confirm_at = NOW(), end_date = NOW() WHERE id = ?");
+                $stmt->execute([$r_id]);
+
+                // Update Item
+                $stmt = $pdo->prepare("UPDATE items SET availability_status = 'available' WHERE id = ?");
+                $stmt->execute([$item_id]);
+            } catch (Exception $e) {}
+        }
+
+        header("Location: owner_dashboard.php?tab=incoming&msg=return_confirmed");
+        exit();
+    }
+}
+
 // Current Tab
 $tab = isset($_GET['tab']) ? $_GET['tab'] : 'overview';
 
@@ -301,13 +362,105 @@ $tab = isset($_GET['tab']) ? $_GET['tab'] : 'overview';
                             <td class="px-6 py-4 text-gray-500">
                                 <?php echo date('M d', strtotime($r['start_date'])) . ' - ' . date('M d', strtotime($r['end_date'])); ?>
                             </td>
-                            <td class="px-6 py-4 font-bold text-green-600">₹<?php echo $r['total_price']; ?></td>
+                            <td class="px-6 py-4 font-bold text-green-600">
+                                <?php if(isset($r['return_status']) && ($r['return_status'] === 'pending_inspection' || $r['return_status'] === 'scheduled')): ?>
+                                    <button onclick='openReturnModal(<?php echo json_encode($r); ?>)' class="bg-black text-white px-4 py-2 rounded-lg text-xs font-bold hover:scale-105 transition-transform shadow-lg flex items-center gap-2">
+                                        <span class="material-symbols-outlined text-sm text-primary">assignment_returned</span>
+                                        Review Return
+                                    </button>
+                                <?php else: ?>
+                                    ₹<?php echo $r['total_price']; ?>
+                                <?php endif; ?>
+                            </td>
                         </tr>
                         <?php endforeach; ?>
                         <?php if(empty($my_incoming_rentals)) echo '<tr><td colspan="4" class="px-6 py-8 text-center text-gray-500">No rentals yet.</td></tr>'; ?>
                     </tbody>
                 </table>
+</div>
+
+            <!-- Return Review Modal -->
+            <div id="return-modal" class="hidden fixed inset-0 z-[100] flex items-center justify-center p-4">
+                <div class="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity" onclick="closeReturnModal()"></div>
+                <div class="relative bg-white dark:bg-surface-dark rounded-3xl p-8 w-full max-w-lg shadow-2xl transform transition-all scale-100">
+                    <button onclick="closeReturnModal()" class="absolute top-4 right-4 text-gray-400 hover:text-black dark:hover:text-white">
+                        <span class="material-symbols-outlined">close</span>
+                    </button>
+                    
+                    <h3 class="text-2xl font-black mb-6">Review Returned Item</h3>
+                    
+                    <div class="space-y-6 mb-8">
+                        <div>
+                             <h4 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Renter's Note</h4>
+                             <div class="bg-gray-50 dark:bg-gray-800 p-4 rounded-xl">
+                                <p id="modal-note" class="text-sm font-medium text-gray-700 dark:text-gray-300 italic">No notes.</p>
+                             </div>
+                        </div>
+                        
+                        <div>
+                            <h4 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Condition Photos</h4>
+                            <div id="modal-photos" class="grid grid-cols-3 gap-3">
+                                <!-- Photos injected here -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <form method="POST">
+                        <input type="hidden" name="confirm_return_id" id="modal-rental-id">
+                        <div class="flex gap-3">
+                            <button type="button" onclick="closeReturnModal()" class="flex-1 py-3 font-bold text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-xl transition-colors">Cancel</button>
+                            <button type="submit" class="flex-1 bg-primary text-black font-bold py-3 rounded-xl hover:bg-yellow-300 transition-colors shadow-lg shadow-yellow-200/50 flex items-center justify-center gap-2">
+                                <span class="material-symbols-outlined font-bold">check_circle</span>
+                                Confirm Receipt
+                            </button>
+                        </div>
+                    </form>
+                </div>
             </div>
+
+            <script>
+                function openReturnModal(rental) {
+                    document.getElementById('modal-rental-id').value = rental.id;
+                    
+                    // Note
+                    const note = rental.condition_note || 'No notes provided.';
+                    document.getElementById('modal-note').textContent = note;
+
+                    // Photos
+                    const photosContainer = document.getElementById('modal-photos');
+                    photosContainer.innerHTML = '';
+                    
+                    if (rental.condition_images && rental.condition_images.length > 0) {
+                        try {
+                             // Handle if it's already an array or a JSON string (depending on how PHP encoded it in the attribute)
+                             // Since we passed via json_encode($r), it should be an array in JS object
+                             let images = rental.condition_images;
+                             if (typeof images === 'string') {
+                                 images = JSON.parse(images);
+                             }
+                             
+                             images.forEach(img => {
+                                 const div = document.createElement('div');
+                                 div.className = 'aspect-square rounded-xl bg-gray-100 dark:bg-gray-800 overflow-hidden cursor-pointer hover:opacity-90 transition-opacity border border-gray-200 dark:border-gray-700';
+                                 div.innerHTML = `<img src="uploads/${img}" class="w-full h-full object-cover" onclick="window.open(this.src, '_blank')">`;
+                                 photosContainer.appendChild(div);
+                            });
+                        } catch(e) {
+                            console.error(e);
+                        }
+                    } else {
+                        photosContainer.innerHTML = '<p class="text-xs text-gray-400 col-span-3 bg-gray-50 dark:bg-gray-800 p-4 rounded-xl text-center">No photos uploaded.</p>';
+                    }
+
+                    document.getElementById('return-modal').classList.remove('hidden');
+                    document.getElementById('return-modal').classList.add('flex');
+                }
+
+                function closeReturnModal() {
+                    document.getElementById('return-modal').classList.add('hidden');
+                    document.getElementById('return-modal').classList.remove('flex');
+                }
+            </script>
 
         <?php elseif($tab == 'outgoing'): ?>
             <h2 class="text-2xl font-bold mb-8">My Orders (Items I rented)</h2>

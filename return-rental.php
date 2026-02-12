@@ -53,58 +53,75 @@ $img_src = (strpos($item['img'], 'uploads/') === 0) ? $item['img'] : 'https://so
 // Handle Form Submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirm_return'])) {
     
-    // 1. Update Rental Status
+    // 1. Handle File Uploads
+    $uploaded_images = [];
+    if (isset($_FILES['condition_photos']) && !empty($_FILES['condition_photos']['name'][0])) {
+        $total_files = count($_FILES['condition_photos']['name']);
+        for ($i = 0; $i < $total_files; $i++) {
+            $file_name = $_FILES['condition_photos']['name'][$i];
+            $file_tmp = $_FILES['condition_photos']['tmp_name'][$i];
+            $file_ext = strtolower(pathinfo($file_name, PATHINFO_EXTENSION));
+            
+            $valid_extensions = ['jpg', 'jpeg', 'png', 'webp'];
+            if (in_array($file_ext, $valid_extensions)) {
+                $new_name = uniqid('return_') . '.' . $file_ext;
+                $upload_path = 'uploads/' . $new_name;
+                if (move_uploaded_file($file_tmp, $upload_path)) {
+                    $uploaded_images[] = $new_name; // Store relative path/filename
+                }
+            }
+        }
+    }
+
+    // 2. Update Rental Data (JSON)
     $updated_rentals = [];
     $item_id = $rental['item']['id'] ?? null;
     
     foreach ($rentals as $r) {
         if ($r['id'] === $rental_id) {
-            $r['status'] = 'returned';
-            $r['actual_end_date'] = date('Y-m-d');
-            $r['return_method'] = $_POST['return_method']; // pickup or dropoff
+            // Do NOT mark as 'returned' yet. Keep 'active' until owner confirms.
+            // But we add return details.
+            $r['status'] = 'active'; 
+            $r['return_status'] = 'pending_inspection';
+            $r['return_method'] = $_POST['return_method']; 
             $r['return_date'] = $_POST['return_date'];
             $r['return_time'] = $_POST['return_time'];
             $r['condition_note'] = $_POST['condition_note'];
-            // In a real app, handle file uploads for photos here
+            $r['condition_images'] = $uploaded_images;
+            $r['return_initiated_at'] = date('Y-m-d H:i:s');
         }
         $updated_rentals[] = $r;
     }
     file_put_contents($rentals_file, json_encode($updated_rentals, JSON_PRETTY_PRINT));
 
-    // 2. Update Item Status (Make it available again)
-    if ($item_id) {
-        $items_file = 'items.json';
-        if (file_exists($items_file)) {
-            $items = json_decode(file_get_contents($items_file), true) ?: [];
-            foreach ($items as &$i) {
-                if ($i['id'] === $item_id) {
-                    $i['status'] = 'Active';
-                    $i['availability_status'] = 'available';
-                }
-            }
-            file_put_contents($items_file, json_encode($items, JSON_PRETTY_PRINT));
+    // 3. Update Database (rentals table only)
+    require_once 'config/database.php';
+    try {
+        $pdo = getDBConnection();
+        if ($pdo) {
+            $stmt = $pdo->prepare("UPDATE rentals SET 
+                return_status = 'pending_inspection',
+                return_method = ?,
+                return_scheduled_at = ?,
+                condition_notes = ?,
+                condition_images = ?
+                WHERE id = ?");
+            
+            $scheduled_at = $_POST['return_date'] . ' ' . explode(' - ', $_POST['return_time'])[0]; // approx
+            $stmt->execute([
+                $_POST['return_method'],
+                date('Y-m-d H:i:s', strtotime($scheduled_at)),
+                $_POST['condition_note'],
+                json_encode($uploaded_images),
+                $rental_id
+            ]);
         }
-
-        // 3. Update Database (if applicable)
-        require_once 'config/database.php'; // Ensure this path is correct relative to this file
-        try {
-            $pdo = getDBConnection();
-            if ($pdo) {
-                // Update rentals table
-                $stmt = $pdo->prepare("UPDATE rentals SET status = 'returned', end_date = NOW() WHERE id = ?");
-                $stmt->execute([$rental_id]);
-
-                // Update items table
-                $stmt = $pdo->prepare("UPDATE items SET availability_status = 'available' WHERE id = ?");
-                $stmt->execute([$item_id]);
-            }
-        } catch (Exception $e) {
-            // Ignore DB errors if file update succeeded, strictly following "based on my folder" but keeping DB sync if present
-        }
+    } catch (Exception $e) {
+        // Log error but proceed
     }
 
-    // Redirect to success/history
-    header("Location: rentals.php?msg=returned_success");
+    // Redirect to rentals with success message
+    header("Location: rentals.php?msg=return_initiated");
     exit();
 }
 

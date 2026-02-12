@@ -11,15 +11,33 @@ if (!isset($_SESSION['user_id'])) {
 // Include database connection
 require_once 'config/database.php';
 
-// Load User to check role - Check both JSON and Database
+// Load Users (JSON + DB)
 $users_file = 'users.json';
-$users = file_exists($users_file) ? json_decode(file_get_contents($users_file), true) : [];
+$users_json = file_exists($users_file) ? json_decode(file_get_contents($users_file), true) : [];
+$users_map = [];
 $current_user = null;
-foreach($users as $u) {
-    if ($u['id'] === $_SESSION['user_id']) {
-        $current_user = $u;
-        break;
+
+// 1. Load from JSON
+foreach($users_json as $u) {
+    if (isset($u['id'])) {
+        $users_map[strval($u['id'])] = $u; // Ensure string key
     }
+}
+
+// 2. Load from Database (to catch any missing ones)
+try {
+    if ($pdo) {
+        $stmt = $pdo->query("SELECT * FROM users");
+        $db_users = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        foreach ($db_users as $u) {
+            $users_map[strval($u['id'])] = $u; 
+        }
+    }
+} catch (Exception $e) { /* Ignore */ }
+
+// Set current user
+if (isset($users_map[strval($_SESSION['user_id'])])) {
+    $current_user = $users_map[strval($_SESSION['user_id'])];
 }
 
 $user_role = $current_user['role'] ?? '';
@@ -252,6 +270,7 @@ $tab = isset($_GET['tab']) ? $_GET['tab'] : 'overview';
             <div class="space-y-6">
                 <?php foreach(array_reverse($my_deliveries) as $d): 
                     $r = $d['rental'];
+                    $item = $r['item'] ?? null;
                 ?>
                 <div class="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm flex flex-col md:flex-row gap-6">
                     <!-- Status Indicator -->
@@ -274,20 +293,35 @@ $tab = isset($_GET['tab']) ? $_GET['tab'] : 'overview';
                     <!-- Details -->
                     <div class="flex-1 border-l border-gray-100 md:pl-6 space-y-4">
                         <div>
-                             <h3 class="font-bold text-lg"><?php echo htmlspecialchars($r['item']['name']); ?></h3>
-                             <p class="text-sm text-gray-500"><?php echo isset($r['item']['address']) ? htmlspecialchars($r['item']['address']) : 'Location info unavailable'; ?></p>
+                             <h3 class="font-bold text-lg"><?php echo isset($item['name']) ? htmlspecialchars($item['name']) : 'Unknown Item (Data Missing)'; ?></h3>
+                             <p class="text-sm text-gray-500"><?php echo isset($item['address']) ? htmlspecialchars($item['address']) : 'Location info unavailable'; ?></p>
                         </div>
                         
+<?php
+                            // Handle Owner Details (Pickup)
+                            $owner_id = $item['user_id'] ?? $item['owner_id'] ?? null;
+                            $owner_name = $users_map[$owner_id]['name'] ?? 'Unknown Owner';
+                            $owner_phone = $users_map[$owner_id]['phone'] ?? 'N/A';
+                            $owner_address = isset($item['address']) ? $item['address'] : ($users_map[$owner_id]['address'] ?? 'Address not in file');
+
+                            // Handle Renter Details (Delivery)
+                            $renter_id = isset($r['user_id']) ? strval($r['user_id']) : null;
+                            $renter_name = isset($users_map[$renter_id]) ? htmlspecialchars($users_map[$renter_id]['name']) : 'Unknown Renter';
+                            $renter_phone = isset($users_map[$renter_id]) ? htmlspecialchars($users_map[$renter_id]['phone']) : 'N/A';
+                            $renter_address = !empty($r['delivery_address']) ? htmlspecialchars($r['delivery_address']) : ($users_map[$renter_id]['address'] ?? 'Address not in file');
+                        ?>
                         <div class="grid grid-cols-2 gap-4 text-sm bg-gray-50 p-4 rounded-xl">
                             <div>
                                 <span class="block text-xs font-bold text-gray-400">PICKUP FROM</span>
-                                <span class="block font-bold mt-1">Owner</span>
-                                <span class="block text-xs text-gray-500"><?php echo isset($r['item']['address']) ? $r['item']['address'] : 'N/A'; ?></span>
+                                <span class="block font-bold mt-1 text-base"><?php echo htmlspecialchars($owner_name); ?></span>
+                                <span class="block text-xs text-gray-500 font-medium"><?php echo htmlspecialchars($owner_phone); ?></span>
+                                <span class="block text-xs text-gray-500 mt-1"><?php echo htmlspecialchars($owner_address); ?></span>
                             </div>
                             <div>
                                 <span class="block text-xs font-bold text-gray-400">DELIVER TO</span>
-                                <span class="block font-bold mt-1">Renter (User)</span>
-                                <span class="block text-xs text-gray-500">Address not in file</span>
+                                <span class="block font-bold mt-1 text-base"><?php echo htmlspecialchars($renter_name); ?></span>
+                                <span class="block text-xs text-gray-500 font-medium"><?php echo htmlspecialchars($renter_phone); ?></span>
+                                <span class="block text-xs text-gray-500 mt-1"><?php echo htmlspecialchars($renter_address); ?></span>
                             </div>
                         </div>
                     </div>

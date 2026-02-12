@@ -1040,5 +1040,26 @@
         "created_at": "2026-01-31 18:15:26",
         "updated_at": "2026-01-31 18:15:26",
         "status": "Pending Approval"
+    },
+    {
+        "id": "item_698039a94bde2",
+        "user_id": "697ad695ad641",
+        "owner_name": "Krishnaveni",
+        "title": "Desk lamp",
+        "category": "student-essentials",
+        "price": "60",
+        "security_deposit": "",
+        "handover_methods": [
+            "pickup"
+        ],
+        "description": "A small study lamp for reading and night study. Easy to use and saves space.",
+        "address": "kanjirappally",
+        "images": [
+            "698039a94356a_Seealle Touch Table Lamp for Bedroom,3-Way Dimmable Small Bedside Lamps for Night Stands,Black Desk Lamp for Kids Room, Office, Living Room, End Table - Amazon_com.jpg",
+            "698039a947db5_Touch Bedside Lamp for Bedroom, 3-Way Dimmable Farmhouse Table Lamps for Nightstand with Fabric Shade, Desk Lamp for Kids Reading, Home Office, with AU Plug (1 Pack).jpg"
+        ],
+        "created_at": "2026-02-02 06:44:09",
+        "updated_at": "2026-02-02 06:44:09",
+        "status": "Pending Approval"
     }
 ]

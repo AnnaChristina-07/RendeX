@@ -98,6 +98,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirm_booking'])) {
     $delivery_fee = ($fulfillment === 'delivery') ? 150 : 0;
     $total = $subtotal + $service_fee + $delivery_fee;
 
+    // Address Logic
+    $final_address = 'Self-Pickup';
+    if ($fulfillment === 'delivery') {
+        $addr_parts = [];
+        if (!empty($_POST['address'])) $addr_parts[] = $_POST['address'];
+        if (!empty($_POST['landmark'])) $addr_parts[] = $_POST['landmark'];
+        $cityStateZip = [];
+        if (!empty($_POST['city'])) $cityStateZip[] = $_POST['city'];
+        if (!empty($_POST['state'])) $cityStateZip[] = $_POST['state'];
+        if (!empty($_POST['zip'])) $cityStateZip[] = $_POST['zip'];
+        if (!empty($cityStateZip)) $addr_parts[] = implode(' ', $cityStateZip);
+        if (!empty($_POST['phone'])) $addr_parts[] = 'Phone: ' . $_POST['phone'];
+        $final_address = implode(', ', $addr_parts);
+    }
+
 
     // Update Items JSON to mark as Unavailable
     foreach ($dynamic_items as &$d_i) {
@@ -138,7 +153,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirm_booking'])) {
                     $item['price'],
                     $total,
                     $_POST['payment_method_val'],
-                    $success_booking['delivery_address']
+                    $final_address
                 ]);
                 
                 // 2. Update items table status
@@ -160,7 +175,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirm_booking'])) {
         'start_date' => $start_date,
         'end_date' => $end_date,
         'fulfillment' => $fulfillment,
-        'delivery_address' => $_POST['address'] ?? 'Self Pickup',
+        'delivery_address' => $final_address,
         'total_price' => $total,
         'payment_method' => $_POST['payment_method_val'] ?? 'Card',
         'payment_details' => ($_POST['payment_method_val'] === 'wallets') 
@@ -443,14 +458,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirm_booking'])) {
                                         <label class="block text-[10px] font-black text-text-muted uppercase tracking-widest mb-2 ml-1">Street Address</label>
                                         <input type="text" name="address" id="delivery_address" placeholder="123 Creative Ave, Apt 4B" class="w-full px-6 py-4 rounded-2xl border-none bg-gray-50 dark:bg-[#1e2019] focus:ring-2 focus:ring-primary font-medium">
                                     </div>
-                                    <div class="grid grid-cols-2 gap-4">
+                                    
+                                    <div>
+                                        <label class="block text-[10px] font-black text-text-muted uppercase tracking-widest mb-2 ml-1">Landmark (Optional)</label>
+                                        <input type="text" name="landmark" id="delivery_landmark" placeholder="Near Central Park" class="w-full px-6 py-4 rounded-2xl border-none bg-gray-50 dark:bg-[#1e2019] focus:ring-2 focus:ring-primary font-medium">
+                                    </div>
+
+                                    <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
                                         <div>
                                             <label class="block text-[10px] font-black text-text-muted uppercase tracking-widest mb-2 ml-1">City</label>
                                             <input type="text" name="city" id="delivery_city" placeholder="New York" class="w-full px-6 py-4 rounded-2xl border-none bg-gray-50 dark:bg-[#1e2019] focus:ring-2 focus:ring-primary font-medium">
                                         </div>
                                         <div>
+                                            <label class="block text-[10px] font-black text-text-muted uppercase tracking-widest mb-2 ml-1">State</label>
+                                            <input type="text" name="state" id="delivery_state" placeholder="NY" class="w-full px-6 py-4 rounded-2xl border-none bg-gray-50 dark:bg-[#1e2019] focus:ring-2 focus:ring-primary font-medium">
+                                        </div>
+                                        <div class="col-span-2 md:col-span-1">
                                             <label class="block text-[10px] font-black text-text-muted uppercase tracking-widest mb-2 ml-1">Zip Code</label>
                                             <input type="text" name="zip" id="delivery_zip" placeholder="10001" class="w-full px-6 py-4 rounded-2xl border-none bg-gray-50 dark:bg-[#1e2019] focus:ring-2 focus:ring-primary font-medium">
+                                        </div>
+                                    </div>
+                                    
+                                    <div>
+                                        <label class="block text-[10px] font-black text-text-muted uppercase tracking-widest mb-2 ml-1">Phone Number</label>
+                                        <div class="relative">
+                                            <span class="absolute left-6 top-1/2 -translate-y-1/2 material-symbols-outlined text-gray-400">call</span>
+                                            <input type="tel" name="phone" id="delivery_phone" placeholder="+1 (555) 000-0000" class="w-full pl-14 pr-6 py-4 rounded-2xl border-none bg-gray-50 dark:bg-[#1e2019] focus:ring-2 focus:ring-primary font-medium">
                                         </div>
                                     </div>
                                 </div>
@@ -682,11 +715,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirm_booking'])) {
                 if (fulfillment === 'delivery') {
                     const addr = document.getElementById('delivery_address').value;
                     const city = document.getElementById('delivery_city').value;
+                    const state = document.getElementById('delivery_state').value;
                     const zip = document.getElementById('delivery_zip').value;
+                    const phone = document.getElementById('delivery_phone').value;
                     
-                    if (!addr || !city || !zip) {
-                        showError('Please fill in your complete delivery address.');
+                    if (!addr || !city || !state || !zip || !phone) {
+                        showError('Please fill in complete delivery details (Address, City, State, Zip, Phone)');
                         if (!addr) document.getElementById('delivery_address').classList.add('error-shake');
+                        if (!city) document.getElementById('delivery_city').classList.add('error-shake');
+                        if (!state) document.getElementById('delivery_state').classList.add('error-shake');
+                        if (!zip) document.getElementById('delivery_zip').classList.add('error-shake');
+                        if (!phone) document.getElementById('delivery_phone').classList.add('error-shake');
                         return;
                     }
                 }

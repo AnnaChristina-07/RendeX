@@ -149,9 +149,15 @@ foreach ($rentals as $rental) {
                         </div>
                         <div class="text-right flex flex-col items-center md:items-end gap-2">
                              <span class="block font-black text-xl">₹<?php echo $rental['total_price']; ?></span>
-                             <a href="return-rental.php?id=<?php echo $rental['id']; ?>" class="bg-black text-white text-xs font-bold px-4 py-2 rounded-full hover:bg-gray-800 transition-colors inline-block">
-                                 Return Item
-                             </a>
+                             <?php if(isset($rental['return_status']) && $rental['return_status'] === 'pending_inspection'): ?>
+                                 <span class="bg-yellow-100 text-yellow-800 text-xs font-bold px-4 py-2 rounded-full inline-block border border-yellow-200">
+                                     Return Initiated
+                                 </span>
+                             <?php else: ?>
+                                 <a href="return-rental.php?id=<?php echo $rental['id']; ?>" class="bg-black text-white text-xs font-bold px-4 py-2 rounded-full hover:bg-gray-800 transition-colors inline-block">
+                                     Return Item
+                                 </a>
+                             <?php endif; ?>
                         </div>
                     </div>
                     <?php endforeach; ?>
@@ -205,5 +211,40 @@ foreach ($rentals as $rental) {
             &copy; 2026 RendeX. All rights reserved.
         </div>
     </footer>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300">
+        <div class="bg-black text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-4">
+             <span class="material-symbols-outlined text-primary">check_circle</span>
+             <p class="font-bold pr-2" id="toast-message">Success</p>
+        </div>
+    </div>
+
+    <script>
+        // Check for msg parameter
+        const urlParams = new URLSearchParams(window.location.search);
+        const msg = urlParams.get('msg');
+        if (msg) {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toast-message');
+            
+            if (msg === 'return_initiated') {
+                toastMsg.textContent = 'Return request submitted! Waiting for owner confirmation.';
+            } else if (msg === 'returned_success') {
+                toastMsg.textContent = 'Return confirmed successfully.';
+            }
+            
+            if (msg === 'return_initiated' || msg === 'returned_success') {
+                setTimeout(() => {
+                    toast.classList.remove('translate-y-20', 'opacity-0');
+                    setTimeout(() => {
+                         toast.classList.add('translate-y-20', 'opacity-0');
+                         // Clean URL
+                         window.history.replaceState({}, document.title, window.location.pathname);
+                    }, 4000);
+                }, 500);
+            }
+        }
+    </script>
 </body>
 </html>
