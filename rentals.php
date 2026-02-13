@@ -185,7 +185,11 @@ foreach ($rentals as $rental) {
                             </div>
                             <div class="text-right flex flex-col items-center md:items-end gap-2">
                                 <span class="block font-black text-xl">₹<?php echo $rental['total_price']; ?></span>
-                                <?php if(isset($rental['return_status']) && $rental['return_status'] === 'pending_inspection'): ?>
+                                <?php if(isset($rental['status']) && $rental['status'] === 'dispute'): ?>
+                                    <span class="bg-red-50 text-red-600 text-xs font-bold px-4 py-2 rounded-full inline-flex items-center gap-1 border border-red-100">
+                                         <span class="material-symbols-outlined text-sm">gavel</span> Dispute Active
+                                    </span>
+                                <?php elseif(isset($rental['return_status']) && $rental['return_status'] === 'pending_inspection'): ?>
                                     <span class="bg-yellow-100 text-yellow-800 text-xs font-bold px-4 py-2 rounded-full inline-block border border-yellow-200">
                                         Return Initiated
                                     </span>

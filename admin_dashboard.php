@@ -311,6 +311,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['assign_delivery'])) {
 }
 
 
+// 6. Resolve Dispute
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['resolve_dispute_id'])) {
+    $r_id = $_POST['resolve_dispute_id'];
+    $action = $_POST['resolution_action']; // 'approve_deduction', 'reject_claim'
+    $admin_note = $_POST['admin_note'] ?? '';
+
+    // Update JSON
+    $new_rentals = [];
+    $rental_found = false;
+    foreach($rentals as $r) {
+        if ($r['id'] === $r_id) {
+            $r['status'] = 'returned'; // Cycle complete
+            $r['return_status'] = 'completed_dispute';
+            $r['dispute_status'] = ($action === 'approve_deduction') ? 'resolved_deducted' : 'resolved_rejected';
+            $r['admin_resolution_note'] = $admin_note;
+            $r['resolved_at'] = date('Y-m-d H:i:s');
+            $rental_found = true;
+        }
+        $new_rentals[] = $r;
+    }
+    file_put_contents($rentals_file, json_encode($new_rentals, JSON_PRETTY_PRINT));
+    
+    // Update DB
+    if ($use_database) {
+        try {
+            $d_status = ($action === 'approve_deduction') ? 'resolved_deducted' : 'resolved_rejected';
+            // We need to support 'dispute_status' column updates
+            $stmt = $pdo->prepare("UPDATE rentals SET status = 'returned', return_status = 'completed_dispute', dispute_status = ? WHERE id = ?");
+            $stmt->execute([$d_status, $r_id]);
+        } catch (PDOException $e) {}
+    }
+
+    header("Location: admin_dashboard.php?tab=disputes&msg=resolved");
+    exit();
+}
+
 // --- DATA PREPARATION ---
 
 // Identify Owners and Renters
@@ -562,6 +598,15 @@ foreach ($rentals as $rental) {
             </a>
             <a href="?tab=rentals" class="flex items-center gap-3 px-4 py-3 rounded-xl transition-colors <?php echo $tab == 'rentals' ? 'bg-gray-800 text-primary font-bold' : 'text-gray-400 hover:bg-gray-800 hover:text-white'; ?>">
                 <span class="material-symbols-outlined">receipt_long</span> Rentals Mgmt
+            </a>
+            <a href="?tab=disputes" class="flex items-center gap-3 px-4 py-3 rounded-xl transition-colors <?php echo $tab == 'disputes' ? 'bg-gray-800 text-primary font-bold' : 'text-gray-400 hover:bg-gray-800 hover:text-white'; ?>">
+                <span class="material-symbols-outlined">gavel</span> Disputes
+                <?php 
+                $dispute_count = 0;
+                foreach($rentals as $r) if(isset($r['status']) && $r['status'] === 'dispute') $dispute_count++;
+                if ($dispute_count > 0): ?>
+                <span class="ml-auto bg-red-600 text-white text-xs font-bold px-2 py-0.5 rounded-full animate-pulse"><?php echo $dispute_count; ?></span>
+                <?php endif; ?>
             </a>
             <a href="?tab=products" class="flex items-center gap-3 px-4 py-3 rounded-xl transition-colors <?php echo $tab == 'products' ? 'bg-gray-800 text-primary font-bold' : 'text-gray-400 hover:bg-gray-800 hover:text-white'; ?>">
                 <span class="material-symbols-outlined">inventory_2</span> Product Mgmt
@@ -1752,6 +1797,123 @@ foreach ($rentals as $rental) {
                             </a>
                         </div>
                     </div>
+            <?php break; 
+
+            case 'disputes': 
+                $active_disputes = array_filter($rentals, function($r) {
+                    return isset($r['status']) && $r['status'] === 'dispute';
+                });
+            ?>
+                <!-- DISPUTES VIEW -->
+                <div class="space-y-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-xl font-bold flex items-center gap-2">
+                             <span class="material-symbols-outlined text-red-600">gavel</span>
+                             Active Disputes <span class="bg-red-100 text-red-700 px-2 py-1 rounded-full text-xs"><?php echo count($active_disputes); ?></span>
+                        </h2>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <?php foreach($active_disputes as $r): 
+                            $item = $r['item'] ?? [];
+                            $damage = $r['damage_report'] ?? [];
+                            $renter_name = $user_names[$r['user_id']] ?? 'Unknown Renter';
+                            $owner_name = $user_names[$item['user_id']] ?? 'Unknown Owner';
+                            $photos = $damage['evidence_photos'] ?? [];
+                            // Handle DB JSON string
+                            if (is_string($photos)) $photos = json_decode($photos, true);
+                        ?>
+                        <div class="bg-white rounded-2xl shadow-sm border border-red-100 overflow-hidden">
+                            <div class="bg-red-50 p-4 border-b border-red-100 flex justify-between items-start">
+                                <div>
+                                    <h3 class="font-bold text-gray-900 flex items-center gap-2">
+                                        <span class="material-symbols-outlined text-red-500 text-sm">report_problem</span>
+                                        Dispute #<?php echo substr($r['id'], -6); ?>
+                                    </h3>
+                                    <p class="text-xs text-gray-500 mt-1">Reported: <?php echo isset($damage['reported_at']) ? date('M d, H:i', strtotime($damage['reported_at'])) : 'Recently'; ?></p>
+                                </div>
+                                <span class="bg-red-100 text-red-700 text-xs font-bold px-2 py-1 rounded-full uppercase">Action Required</span>
+                            </div>
+                            
+                            <div class="p-6 space-y-6">
+                                <!-- Item & Parties -->
+                                <div class="flex items-center gap-4 p-4 bg-gray-50 rounded-xl">
+                                    <div class="w-16 h-16 bg-gray-200 rounded-lg overflow-hidden shrink-0">
+                                        <?php if(isset($item['img'])): ?>
+                                        <img src="<?php echo htmlspecialchars($item['img']); ?>" class="w-full h-full object-cover">
+                                        <?php else: ?>
+                                        <div class="w-full h-full flex items-center justify-center text-gray-400"><span class="material-symbols-outlined">image</span></div>
+                                        <?php endif; ?>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <h4 class="font-bold text-sm truncate"><?php echo htmlspecialchars($item['title'] ?? 'Item'); ?></h4>
+                                        <div class="flex items-center justify-between mt-2 text-xs">
+                                            <span class="text-gray-500">Owner: <strong class="text-gray-700"><?php echo htmlspecialchars($owner_name); ?></strong></span>
+                                            <span class="text-gray-500">Renter: <strong class="text-gray-700"><?php echo htmlspecialchars($renter_name); ?></strong></span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Damage Report -->
+                                <div>
+                                    <h4 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Damage Report</h4>
+                                    <div class="bg-gray-50 p-4 rounded-xl border border-gray-100 mb-4">
+                                        <p class="text-sm text-gray-800 italic">"<?php echo htmlspecialchars($damage['description'] ?? 'No description'); ?>"</p>
+                                        <div class="mt-3 pt-3 border-t border-gray-200 flex justify-between items-center">
+                                            <span class="text-xs text-gray-500">Owner Claimed Cost:</span>
+                                            <span class="font-bold text-red-600 text-lg">₹<?php echo number_format($damage['estimated_cost'] ?? 0); ?></span>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Evidence -->
+                                    <h5 class="text-xs font-bold text-gray-400 mb-2">Evidence</h5>
+                                    <div class="flex gap-2 overflow-x-auto pb-2">
+                                        <?php if (!empty($photos) && is_array($photos)): ?>
+                                            <?php foreach($photos as $p): ?>
+                                            <a href="uploads/<?php echo htmlspecialchars($p); ?>" target="_blank" class="w-16 h-16 rounded-lg overflow-hidden border border-gray-200 block shrink-0 hover:border-red-400 transition-colors">
+                                                <img src="uploads/<?php echo htmlspecialchars($p); ?>" class="w-full h-full object-cover">
+                                            </a>
+                                            <?php endforeach; ?>
+                                        <?php else: ?>
+                                            <span class="text-xs text-gray-400 italic">No photos provided.</span>
+                                        <?php endif; ?>
+                                    </div>
+                                </div>
+
+                                <!-- Actions -->
+                                <form method="POST" class="border-t pt-6">
+                                    <input type="hidden" name="resolve_dispute_id" value="<?php echo $r['id']; ?>">
+                                    <label class="block text-xs font-bold text-gray-400 uppercase mb-2">Admin Resolution Note</label>
+                                    <textarea name="admin_note" rows="2" class="w-full bg-gray-50 border-gray-200 rounded-lg text-sm p-3 mb-4 focus:ring-gray-500 focus:border-gray-500" placeholder="Reason for decision..."></textarea>
+                                    
+                                    <div class="grid grid-cols-2 gap-3">
+                                        <button type="submit" name="resolution_action" value="approve_deduction" class="bg-red-50 text-red-700 border border-red-200 font-bold py-3 rounded-xl hover:bg-red-100 transition-colors flex items-center justify-center gap-2">
+                                            <span class="material-symbols-outlined text-sm">check_circle</span>
+                                            Approve Deduction
+                                        </button>
+                                        <button type="submit" name="resolution_action" value="reject_claim" class="bg-gray-100 text-gray-700 border border-gray-200 font-bold py-3 rounded-xl hover:bg-gray-200 transition-colors flex items-center justify-center gap-2">
+                                            <span class="material-symbols-outlined text-sm">cancel</span>
+                                            Reject Claim
+                                        </button>
+                                    </div>
+                                    <p class="text-[10px] text-gray-400 text-center mt-3">
+                                        Approve: Owner keeps deposit/cost. Reject: Renter gets full refund.
+                                    </p>
+                                </form>
+                            </div>
+                        </div>
+                        <?php endforeach; ?>
+                        
+                        <?php if(empty($active_disputes)): ?>
+                        <div class="col-span-full py-12 flex flex-col items-center justify-center text-gray-400">
+                             <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                                <span class="material-symbols-outlined text-2xl">thumb_up</span>
+                             </div>
+                             <p>No active disputes.</p>
+                        </div>
+                        <?php endif; ?>
+                    </div>
+                </div>
             <?php break; 
             
             default: ?>

@@ -33,7 +33,7 @@ if (!is_array($items)) $items = [];
 if (isset($_GET['edit_id'])) {
     $edit_id = $_GET['edit_id'];
     foreach ($items as $item) {
-        if ((string)$item['id'] === (string)$edit_id && (string)$item['user_id'] === (string)$_SESSION['user_id']) {
+        if (isset($item['id']) && (string)$item['id'] === (string)$edit_id && isset($item['user_id']) && (string)$item['user_id'] === (string)$_SESSION['user_id']) {
             $title = $item['title'];
             $category = $item['category'];
             $price = $item['price'];

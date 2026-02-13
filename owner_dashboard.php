@@ -147,6 +147,77 @@ if (isset($_POST['confirm_return_id'])) {
     }
 }
 
+// Report Damage (Owner Action)
+if (isset($_POST['report_damage_id'])) {
+    $r_id = $_POST['report_damage_id'];
+    $damage_desc = $_POST['damage_description'];
+    $damage_cost = floatval($_POST['damage_cost']);
+    
+    // 1. Handle File Uploads
+    $uploaded_evidence = [];
+    if (isset($_FILES['damage_evidence']) && !empty($_FILES['damage_evidence']['name'][0])) {
+        $total_files = count($_FILES['damage_evidence']['name']);
+        for ($i = 0; $i < $total_files; $i++) {
+            $file_name = $_FILES['damage_evidence']['name'][$i];
+            $file_tmp = $_FILES['damage_evidence']['tmp_name'][$i];
+            $file_ext = strtolower(pathinfo($file_name, PATHINFO_EXTENSION));
+            if (in_array($file_ext, ['jpg', 'jpeg', 'png', 'webp'])) {
+                $new_name = uniqid('damage_') . '.' . $file_ext;
+                if (move_uploaded_file($file_tmp, 'uploads/' . $new_name)) {
+                    $uploaded_evidence[] = $new_name;
+                }
+            }
+        }
+    }
+
+    // 2. Update Rental JSON
+    $updated_rentals = [];
+    $item_id = null;
+    $rental_found = false;
+
+    foreach($all_rentals as $r) {
+        if ($r['id'] === $r_id && isset($r['item']['user_id']) && $r['item']['user_id'] === $user_id) {
+             $r['status'] = 'dispute'; // Mark as dispute/damage reported
+             $r['return_status'] = 'damage_reported';
+             $r['damage_report'] = [
+                 'reported_at' => date('Y-m-d H:i:s'),
+                 'description' => $damage_desc,
+                 'estimated_cost' => $damage_cost,
+                 'evidence_photos' => $uploaded_evidence,
+                 'status' => 'pending_review'
+             ];
+             $item_id = $r['item']['id'];
+             $rental_found = true;
+        }
+        $updated_rentals[] = $r;
+    }
+    
+    if ($rental_found) {
+        file_put_contents($rentals_file, json_encode($updated_rentals, JSON_PRETTY_PRINT));
+        
+         // 3. Update Database
+        if ($pdo) {
+            try {
+                // Ensure columns exist (Lazy Migration)
+                $cols = $pdo->query("SHOW COLUMNS FROM rentals LIKE 'damage_reported_at'")->fetchAll();
+                if (empty($cols)) {
+                    $pdo->exec("ALTER TABLE rentals ADD COLUMN damage_reported_at DATETIME NULL");
+                    $pdo->exec("ALTER TABLE rentals ADD COLUMN damage_description TEXT NULL");
+                    $pdo->exec("ALTER TABLE rentals ADD COLUMN damage_cost DECIMAL(10,2) NULL");
+                    $pdo->exec("ALTER TABLE rentals ADD COLUMN damage_evidence_photos TEXT NULL");
+                    $pdo->exec("ALTER TABLE rentals ADD COLUMN dispute_status VARCHAR(20) DEFAULT 'none'");
+                }
+
+                $stmt = $pdo->prepare("UPDATE rentals SET status = 'dispute', return_status = 'damage_reported', damage_reported_at = NOW(), damage_description = ?, damage_cost = ?, damage_evidence_photos = ?, dispute_status = 'pending' WHERE id = ?");
+                $stmt->execute([$damage_desc, $damage_cost, json_encode($uploaded_evidence), $r_id]);
+            } catch (Exception $e) {}
+        }
+
+        header("Location: owner_dashboard.php?tab=incoming&msg=damage_reported");
+        exit();
+    }
+}
+
 // Current Tab
 $tab = isset($_GET['tab']) ? $_GET['tab'] : 'overview';
 
@@ -382,46 +453,101 @@ $tab = isset($_GET['tab']) ? $_GET['tab'] : 'overview';
             <!-- Return Review Modal -->
             <div id="return-modal" class="hidden fixed inset-0 z-[100] flex items-center justify-center p-4">
                 <div class="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity" onclick="closeReturnModal()"></div>
-                <div class="relative bg-white dark:bg-surface-dark rounded-3xl p-8 w-full max-w-lg shadow-2xl transform transition-all scale-100">
+                <div class="relative bg-white dark:bg-surface-dark rounded-3xl p-8 w-full max-w-lg shadow-2xl transform transition-all scale-100 overflow-y-auto max-h-[90vh]">
                     <button onclick="closeReturnModal()" class="absolute top-4 right-4 text-gray-400 hover:text-black dark:hover:text-white">
                         <span class="material-symbols-outlined">close</span>
                     </button>
                     
-                    <h3 class="text-2xl font-black mb-6">Review Returned Item</h3>
-                    
-                    <div class="space-y-6 mb-8">
-                        <div>
-                             <h4 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Renter's Note</h4>
-                             <div class="bg-gray-50 dark:bg-gray-800 p-4 rounded-xl">
-                                <p id="modal-note" class="text-sm font-medium text-gray-700 dark:text-gray-300 italic">No notes.</p>
-                             </div>
-                        </div>
+                    <!-- REVIEW VIEW -->
+                    <div id="review-content">
+                        <h3 class="text-2xl font-black mb-6">Review Returned Item</h3>
                         
-                        <div>
-                            <h4 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Condition Photos</h4>
-                            <div id="modal-photos" class="grid grid-cols-3 gap-3">
-                                <!-- Photos injected here -->
+                        <div class="space-y-6 mb-8">
+                            <div>
+                                 <h4 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Renter's Note</h4>
+                                 <div class="bg-gray-50 dark:bg-gray-800 p-4 rounded-xl">
+                                    <p id="modal-note" class="text-sm font-medium text-gray-700 dark:text-gray-300 italic">No notes.</p>
+                                 </div>
+                            </div>
+                            
+                            <div>
+                                <h4 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Condition Photos</h4>
+                                <div id="modal-photos" class="grid grid-cols-3 gap-3">
+                                    <!-- Photos injected here -->
+                                </div>
                             </div>
                         </div>
+    
+                        <form method="POST">
+                            <input type="hidden" name="confirm_return_id" id="modal-rental-id">
+                            <div class="flex flex-col gap-3">
+                                <button type="submit" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-4 rounded-xl transition-colors shadow-lg shadow-green-200/50 flex items-center justify-center gap-2">
+                                    <span class="material-symbols-outlined font-bold">check_circle</span>
+                                    Confirm Good Condition
+                                </button>
+                                
+                                <div class="flex gap-3">
+                                    <button type="button" onclick="closeReturnModal()" class="flex-1 py-3 font-bold text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-xl transition-colors">Cancel</button>
+                                    <button type="button" onclick="showDamageForm()" class="flex-1 bg-red-50 text-red-600 border border-red-100 font-bold py-3 rounded-xl hover:bg-red-100 transition-colors flex items-center justify-center gap-2">
+                                        <span class="material-symbols-outlined text-sm">report_problem</span>
+                                        Report Damage
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
                     </div>
 
-                    <form method="POST">
-                        <input type="hidden" name="confirm_return_id" id="modal-rental-id">
-                        <div class="flex gap-3">
-                            <button type="button" onclick="closeReturnModal()" class="flex-1 py-3 font-bold text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-xl transition-colors">Cancel</button>
-                            <button type="submit" class="flex-1 bg-primary text-black font-bold py-3 rounded-xl hover:bg-yellow-300 transition-colors shadow-lg shadow-yellow-200/50 flex items-center justify-center gap-2">
-                                <span class="material-symbols-outlined font-bold">check_circle</span>
-                                Confirm Receipt
+                    <!-- DAMAGE REPORT VIEW -->
+                    <div id="damage-form-view" class="hidden">
+                         <div class="flex items-center gap-3 mb-6">
+                            <button type="button" onclick="hideDamageForm()" class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors">
+                                <span class="material-symbols-outlined text-sm">arrow_back</span>
                             </button>
+                            <h3 class="text-2xl font-black text-red-600">Report Damage</h3>
                         </div>
-                    </form>
+
+                        <form method="POST" enctype="multipart/form-data">
+                            <input type="hidden" name="report_damage_id" id="damage-rental-id">
+                            
+                            <div class="space-y-5 mb-8">
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Description of Damage</label>
+                                    <textarea name="damage_description" required rows="4" class="w-full bg-gray-50 border-0 rounded-xl p-4 font-medium focus:ring-2 focus:ring-red-500" placeholder="Describe the damage in detail..."></textarea>
+                                </div>
+
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Estimated Cost (₹)</label>
+                                    <div class="relative">
+                                        <span class="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-gray-400">₹</span>
+                                        <input type="number" name="damage_cost" required min="0" step="0.01" class="w-full bg-gray-50 border-0 rounded-xl pl-8 pr-4 py-3 font-bold focus:ring-2 focus:ring-red-500" placeholder="0.00">
+                                    </div>
+                                    <p class="text-xs text-gray-400 mt-2">If cost > deposit, a dispute will be raised.</p>
+                                </div>
+
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Evidence (Photos)</label>
+                                    <input type="file" name="damage_evidence[]" multiple accept="image/*" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-red-50 file:text-red-700 hover:file:bg-red-100">
+                                </div>
+                            </div>
+
+                            <button type="submit" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-4 rounded-xl transition-colors shadow-lg shadow-red-200/50 flex items-center justify-center gap-2">
+                                <span class="material-symbols-outlined font-bold">gavel</span>
+                                Submit Report
+                            </button>
+                        </form>
+                    </div>
                 </div>
             </div>
 
             <script>
                 function openReturnModal(rental) {
                     document.getElementById('modal-rental-id').value = rental.id;
+                    document.getElementById('damage-rental-id').value = rental.id; // Set for damage form too
                     
+                    // Reset View
+                    document.getElementById('review-content').classList.remove('hidden');
+                    document.getElementById('damage-form-view').classList.add('hidden');
+
                     // Note
                     const note = rental.condition_note || 'No notes provided.';
                     document.getElementById('modal-note').textContent = note;
@@ -459,6 +585,16 @@ $tab = isset($_GET['tab']) ? $_GET['tab'] : 'overview';
                 function closeReturnModal() {
                     document.getElementById('return-modal').classList.add('hidden');
                     document.getElementById('return-modal').classList.remove('flex');
+                }
+
+                function showDamageForm() {
+                    document.getElementById('review-content').classList.add('hidden');
+                    document.getElementById('damage-form-view').classList.remove('hidden');
+                }
+
+                function hideDamageForm() {
+                    document.getElementById('damage-form-view').classList.add('hidden');
+                    document.getElementById('review-content').classList.remove('hidden');
                 }
             </script>
 
