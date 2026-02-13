@@ -9,6 +9,21 @@ $rentals_file = 'rentals.json';
 $rentals = file_exists($rentals_file) ? json_decode(file_get_contents($rentals_file), true) : [];
 if (!is_array($rentals)) $rentals = [];
 
+// Load Deliveries
+$deliveries_file = 'deliveries.json';
+$deliveries = file_exists($deliveries_file) ? json_decode(file_get_contents($deliveries_file), true) : [];
+
+// Load Users (for Driver Info)
+$users_file = 'users.json';
+$users = file_exists($users_file) ? json_decode(file_get_contents($users_file), true) : [];
+$users_map = [];
+foreach ($users as $u) {
+    if (isset($u['id'])) {
+        $users_map[$u['id']] = $u;
+    }
+}
+
+
 // Handle Return Action
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['return_id'])) {
     $return_id = $_POST['return_id'];
@@ -136,29 +151,146 @@ foreach ($rentals as $rental) {
                     <?php foreach ($active_rentals as $rental): 
                         $item = $rental['item'];
                         $img_src = (strpos($item['img'], 'uploads/') === 0) ? $item['img'] : 'https://source.unsplash.com/random/200x200?' . urlencode($item['img']);
+                        
+                        // Delivery Tracking Logic
+                        $is_delivery = (isset($rental['fulfillment']) && $rental['fulfillment'] === 'delivery');
+                        $delivery_status = 'pending';
+                        $driver = null;
+                        
+                        if ($is_delivery) {
+                            $rental_id = $rental['id'];
+                            // Find delivery record
+                            foreach ($deliveries as $d) {
+                                if (isset($d['rental_id']) && $d['rental_id'] === $rental_id) {
+                                    $delivery_status = $d['status']; // pending, assigned, picked_up, delivered
+                                    // Get driver info
+                                    if (isset($d['partner_id']) && isset($users_map[$d['partner_id']])) {
+                                        $driver = $users_map[$d['partner_id']];
+                                    }
+                                    break;
+                                }
+                            }
+                        }
                     ?>
-                    <div class="bg-surface-light dark:bg-surface-dark p-6 rounded-2xl border border-[#e9e8ce] dark:border-[#3e3d2a] flex flex-col md:flex-row items-center gap-6">
-                        <div class="w-full md:w-24 h-24 rounded-xl bg-gray-100 overflow-hidden shrink-0">
-                            <img src="<?php echo htmlspecialchars($img_src); ?>" class="w-full h-full object-cover">
+                    <div class="bg-surface-light dark:bg-surface-dark p-6 rounded-2xl border border-[#e9e8ce] dark:border-[#3e3d2a] flex flex-col gap-6">
+                        <div class="flex flex-col md:flex-row items-center gap-6">
+                            <div class="w-full md:w-24 h-24 rounded-xl bg-gray-100 overflow-hidden shrink-0">
+                                <img src="<?php echo htmlspecialchars($img_src); ?>" class="w-full h-full object-cover">
+                            </div>
+                            <div class="flex-1 text-center md:text-left">
+                                <h3 class="text-lg font-bold"><?php echo htmlspecialchars($item['name']); ?></h3>
+                                <p class="text-sm text-text-muted mt-1">
+                                    Due Return: <span class="font-bold text-text-main"><?php echo date('M d, Y', strtotime($rental['end_date'])); ?></span>
+                                </p>
+                            </div>
+                            <div class="text-right flex flex-col items-center md:items-end gap-2">
+                                <span class="block font-black text-xl">₹<?php echo $rental['total_price']; ?></span>
+                                <?php if(isset($rental['return_status']) && $rental['return_status'] === 'pending_inspection'): ?>
+                                    <span class="bg-yellow-100 text-yellow-800 text-xs font-bold px-4 py-2 rounded-full inline-block border border-yellow-200">
+                                        Return Initiated
+                                    </span>
+                                <?php else: ?>
+                                    <a href="return-rental.php?id=<?php echo $rental['id']; ?>" class="bg-black text-white text-xs font-bold px-4 py-2 rounded-full hover:bg-gray-800 transition-colors inline-block">
+                                        Return Item
+                                    </a>
+                                <?php endif; ?>
+                            </div>
                         </div>
-                        <div class="flex-1 text-center md:text-left">
-                            <h3 class="text-lg font-bold"><?php echo htmlspecialchars($item['name']); ?></h3>
-                            <p class="text-sm text-text-muted mt-1">
-                                Due Return: <span class="font-bold text-text-main"><?php echo date('M d, Y', strtotime($rental['end_date'])); ?></span>
-                            </p>
+
+                        <!-- Delivery Tracking Section -->
+                        <?php if ($is_delivery): ?>
+                        <div class="border-t border-gray-100 dark:border-gray-700 pt-6 mt-6">
+                            <h4 class="text-sm font-bold mb-6 flex items-center gap-2 text-text-muted">
+                                <span class="material-symbols-outlined text-lg">local_shipping</span> 
+                                Delivery Status
+                            </h4>
+                            
+                            <!-- Enhanced Timeline -->
+                            <?php
+                                // Status Levels
+                                $levels = ['pending' => 0, 'assigned' => 1, 'picked_up' => 2, 'delivered' => 3];
+                                $current_level = $levels[$delivery_status] ?? 0;
+                                
+                                $steps = [
+                                    ['label' => 'Order Placed', 'icon' => 'inventory_2'],
+                                    ['label' => 'Driver Assigned', 'icon' => 'person_pin'],
+                                    ['label' => 'In Transit', 'icon' => 'local_shipping'],
+                                    ['label' => 'Delivered', 'icon' => 'home_pin']
+                                ];
+                            ?>
+                            <div class="w-full max-w-4xl mx-auto mb-8">
+                                <div class="flex items-center justify-between w-full relative">
+                                    <?php foreach ($steps as $index => $step): 
+                                        $is_completed = $index <= $current_level;
+                                        $is_current = $index === $current_level;
+                                        
+                                        // Colors
+                                        $bg_color = $is_completed ? 'bg-black text-white dark:bg-primary dark:text-black' : 'bg-gray-100 text-gray-400 dark:bg-gray-700 dark:text-gray-500';
+                                        $text_color = $is_completed ? 'text-black dark:text-white' : 'text-gray-400 dark:text-gray-500';
+                                        $border_color = $is_current ? 'ring-4 ring-gray-100 dark:ring-gray-800' : '';
+                                    ?>
+                                        <!-- Step Circle -->
+                                        <div class="relative z-10 flex flex-col items-center">
+                                            <div class="w-10 h-10 rounded-full <?php echo $bg_color . ' ' . $border_color; ?> flex items-center justify-center transition-all duration-500 shadow-sm relative group">
+                                                <span class="material-symbols-outlined text-xl"><?php echo $step['icon']; ?></span>
+                                                <?php if($is_current && $delivery_status !== 'delivered'): ?>
+                                                    <span class="absolute inline-flex h-full w-full rounded-full bg-black opacity-10 animate-ping"></span>
+                                                <?php endif; ?>
+                                            </div>
+                                            <span class="absolute top-12 text-[10px] md:text-xs font-bold uppercase tracking-wider text-center w-32 <?php echo $text_color; ?> transition-colors duration-500">
+                                                <?php echo $step['label']; ?>
+                                            </span>
+                                        </div>
+
+                                        <!-- Connecting Line (Skip on last item) -->
+                                        <?php if ($index < count($steps) - 1): 
+                                            $line_color = ($index < $current_level) ? 'bg-black dark:bg-primary' : 'bg-gray-100 dark:bg-gray-700';
+                                        ?>
+                                            <div class="flex-1 h-1 mx-2 rounded-full relative overflow-hidden bg-gray-100 dark:bg-gray-700">
+                                                <div class="absolute top-0 left-0 h-full w-full <?php echo $line_color; ?> transition-all duration-700 origin-left"></div>
+                                            </div>
+                                        <?php endif; ?>
+                                    <?php endforeach; ?>
+                                </div>
+                            </div>
+                            
+                            <!-- Spacer for text below circles -->
+                            <div class="h-6"></div>
+
+                            <!-- Driver Info Card -->
+                            <?php if ($driver): ?>
+                            <div class="mt-4 bg-white dark:bg-[#2d2c18] border border-gray-100 dark:border-gray-700 rounded-2xl p-5 flex items-center justify-between gap-4 max-w-lg shadow-sm hover:shadow-md transition-shadow duration-300">
+                                <div class="flex items-center gap-4">
+                                    <div class="w-14 h-14 rounded-full bg-[#f9f506] flex items-center justify-center text-black font-black text-xl shadow-inner">
+                                        <?php echo strtoupper(substr($driver['name'], 0, 1)); ?>
+                                    </div>
+                                    <div>
+                                        <div class="flex items-center gap-2 mb-1">
+                                            <h5 class="font-bold text-lg leading-none"><?php echo htmlspecialchars($driver['name']); ?></h5>
+                                            <span class="bg-gray-100 dark:bg-gray-700 text-[10px] font-bold px-2 py-0.5 rounded uppercase">Driver</span>
+                                        </div>
+                                        <p class="text-xs text-text-muted flex items-center gap-1">
+                                            <span class="material-symbols-outlined text-sm">two_wheeler</span>
+                                            <?php echo htmlspecialchars($driver['delivery_application']['vehicle_number'] ?? 'Vehicle Assigned'); ?>
+                                        </p>
+                                    </div>
+                                </div>
+                                <a href="tel:<?php echo htmlspecialchars($driver['phone']); ?>" class="group bg-black text-white dark:bg-white dark:text-black w-12 h-12 rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-transform active:scale-95">
+                                    <span class="material-symbols-outlined group-hover:animate-shake">call</span>
+                                </a>
+                            </div>
+                            <?php elseif ($is_delivery && $current_level < 1): ?>
+                                <div class="mt-6 flex flex-col items-center justify-center py-6 bg-yellow-50 dark:bg-yellow-900/20 rounded-2xl border border-yellow-100 dark:border-yellow-900/50 text-center animate-pulse">
+                                    <div class="w-10 h-10 bg-yellow-100 dark:bg-yellow-800/50 rounded-full flex items-center justify-center mb-2 text-yellow-700 dark:text-yellow-400">
+                                        <span class="material-symbols-outlined animate-spin">progress_activity</span>
+                                    </div>
+                                    <p class="text-sm font-bold text-yellow-800 dark:text-yellow-400">Finding nearest delivery partner...</p>
+                                    <p class="text-xs text-yellow-600 dark:text-yellow-500 mt-1">This usually takes 2-5 minutes</p>
+                                </div>
+                            <?php endif; ?>
+
                         </div>
-                        <div class="text-right flex flex-col items-center md:items-end gap-2">
-                             <span class="block font-black text-xl">₹<?php echo $rental['total_price']; ?></span>
-                             <?php if(isset($rental['return_status']) && $rental['return_status'] === 'pending_inspection'): ?>
-                                 <span class="bg-yellow-100 text-yellow-800 text-xs font-bold px-4 py-2 rounded-full inline-block border border-yellow-200">
-                                     Return Initiated
-                                 </span>
-                             <?php else: ?>
-                                 <a href="return-rental.php?id=<?php echo $rental['id']; ?>" class="bg-black text-white text-xs font-bold px-4 py-2 rounded-full hover:bg-gray-800 transition-colors inline-block">
-                                     Return Item
-                                 </a>
-                             <?php endif; ?>
-                        </div>
+                        <?php endif; ?>
                     </div>
                     <?php endforeach; ?>
                 <?php endif; ?>
@@ -178,8 +310,8 @@ foreach ($rentals as $rental) {
                 <?php else: ?>
                     <?php foreach ($past_rentals as $rental): 
                         $item = $rental['item'];
-                         $img_src = (strpos($item['img'], 'uploads/') === 0) ? $item['img'] : 'https://source.unsplash.com/random/200x200?' . urlencode($item['img']);
-                         $is_returned_early = (isset($rental['status']) && $rental['status'] === 'returned');
+                        $img_src = (strpos($item['img'], 'uploads/') === 0) ? $item['img'] : 'https://source.unsplash.com/random/200x200?' . urlencode($item['img']);
+                        $is_returned_early = (isset($rental['status']) && $rental['status'] === 'returned');
                     ?>
                     <div class="bg-surface-light dark:bg-surface-dark p-6 rounded-2xl border border-[#e9e8ce] dark:border-[#3e3d2a] flex flex-col md:flex-row items-center gap-6 opacity-75 grayscale hover:grayscale-0 transition-all">
                         <div class="w-full md:w-24 h-24 rounded-xl bg-gray-100 overflow-hidden shrink-0">

@@ -407,7 +407,7 @@ foreach ($users as $u) {
 // RE-CHECK: If we have approved applications, ensure those users are in delivery_partners list
 if ($use_database) {
     try {
-        $stmt_partners = $pdo->query("SELECT u.* FROM users u JOIN driver_applications da ON u.id = da.user_id WHERE da.status = 'approved'");
+        $stmt_partners = $pdo->query("SELECT u.*, da.city, da.address, da.pincode FROM users u JOIN driver_applications da ON u.id = da.user_id WHERE da.status = 'approved'");
         $db_partners = $stmt_partners->fetchAll(PDO::FETCH_ASSOC);
         
         // Merge into delivery_partners if not already there
@@ -1461,6 +1461,206 @@ foreach ($rentals as $rental) {
                         </div>
                     </div>
                 </div>
+            <?php break; 
+            
+            case 'deliveries': 
+                // Logic to find pending and active deliveries
+                $delivery_map = [];
+                foreach ($deliveries as $d) {
+                    $delivery_map[$d['rental_id']] = $d;
+                }
+                
+                $pending_deliveries = [];
+                $active_deliveries_list = [];
+                
+                foreach ($rentals as $r) {
+                    // Check if rental requires delivery
+                    if (isset($r['fulfillment']) && $r['fulfillment'] === 'delivery') {
+                        // Check if already assigned
+                        if (isset($delivery_map[$r['id']])) {
+                            // Already assigned -> Active Delivery
+                            $r['delivery_info'] = $delivery_map[$r['id']];
+                            $active_deliveries_list[] = $r;
+                        } else {
+                            // Not assigned -> Pending
+                             // Filter out returned/cancelled rentals from pending list if desired, 
+                             // but usually we want to see them if they were supposed to be delivered but failed?
+                             // enhancing logic: only show if rental is active or recently created
+                             $is_returned = (isset($r['status']) && ($r['status'] === 'returned' || $r['status'] === 'cancelled'));
+                             if (!$is_returned) {
+                                 $pending_deliveries[] = $r;
+                             }
+                        }
+                    }
+                }
+                ?>
+                <!-- DELIVERIES MANAGEMENT VIEW -->
+                <div class="space-y-10">
+                    
+                    <!-- Pending Assignments Section -->
+                    <section>
+                        <h2 class="text-xl font-bold flex items-center gap-2 mb-6 text-orange-600">
+                             <span class="material-symbols-outlined">pending_actions</span>
+                             Pending Assignments <span class="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded-full"><?php echo count($pending_deliveries); ?></span>
+                        </h2>
+                        
+                        <?php if (empty($pending_deliveries)): ?>
+                            <div class="bg-white rounded-2xl p-8 text-center border border-gray-100 shadow-sm">
+                                <div class="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-3">
+                                    <span class="material-symbols-outlined text-3xl">check_circle</span>
+                                </div>
+                                <h3 class="font-bold text-gray-900">All caught up!</h3>
+                                <p class="text-gray-500 text-sm">No pending delivery assignments.</p>
+                            </div>
+                        <?php else: ?>
+                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                <?php foreach ($pending_deliveries as $pd): 
+                                    $item_name = $pd['item']['name'] ?? 'Item';
+                                    $renter_name = $user_names[$pd['user_id']] ?? 'Unknown Renter';
+                                    $address = $pd['delivery_address'] ?? 'No address provided';
+                                    
+                                    // Smart Match Logic
+                                    // We'll give a score to each partner based on address match
+                                    $details_json = json_encode([
+                                        'rental_id' => $pd['id'],
+                                        'address' => $address
+                                    ]);
+                                ?>
+                                <div class="bg-white rounded-xl p-5 border border-orange-200 shadow-sm hover:shadow-md transition-shadow relative">
+                                    <div class="flex justify-between items-start mb-3">
+                                        <div>
+                                            <h3 class="font-bold text-gray-900 line-clamp-1"><?php echo htmlspecialchars($item_name); ?></h3>
+                                            <p class="text-xs text-gray-500 flex items-center gap-1 mt-1">
+                                                <span class="material-symbols-outlined text-[10px]">location_on</span>
+                                                <span class="line-clamp-1" title="<?php echo htmlspecialchars($address); ?>"><?php echo htmlspecialchars(substr($address, 0, 30)) . '...'; ?></span>
+                                            </p>
+                                        </div>
+                                        <span class="text-[10px] font-mono bg-gray-100 px-2 py-1 rounded text-gray-500"><?php echo substr($pd['id'], 0, 8); ?>...</span>
+                                    </div>
+                                    
+                                    <div class="bg-gray-50 rounded-lg p-3 text-xs space-y-2 mb-4">
+                                        <div class="flex justify-between">
+                                            <span class="text-gray-400">Owner:</span>
+                                            <span class="font-bold"><?php echo htmlspecialchars($pd['item']['owner_name'] ?? 'Owner'); ?></span>
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span class="text-gray-400">Renter:</span>
+                                            <span class="font-bold"><?php echo htmlspecialchars($renter_name); ?></span>
+                                        </div>
+                                    </div>
+                                    
+                                    <form method="POST">
+                                        <input type="hidden" name="assign_delivery" value="1">
+                                        <input type="hidden" name="rental_id" value="<?php echo $pd['id']; ?>">
+                                        
+                                        <div class="space-y-2">
+                                            <label class="text-[10px] font-bold uppercase text-gray-400">Assign Partner:</label>
+                                            <div class="flex gap-2">
+                                                <select name="partner_id" required class="flex-1 bg-white border border-gray-200 text-sm rounded-lg focus:ring-black focus:border-black p-2">
+                                                    <option value="">Select...</option>
+                                                    <?php 
+                                                        // Sort partners: prioritized ones first
+                                                        $sorted_partners = $delivery_partners;
+                                                        usort($sorted_partners, function($a, $b) use ($address) {
+                                                            // diverse check for city in address
+                                                            // This is a naive check but works for demonstration
+                                                            $a_loc = strtolower($a['city'] ?? $a['address'] ?? '');
+                                                            $b_loc = strtolower($b['city'] ?? $b['address'] ?? '');
+                                                            $addr_lower = strtolower($address);
+                                                            
+                                                            $a_match = ($a_loc && strpos($addr_lower, $a_loc) !== false);
+                                                            $b_match = ($b_loc && strpos($addr_lower, $b_loc) !== false);
+                                                            
+                                                            return $b_match <=> $a_match; // true (1) comes before false (0)
+                                                        });
+                                                    
+                                                        foreach ($sorted_partners as $dp): 
+                                                            $dp_loc = $dp['city'] ?? '';
+                                                            $is_match = ($dp_loc && stripos($address, $dp_loc) !== false);
+                                                    ?>
+                                                    <option value="<?php echo $dp['id']; ?>">
+                                                        <?php echo htmlspecialchars($dp['name']); ?> 
+                                                        <?php if($is_match) echo ' (Warning: Likely Match)'; // Wait, 'Recommended' is better ?>
+                                                        <?php if($is_match) echo '⭐ (Nearby)'; ?>
+                                                    </option>
+                                                    <?php endforeach; ?>
+                                                </select>
+                                                <button class="bg-black text-white px-3 rounded-lg font-bold text-sm hover:bg-gray-800 transition-colors">Assign</button>
+                                            </div>
+                                        </div>
+                                    </form>
+                                </div>
+                                <?php endforeach; ?>
+                            </div>
+                        <?php endif; ?>
+                    </section>
+
+                    <!-- Active Deliveries Section -->
+                    <section>
+                         <h2 class="text-xl font-bold flex items-center gap-2 mb-6">
+                             <span class="material-symbols-outlined">local_shipping</span>
+                             Active Deliveries
+                        </h2>
+                        
+                        <div class="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
+                            <table class="w-full text-left text-sm">
+                                <thead class="bg-gray-50 border-b border-gray-100 text-xs uppercase text-gray-400 font-bold">
+                                    <tr>
+                                        <th class="p-4">Item</th>
+                                        <th class="p-4">Status</th>
+                                        <th class="p-4">Assigned To</th>
+                                        <th class="p-4">Last Update</th>
+                                        <th class="p-4 text-right">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-100">
+                                    <?php if (!empty($active_deliveries_list)): ?>
+                                        <?php foreach ($active_deliveries_list as $ad): 
+                                            $del = $ad['delivery_info'];
+                                            $partner_name = 'Unknown';
+                                            foreach($delivery_partners as $dp) {
+                                                if($dp['id'] === $del['partner_id']) { $partner_name = $dp['name']; break; }
+                                            }
+                                            
+                                            // Status Badge Color
+                                            $status_colors = [
+                                                'assigned' => 'bg-blue-100 text-blue-700',
+                                                'picked_up' => 'bg-yellow-100 text-yellow-700',
+                                                'delivered' => 'bg-green-100 text-green-700',
+                                                'cancelled' => 'bg-red-100 text-red-700'
+                                            ];
+                                            $badge_class = $status_colors[$del['status']] ?? 'bg-gray-100 text-gray-700';
+                                        ?>
+                                        <tr class="hover:bg-gray-50/50">
+                                            <td class="p-4 font-bold text-gray-900"><?php echo htmlspecialchars($ad['item']['name']); ?></td>
+                                            <td class="p-4">
+                                                <span class="text-[10px] font-bold uppercase px-2 py-1 rounded-full <?php echo $badge_class; ?>">
+                                                    <?php echo str_replace('_', ' ', $del['status']); ?>
+                                                </span>
+                                            </td>
+                                            <td class="p-4 text-gray-600"><?php echo htmlspecialchars($partner_name); ?></td>
+                                            <td class="p-4 text-gray-400 text-xs">
+                                                <?php 
+                                                    $last_update = end($del['history']);
+                                                    echo $last_update ? $last_update['timestamp'] : '-';
+                                                ?>
+                                            </td>
+                                            <td class="p-4 text-right">
+                                                <button class="text-gray-400 hover:text-black">
+                                                    <span class="material-symbols-outlined">more_vert</span>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                        <?php endforeach; ?>
+                                    <?php else: ?>
+                                    <tr><td colspan="5" class="p-8 text-center text-gray-400 italic">No assigned deliveries yet.</td></tr>
+                                    <?php endif; ?>
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
+                </div>
+
             <?php break; 
             
             case 'system': ?>

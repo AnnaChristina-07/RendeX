@@ -1,3 +1,7 @@
+<?php
+session_start();
+require_once 'config/database.php';
+?>
 <!DOCTYPE html>
 <html class="light" lang="en"><head>
 <meta charset="utf-8"/>
@@ -56,7 +60,6 @@
 </head>
 <body class="bg-background-light dark:bg-background-dark text-text-main dark:text-white transition-colors duration-200">
 <div class="relative flex min-h-screen w-full flex-col overflow-x-hidden">
-<?php session_start(); ?>
 <header class="sticky top-0 z-50 flex items-center justify-between border-b border-[#e9e8ce] dark:border-[#3e3d2a] bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-sm px-6 py-4 lg:px-10">
 <div class="flex items-center gap-8 w-full max-w-[1400px] mx-auto">
 <a href="index.php" class="flex items-center gap-2 text-text-main dark:text-white">
@@ -292,25 +295,70 @@ function toggleMoreCategories() {
 <h2 class="text-2xl font-bold mb-6">Trending Near You</h2>
 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
 <?php
-$items_file = 'items.json';
-$items = [];
-if (file_exists($items_file)) {
-    $json_content = file_get_contents($items_file);
-    $items = json_decode($json_content, true) ?? [];
+$display_items = [];
+// Try fetching from Database first
+if (function_exists('getDBConnection')) {
+    $pdo = getDBConnection();
+    if ($pdo) {
+        try {
+            // Fetch items that are admin-approved and marked active by user
+            $stmt = $pdo->query("SELECT * FROM items WHERE admin_status = 'approved' AND is_active = 1 ORDER BY created_at DESC LIMIT 4");
+            $db_raw_items = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            foreach ($db_raw_items as $row) {
+                // Normalize keys to match JSON structure used in view
+                $item = $row;
+                $item['price'] = $row['price_per_day']; // View uses 'price'
+                $item['address'] = $row['location'];    // View uses 'address'
+                $item['status'] = 'Active';             // Since we filtered correctly
+                
+                // Handle Images safely
+                $item['images'] = [];
+                if (!empty($row['images'])) {
+                    $decoded = json_decode($row['images'], true);
+                    if (is_array($decoded)) {
+                        $item['images'] = $decoded;
+                    } elseif (is_string($decoded)) {
+                         // Double encoded case or single string
+                         $item['images'] = [$decoded];
+                    } else {
+                         // Raw string case
+                         $item['images'] = [$row['images']];
+                    }
+                }
+                
+                $display_items[] = $item;
+            }
+        } catch (Exception $e) {
+            // Silent fail, fall back to JSON
+            error_log("DB Fetch Error in index.php: " . $e->getMessage());
+        }
+    }
 }
 
-// Filter only Active items
-$active_items = array_filter($items, function($item) {
-    return isset($item['status']) && $item['status'] === 'Active';
-});
+// Fallback to JSON if DB gave nothing
+if (empty($display_items)) {
+    $items_file = 'items.json';
+    $items = [];
+    if (file_exists($items_file)) {
+        $json_content = file_get_contents($items_file);
+        $items = json_decode($json_content, true) ?? [];
+    }
+    
+    // Filter only Active items
+    $active_items = array_filter($items, function($item) {
+        return isset($item['status']) && $item['status'] === 'Active';
+    });
+    
+    // Sort by creation date (newest first)
+    usort($active_items, function($a, $b) {
+        return strtotime($b['created_at']) - strtotime($a['created_at']);
+    });
+    
+    // Limit to 4 items for the homepage
+    $display_items = array_slice($active_items, 0, 4);
+}
 
-// Sort by creation date (newest first)
-usort($active_items, function($a, $b) {
-    return strtotime($b['created_at']) - strtotime($a['created_at']);
-});
-
-// Limit to 4 items for the homepage
-$display_items = array_slice($active_items, 0, 4);
 
 if (empty($display_items)): 
 ?>

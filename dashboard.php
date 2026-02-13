@@ -404,7 +404,58 @@ function toggleMoreCategories() {
 <section class="mt-12">
 <h2 class="text-2xl font-bold mb-6">Trending Near You</h2>
 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            <?php if (empty($items)): ?>
+<?php
+// DB Fetch Logic for Trending Items
+$trending_items = [];
+// Try DB
+if (isset($pdo) && $pdo) {
+    try {
+        // Fetch active items
+        $stmt = $pdo->query("SELECT * FROM items WHERE admin_status = 'approved' AND is_active = 1 AND (active_until IS NULL OR active_until >= NOW()) ORDER BY created_at DESC LIMIT 4");
+        $db_raw = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        foreach ($db_raw as $row) {
+             $item = $row;
+             $item['price'] = $row['price_per_day']; // Map for view
+             $item['address'] = $row['location'] ?? 'Nearby';  // Map for view
+             
+             // Decode images
+             $item['images'] = [];
+             if (!empty($row['images'])) {
+                 $decoded = json_decode($row['images'], true);
+                 if (is_array($decoded)) {
+                     $item['images'] = $decoded;
+                 } elseif (is_string($decoded)) {
+                     $item['images'] = [$decoded];
+                 } else {
+                     $item['images'] = [$row['images']]; // Raw fallback
+                 }
+             }
+             
+             $trending_items[] = $item;
+        }
+    } catch (Exception $e) {
+        // Ignore DB error
+    }
+}
+
+// Fallback to JSON if DB empty
+if (empty($trending_items) && !empty($items)) {
+    $valid_items = array_filter($items, function($item) {
+        return !empty($item['title']) && 
+               isset($item['status']) && $item['status'] === 'Active' &&
+               (!isset($item['active_until']) || strtotime($item['active_until']) >= time());
+    });
+    // Sort
+    usort($valid_items, function($a, $b) {
+        $t1 = isset($a['created_at']) ? strtotime($a['created_at']) : 0;
+        $t2 = isset($b['created_at']) ? strtotime($b['created_at']) : 0;
+        return $t2 - $t1;
+    });
+    $trending_items = array_slice($valid_items, 0, 4);
+}
+?>
+
+            <?php if (empty($trending_items)): ?>
                 <div class="col-span-full flex flex-col items-center justify-center py-16 text-center">
                     <div class="w-16 h-16 bg-gray-100 dark:bg-zinc-800 rounded-full flex items-center justify-center mb-4">
                         <span class="material-symbols-outlined text-gray-400 text-3xl">inventory_2</span>
@@ -417,22 +468,8 @@ function toggleMoreCategories() {
                 </div>
             <?php else: ?>
                 <?php 
-                    // Filter and limit items to show only 4 "nearby" trending items
-                    $valid_items = array_filter($items, function($item) {
-                        return !empty($item['title']) && 
-                               isset($item['status']) && $item['status'] === 'Active' &&
-                               (!isset($item['active_until']) || strtotime($item['active_until']) >= time());
-                    });
-                    
-                    // Sort by newest first
-                    usort($valid_items, function($a, $b) {
-                        $t1 = isset($a['created_at']) ? strtotime($a['created_at']) : 0;
-                        $t2 = isset($b['created_at']) ? strtotime($b['created_at']) : 0;
-                        return $t2 - $t1;
-                    });
-
-                    // Limit to 4 items
-                    $display_items = array_slice($valid_items, 0, 4);
+                    // Use the fetched trending items
+                    $display_items = $trending_items;
                 ?>
 
                 <?php foreach ($display_items as $item): 

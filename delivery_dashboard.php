@@ -272,17 +272,17 @@ $tab = isset($_GET['tab']) ? $_GET['tab'] : 'overview';
                     $r = $d['rental'];
                     $item = $r['item'] ?? null;
                 ?>
-                <div class="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm flex flex-col md:flex-row gap-6">
+                <div class="bg-white rounded-2xl border border-gray-200 border-l-4 border-l-[#f9f506] p-6 shadow-sm flex flex-col md:flex-row gap-6 hover:shadow-[0_0_15px_rgba(249,245,6,0.3)] transition-shadow">
                     <!-- Status Indicator -->
                     <div class="md:w-48 shrink-0 flex flex-col gap-2">
                         <span class="font-mono text-xs text-gray-400">ID: <?php echo $d['id']; ?></span>
                         <?php 
                             $badge_color = 'bg-gray-100 text-gray-600';
-                            if ($d['status'] == 'assigned') $badge_color = 'bg-yellow-100 text-yellow-800';
+                            if ($d['status'] == 'assigned') $badge_color = 'bg-[#f9f506] text-black';
                             if ($d['status'] == 'picked_up') $badge_color = 'bg-blue-100 text-blue-800';
                             if ($d['status'] == 'delivered') $badge_color = 'bg-green-100 text-green-800';
                         ?>
-                        <div class="px-3 py-2 rounded-lg font-bold text-xs uppercase text-center <?php echo $badge_color; ?>">
+                        <div class="px-5 py-2 rounded-lg font-black text-xs uppercase text-center shadow-sm <?php echo $d['status'] == 'assigned' ? 'bg-[#f9f506] text-black' : $badge_color; ?>">
                             <?php echo str_replace('_', ' ', $d['status']); ?>
                         </div>
                         <div class="text-xs text-gray-500 mt-auto">
@@ -310,15 +310,19 @@ $tab = isset($_GET['tab']) ? $_GET['tab'] : 'overview';
                             $renter_phone = isset($users_map[$renter_id]) ? htmlspecialchars($users_map[$renter_id]['phone']) : 'N/A';
                             $renter_address = !empty($r['delivery_address']) ? htmlspecialchars($r['delivery_address']) : ($users_map[$renter_id]['address'] ?? 'Address not in file');
                         ?>
-                        <div class="grid grid-cols-2 gap-4 text-sm bg-gray-50 p-4 rounded-xl">
+                        <div class="grid grid-cols-2 gap-4 text-sm bg-[#ffffea] p-4 rounded-xl border border-yellow-100">
                             <div>
-                                <span class="block text-xs font-bold text-gray-400">PICKUP FROM</span>
+                                <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2 mb-1">
+                                    <span class="w-2 h-2 rounded-full bg-[#f9f506]"></span> PICKUP FROM
+                                </span>
                                 <span class="block font-bold mt-1 text-base"><?php echo htmlspecialchars($owner_name); ?></span>
                                 <span class="block text-xs text-gray-500 font-medium"><?php echo htmlspecialchars($owner_phone); ?></span>
                                 <span class="block text-xs text-gray-500 mt-1"><?php echo htmlspecialchars($owner_address); ?></span>
                             </div>
                             <div>
-                                <span class="block text-xs font-bold text-gray-400">DELIVER TO</span>
+                                <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2 mb-1">
+                                    <span class="w-2 h-2 rounded-full bg-black"></span> DELIVER TO
+                                </span>
                                 <span class="block font-bold mt-1 text-base"><?php echo htmlspecialchars($renter_name); ?></span>
                                 <span class="block text-xs text-gray-500 font-medium"><?php echo htmlspecialchars($renter_phone); ?></span>
                                 <span class="block text-xs text-gray-500 mt-1"><?php echo htmlspecialchars($renter_address); ?></span>
@@ -332,8 +336,8 @@ $tab = isset($_GET['tab']) ? $_GET['tab'] : 'overview';
                             <form method="POST" class="w-full">
                                 <input type="hidden" name="update_status_id" value="<?php echo $d['id']; ?>">
                                 <input type="hidden" name="new_status" value="picked_up">
-                                <button class="w-full bg-black text-white py-3 rounded-xl font-bold hover:bg-gray-800 transition-colors flex flex-col items-center">
-                                    <span class="material-symbols-outlined mb-1">package</span>
+                                <button class="w-full bg-black text-white py-3 rounded-xl font-bold hover:bg-gray-900 transition-all flex flex-col items-center group shadow-md hover:shadow-lg active:scale-95">
+                                    <span class="material-symbols-outlined mb-1 text-[#f9f506] group-hover:scale-110 transition-transform">package</span>
                                     Confirm Pickup
                                 </button>
                             </form>
@@ -341,8 +345,8 @@ $tab = isset($_GET['tab']) ? $_GET['tab'] : 'overview';
                             <form method="POST" class="w-full">
                                 <input type="hidden" name="update_status_id" value="<?php echo $d['id']; ?>">
                                 <input type="hidden" name="new_status" value="delivered">
-                                <button class="w-full bg-[#dfff00] text-black py-3 rounded-xl font-bold hover:bg-[#eaff3d] transition-colors flex flex-col items-center">
-                                    <span class="material-symbols-outlined mb-1">check_circle</span>
+                                <button class="w-full bg-[#f9f506] text-black py-3 rounded-xl font-bold hover:bg-[#fffc4d] transition-all flex flex-col items-center group shadow-md hover:shadow-lg active:scale-95">
+                                    <span class="material-symbols-outlined mb-1 group-hover:scale-110 transition-transform">check_circle</span>
                                     Confirm Delivery
                                 </button>
                             </form>
