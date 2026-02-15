@@ -66,5 +66,26 @@
                 "timestamp": "2026-02-13 16:52:07"
             }
         ]
+    },
+    {
+        "id": "del_69920373ce9d4",
+        "rental_id": "RENT_698f4b5e4b9bd",
+        "partner_id": "695a9a1b6d290",
+        "status": "delivered",
+        "assigned_at": "2026-02-15 18:33:39",
+        "history": [
+            {
+                "status": "assigned",
+                "timestamp": "2026-02-15 18:33:39"
+            },
+            {
+                "status": "picked_up",
+                "timestamp": "2026-02-15 18:34:30"
+            },
+            {
+                "status": "delivered",
+                "timestamp": "2026-02-15 18:34:35"
+            }
+        ]
     }
 ]

@@ -192,7 +192,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirm_return'])) {
             <p class="text-text-muted">Coordinate logistics and document condition to ensure a smooth hand-off.</p>
         </div>
 
-        <form method="POST" id="return-form" class="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12 items-start">
+        <form method="POST" id="return-form" enctype="multipart/form-data" class="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12 items-start">
             
             <!-- Left: Rental Summary -->
             <div class="lg:col-span-1 order-2 lg:order-1">
@@ -291,12 +291,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirm_return'])) {
                         </div>
 
                         <div>
-                            <label class="block text-xs font-bold text-text-muted uppercase tracking-widest mb-3 ml-1">Proof of Condition (Photos) <span class="text-red-500">*</span></label>
-                            <div id="photo_dropzone" class="border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-2xl p-8 text-center bg-gray-50 dark:bg-[#1e2019]/50 hover:bg-gray-100 transition-colors cursor-pointer relative" onclick="document.getElementById('condition_photos').click()">
-                                <input type="file" multiple accept="image/*" id="condition_photos" name="condition_photos[]" class="absolute inset-0 opacity-0 cursor-pointer w-full h-full" onchange="handleFileSelect(this)">
-                                <span class="material-symbols-outlined text-4xl text-gray-400 mb-2">add_a_photo</span>
-                                <p id="photo_text" class="font-bold text-sm">Click or drag photos to upload</p>
-                                <p class="text-xs text-text-muted mt-1">Please provide clear photos of the front, back, and any sensitive parts.</p>
+                            <div id="photo_dropzone" class="border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-2xl p-8 text-center bg-gray-50 dark:bg-[#1e2019]/50 hover:bg-gray-100 transition-colors cursor-pointer relative group/upload">
+                                <input type="file" multiple accept="image/*" id="condition_photos" name="condition_photos[]" class="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10" onchange="handleFileSelect(this)">
+                                <div id="upload_prompt" class="transition-opacity duration-300">
+                                    <span class="material-symbols-outlined text-4xl text-gray-400 mb-2 group-hover/upload:text-primary transition-colors">add_a_photo</span>
+                                    <p id="photo_text" class="font-bold text-sm">Click or drag photos to upload</p>
+                                    <p class="text-xs text-text-muted mt-1">Please provide clear photos of the front, back, and any sensitive parts.</p>
+                                </div>
+                                <div id="preview_container" class="hidden grid-cols-3 gap-2 mt-4 relative z-20 pointer-events-none"></div>
                             </div>
                         </div>
                     </div>
@@ -386,11 +388,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirm_return'])) {
 
         function handleFileSelect(input) {
             const dropzone = document.getElementById('photo_dropzone');
-            const text = document.getElementById('photo_text');
+            const pContainer = document.getElementById('preview_container');
+            const prompt = document.getElementById('upload_prompt');
+            
             if (input.files && input.files.length > 0) {
-                text.textContent = input.files.length + " file(s) selected";
                 dropzone.classList.remove('border-gray-300', 'dark:border-gray-700');
-                dropzone.classList.add('border-green-500', 'bg-green-50');
+                dropzone.classList.add('border-primary', 'bg-yellow-50/50');
+                
+                // Show previews
+                prompt.classList.add('hidden');
+                pContainer.classList.remove('hidden');
+                pContainer.classList.add('grid');
+                pContainer.innerHTML = '';
+                
+                Array.from(input.files).forEach(file => {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        const div = document.createElement('div');
+                        div.className = 'aspect-square rounded-lg overflow-hidden border border-gray-200 relative bg-white';
+                        div.innerHTML = `<img src="${e.target.result}" class="w-full h-full object-cover">`;
+                        pContainer.appendChild(div);
+                    }
+                    reader.readAsDataURL(file);
+                });
+                
+            } else {
+                // Reset
+                 dropzone.classList.add('border-gray-300', 'dark:border-gray-700');
+                 dropzone.classList.remove('border-primary', 'bg-yellow-50/50');
+                 prompt.classList.remove('hidden');
+                 pContainer.classList.add('hidden');
+                 pContainer.classList.remove('grid');
+                 pContainer.innerHTML = '';
             }
         }
 

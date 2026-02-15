@@ -1047,8 +1047,8 @@ foreach ($rentals as $rental) {
                     <!-- Unassigned Section -->
                     <section>
                         <h2 class="text-xl font-bold flex items-center gap-2 mb-4">
-                            <span class="material-symbols-outlined text-orange-500">pending</span> 
-                            Pending Assignments <span class="text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded-full"><?php echo count($unassigned_rentals); ?></span>
+                            <span class="material-symbols-outlined text-yellow-500">pending</span> 
+                            Pending Assignments <span class="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full"><?php echo count($unassigned_rentals); ?></span>
                         </h2>
                         
                         <?php if (empty($delivery_partners)): ?>
@@ -1085,13 +1085,13 @@ foreach ($rentals as $rental) {
                                     <input type="hidden" name="rental_id" value="<?php echo $r['id']; ?>">
                                     <label class="block text-xs font-bold text-gray-500 mb-2">Assign Partner:</label>
                                     <div class="flex gap-2">
-                                        <select name="partner_id" required class="flex-1 bg-gray-50 border-gray-200 rounded-lg text-sm py-2 px-3 focus:ring-black focus:border-black">
+                                        <select name="partner_id" required class="flex-1 bg-gray-50 border-gray-200 rounded-lg text-sm py-2 px-3 focus:ring-yellow-500 focus:border-yellow-500">
                                             <option value="">Select...</option>
                                             <?php foreach($delivery_partners as $dp): ?>
                                             <option value="<?php echo $dp['id']; ?>"><?php echo htmlspecialchars($dp['name']); ?> </option>
                                             <?php endforeach; ?>
                                         </select>
-                                        <button type="submit" class="bg-black text-white px-3 py-2 rounded-lg text-xs font-bold hover:bg-gray-800">Assign</button>
+                                        <button type="submit" class="bg-primary text-black px-3 py-2 rounded-lg text-xs font-bold hover:bg-yellow-400">Assign</button>
                                     </div>
                                 </form>
                             </div>

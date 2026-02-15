@@ -731,13 +731,30 @@
             "type": "dynamic",
             "user_id": "697e2d046713b"
         },
-        "status": "active",
+        "status": "returned",
         "start_date": "2026-02-13",
         "end_date": "2026-02-15",
         "fulfillment": "delivery",
         "delivery_address": "Kayaplackal (H) ,Chirakadav PO, Ponkunnam, Near Chirakadavu Temple, Ponkunnam Kottayam 685518, Phone: 9876543210",
         "total_price": 360,
-        "created_at": "2026-02-13 16:43:04"
+        "created_at": "2026-02-13 16:43:04",
+        "return_status": "completed_dispute",
+        "return_method": "dropoff",
+        "return_date": "2026-02-15",
+        "return_time": "05:00 - 07:00 PM",
+        "condition_note": "No damage or issues. The umbrella is in good condition",
+        "condition_images": [],
+        "return_initiated_at": "2026-02-15 18:09:19",
+        "damage_report": {
+            "reported_at": "2026-02-15 18:12:15",
+            "description": "One rib is slightly bent",
+            "estimated_cost": 40,
+            "evidence_photos": [],
+            "status": "pending_review"
+        },
+        "dispute_status": "resolved_deducted",
+        "admin_resolution_note": "",
+        "resolved_at": "2026-02-15 18:39:20"
     },
     {
         "id": "RENT_698f4b5e4b9bd",
@@ -776,12 +793,30 @@
             "type": "dynamic",
             "user_id": "697e2d046713b"
         },
-        "status": "active",
+        "status": "dispute",
         "start_date": "2026-02-13",
         "end_date": "2026-02-17",
         "fulfillment": "delivery",
         "delivery_address": "Vadakkedath(H),Pachady PO , Nedumkandam, near Thooval Waterfalls, Nedumkandam Idukki 685553, Phone: 9876567809",
         "total_price": 900,
-        "created_at": "2026-02-13 17:03:42"
+        "created_at": "2026-02-13 17:03:42",
+        "return_status": "damage_reported",
+        "return_method": "dropoff",
+        "return_date": "2026-02-17",
+        "return_time": "09:00 - 11:00 AM",
+        "condition_note": "Well maintained. No rust or broken parts.",
+        "condition_images": [
+            "return_6992067d2d94d.jpg"
+        ],
+        "return_initiated_at": "2026-02-15 18:46:37",
+        "damage_report": {
+            "reported_at": "2026-02-15 18:48:09",
+            "description": "Frame slightly bent but still usable",
+            "estimated_cost": 100,
+            "evidence_photos": [
+                "damage_699206d9ebc4f.jpg"
+            ],
+            "status": "pending_review"
+        }
     }
 ]

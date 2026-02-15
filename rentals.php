@@ -194,9 +194,15 @@ foreach ($rentals as $rental) {
                                         Return Initiated
                                     </span>
                                 <?php else: ?>
-                                    <a href="return-rental.php?id=<?php echo $rental['id']; ?>" class="bg-black text-white text-xs font-bold px-4 py-2 rounded-full hover:bg-gray-800 transition-colors inline-block">
-                                        Return Item
-                                    </a>
+                                    <?php if ($is_delivery && $delivery_status !== 'delivered'): ?>
+                                        <button disabled class="bg-gray-200 text-gray-400 text-xs font-bold px-4 py-2 rounded-full cursor-not-allowed inline-block" title="Item must be delivered before it can be returned">
+                                            Return Item
+                                        </button>
+                                    <?php else: ?>
+                                        <a href="return-rental.php?id=<?php echo $rental['id']; ?>" class="bg-black text-white text-xs font-bold px-4 py-2 rounded-full hover:bg-gray-800 transition-colors inline-block">
+                                            Return Item
+                                        </a>
+                                    <?php endif; ?>
                                 <?php endif; ?>
                             </div>
                         </div>
