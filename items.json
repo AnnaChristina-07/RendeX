@@ -1395,6 +1395,29 @@
         ],
         "created_at": "2026-02-13 08:40:10",
         "updated_at": "2026-02-13 08:40:10",
-        "status": "Pending Approval"
+        "status": "Rejected"
+    },
+    {
+        "id": "item_6995fac80c607",
+        "user_id": "69954bf981e70",
+        "owner_name": "Jewel Biju",
+        "title": "Desk Lamp",
+        "category": "student-essentials",
+        "price": "80",
+        "security_deposit": "",
+        "handover_methods": [
+            "pickup"
+        ],
+        "description": "Small lamp for study and reading. Easy to use and good for night time.",
+        "address": "House No. 23, St. Mary\u2019s Villa, Main Road, Near KSRTC Bus Stand, Pala, Kerala - 686575",
+        "images": [
+            "6995fac803889_The 50 Easiest, Most Clever Home Upgrades Under $30 On Amazon.jpg",
+            "6995fac80a49c_Wooden Table Lamp 1pc - Indoor Lighting - Yellow-2 _ one-size.jpg"
+        ],
+        "created_at": "2026-02-18 18:45:44",
+        "updated_at": "2026-02-18 18:45:44",
+        "status": "Active",
+        "active_until": "2026-03-20 18:56:01",
+        "listing_duration": 30
     }
 ]

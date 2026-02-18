@@ -20,6 +20,11 @@ $security_deposit = '';
 $handover_methods = ['pickup']; // Default
 $description = '';
 $address = '';
+$addr_house = '';
+$addr_street = '';
+$addr_city = '';
+$addr_state = '';
+$addr_pin = '';
 $images = [];
 $edit_id = null;
 $is_edit = false;
@@ -41,6 +46,17 @@ if (isset($_GET['edit_id'])) {
             $handover_methods = $item['handover_methods'] ?? ['pickup'];
             $description = $item['description'];
             $address = $item['address'];
+            $address = $item['address'];
+            // Try to parse address components
+            if (preg_match('/^(.*), (.*), (.*), (.*) - (.*)$/', $address, $matches)) {
+                $addr_house = $matches[1];
+                $addr_street = $matches[2];
+                $addr_city = $matches[3];
+                $addr_state = $matches[4];
+                $addr_pin = $matches[5];
+            } else {
+                $addr_city = $address; // Fallback for legacy data
+            }
             $images = $item['images']; // Keep existing images
             $is_edit = true;
             break;
@@ -65,6 +81,17 @@ if (isset($_GET['edit_id'])) {
                     $handover_methods = json_decode($db_item['handover_methods'], true) ?: ['pickup'];
                     $description = $db_item['description'];
                     $address = $db_item['location'];
+                    $address = $db_item['location'];
+                    // Try to parse address components
+                    if (preg_match('/^(.*), (.*), (.*), (.*) - (.*)$/', $address, $matches)) {
+                        $addr_house = $matches[1];
+                        $addr_street = $matches[2];
+                        $addr_city = $matches[3];
+                        $addr_state = $matches[4];
+                        $addr_pin = $matches[5];
+                    } else {
+                        $addr_city = $address; // Fallback for legacy data
+                    }
                     $images = json_decode($db_item['images'], true) ?: [];
                     $is_edit = true;
                 }
@@ -86,16 +113,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $security_deposit = trim($_POST['security_deposit'] ?? 0);
     $handover_methods = $_POST['handover_methods'] ?? [];
     $description = trim($_POST['description']);
-    $address = trim($_POST['address']);
+    $addr_house = trim($_POST['addr_house'] ?? '');
+    $addr_street = trim($_POST['addr_street'] ?? '');
+    $addr_city = trim($_POST['addr_city'] ?? '');
+    $addr_state = trim($_POST['addr_state'] ?? '');
+    $addr_pin = trim($_POST['addr_pin'] ?? '');
 
     if (empty($title)) $errors[] = "Item Name is required.";
     if (empty($category)) $errors[] = "Please select a Category.";
     if (empty($description)) $errors[] = "Description is required.";
-    if (empty($address)) {
-        $errors[] = "Pickup Location is required.";
-    } elseif (!preg_match("/^[a-zA-Z\s,.-]+$/", $address)) {
-        $errors[] = "Pickup Location must specific place name(letters only).";
+    
+    if (empty($addr_house) || empty($addr_street) || empty($addr_city) || empty($addr_state) || empty($addr_pin)) {
+        $errors[] = "Please provide complete pickup address details (House No, Street, City, State, Pincode).";
     }
+    
+    $address = "$addr_house, $addr_street, $addr_city, $addr_state - $addr_pin";
     
     // Validate Price
     if (!is_numeric($price) || $price <= 0) {
@@ -580,9 +612,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <h3 class="text-xl font-bold text-gray-900 dark:text-white">Pickup Location</h3>
                 </div>
                 
-                <div class="relative">
-                    <span class="absolute left-5 top-1/2 -translate-y-1/2 material-symbols-outlined text-gray-400">location_on</span>
-                    <input type="text" name="address" value="<?php echo htmlspecialchars($address); ?>" placeholder="Enter city or area (e.g. Indiranagar, Bangalore)" class="w-full bg-gray-50 dark:bg-gray-800 border-none focus:bg-white dark:focus:bg-gray-700 focus:ring-2 focus:ring-yellow-400 rounded-2xl pl-12 pr-5 py-4 font-medium transition-all" required oninput="this.value = this.value.replace(/[^a-zA-Z\s,.-]/g, '')">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="md:col-span-2">
+                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 ml-1">Flat, House no., Building <span class="text-red-500">*</span></label>
+                        <input type="text" name="addr_house" value="<?php echo htmlspecialchars($addr_house); ?>" placeholder="e.g. Flat 4B, Emerald Apartments" class="w-full bg-gray-50 dark:bg-gray-800 border-none focus:bg-white dark:focus:bg-gray-700 focus:ring-2 focus:ring-yellow-400 rounded-2xl px-5 py-4 font-medium transition-all" required>
+                    </div>
+                    
+                    <div class="md:col-span-2">
+                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 ml-1">Area, Street, Sector, Village <span class="text-red-500">*</span></label>
+                        <input type="text" name="addr_street" value="<?php echo htmlspecialchars($addr_street); ?>" placeholder="e.g. 12th Main Road, Indiranagar" class="w-full bg-gray-50 dark:bg-gray-800 border-none focus:bg-white dark:focus:bg-gray-700 focus:ring-2 focus:ring-yellow-400 rounded-2xl px-5 py-4 font-medium transition-all" required>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 ml-1">Town/City <span class="text-red-500">*</span></label>
+                        <input type="text" name="addr_city" value="<?php echo htmlspecialchars($addr_city); ?>" placeholder="e.g. Bangalore" class="w-full bg-gray-50 dark:bg-gray-800 border-none focus:bg-white dark:focus:bg-gray-700 focus:ring-2 focus:ring-yellow-400 rounded-2xl px-5 py-4 font-medium transition-all" required>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 ml-1">State <span class="text-red-500">*</span></label>
+                        <input type="text" name="addr_state" value="<?php echo htmlspecialchars($addr_state); ?>" placeholder="e.g. Karnataka" class="w-full bg-gray-50 dark:bg-gray-800 border-none focus:bg-white dark:focus:bg-gray-700 focus:ring-2 focus:ring-yellow-400 rounded-2xl px-5 py-4 font-medium transition-all" required>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 ml-1">Pincode <span class="text-red-500">*</span></label>
+                        <input type="text" name="addr_pin" value="<?php echo htmlspecialchars($addr_pin); ?>" placeholder="e.g. 560038" pattern="[0-9]{6}" maxlength="6" class="w-full bg-gray-50 dark:bg-gray-800 border-none focus:bg-white dark:focus:bg-gray-700 focus:ring-2 focus:ring-yellow-400 rounded-2xl px-5 py-4 font-medium transition-all" required>
+                    </div>
                 </div>
             </div>
 
