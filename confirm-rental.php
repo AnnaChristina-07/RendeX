@@ -16,6 +16,7 @@ if (!$item_id) {
 }
 
 require_once 'config/database.php';
+require_once 'config/mail.php';
 
 // Load Item Data (Same logic as item-details.php)
 $item = null;
@@ -198,6 +199,51 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirm_booking'])) {
     ];
     
     file_put_contents($rentals_file, json_encode($rentals, JSON_PRETTY_PRINT));
+
+    // Send Confirmation Email
+    $renter_email = $_SESSION['user_email'] ?? $_SESSION['email'] ?? '';
+    if ($renter_email) {
+        $subject = "Rental Confirmation - #" . $success_booking['id'];
+        $email_body = "
+            <div style='font-family: sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #e9e8ce; border-radius: 20px; background-color: #ffffff;'>
+                <div style='background-color: #f9f506; padding: 20px; border-radius: 15px; text-align: center; margin-bottom: 30px;'>
+                    <h1 style='margin: 0; color: #000; font-size: 24px;'>Booking Confirmed!</h1>
+                </div>
+                
+                <p style='color: #5e5e4a; font-size: 16px; line-height: 1.5;'>Hi <strong>" . htmlspecialchars($success_booking['user_name']) . "</strong>,</p>
+                <p style='color: #5e5e4a; font-size: 16px; line-height: 1.5;'>Your rental for <strong>" . htmlspecialchars($success_booking['item_name']) . "</strong> has been successfully booked.</p>
+                
+                <div style='background-color: #f8f8f5; padding: 20px; border-radius: 15px; margin: 30px 0;'>
+                    <table style='width: 100%; border-collapse: collapse;'>
+                        <tr>
+                            <td style='padding: 10px 0; color: #5e5e4a; font-size: 14px;'>Booking ID</td>
+                            <td style='padding: 10px 0; font-weight: bold; text-align: right;'>" . $success_booking['id'] . "</td>
+                        </tr>
+                        <tr>
+                            <td style='padding: 10px 0; color: #5e5e4a; font-size: 14px;'>Dates</td>
+                            <td style='padding: 10px 0; font-weight: bold; text-align: right;'>" . date('M d', strtotime($start_date)) . " - " . date('M d', strtotime($end_date)) . "</td>
+                        </tr>
+                        <tr>
+                            <td style='padding: 10px 0; color: #5e5e4a; font-size: 14px;'>Fulfillment</td>
+                            <td style='padding: 10px 0; font-weight: bold; text-align: right;'>" . ucfirst($fulfillment) . "</td>
+                        </tr>
+                        <tr>
+                            <td style='padding: 10px 0; color: #5e5e4a; font-size: 14px;'>Total Paid</td>
+                            <td style='padding: 10px 0; font-weight: bold; text-align: right; color: #16a34a;'>₹" . number_format($total, 2) . "</td>
+                        </tr>
+                    </table>
+                </div>
+
+                <p style='color: #5e5e4a; font-size: 14px; text-align: center; margin-top: 30px;'>
+                    Thank you for choosing RendeX. <br>
+                    <a href='http://" . $_SERVER['HTTP_HOST'] . "/RendeX/rentals.php' style='color: #000; font-weight: bold; text-decoration: none;'>View My Rentals</a>
+                </p>
+            </div>
+        ";
+        // Send the email (fire and forget)
+        send_smtp_email($renter_email, $subject, $email_body);
+    }
+
     // We stay on the page to show our premium success message
 }
 

@@ -818,5 +818,50 @@
             ],
             "status": "pending_review"
         }
+    },
+    {
+        "id": "RENT_69954d85308a2",
+        "user_id": "697ad695ad641",
+        "item": {
+            "id": 36,
+            "owner_id": "697bb26600c09",
+            "title": "Tents",
+            "description": "Tent in good condition. Clean, waterproof, and well-maintained. Suitable for camping and outdoor stays",
+            "category": "outdoor-gear",
+            "price_per_day": "300.00",
+            "security_deposit": "0.00",
+            "condition_status": "good",
+            "availability_status": "available",
+            "active_until": "2026-02-28 20:47:07",
+            "listing_duration": 30,
+            "location": "Kattappana",
+            "city": null,
+            "state": null,
+            "pincode": null,
+            "images": "[\"697bb928f165c_download (8).jpg\",\"697bb928f2761_Outdoor 2-4 Persons Camping Tent Double Layer Waterproof Windproof Anti-Uv Sunshade Canopy.gif\"]",
+            "is_active": 1,
+            "views_count": 0,
+            "created_at": "2026-01-30 01:16:49",
+            "updated_at": "2026-01-30 01:17:07",
+            "handover_methods": "[\"pickup\"]",
+            "admin_status": "approved",
+            "name": "Tents",
+            "price": "300.00",
+            "address": "Kattappana",
+            "all_images": [
+                "uploads\/697bb928f165c_download (8).jpg",
+                "uploads\/697bb928f2761_Outdoor 2-4 Persons Camping Tent Double Layer Waterproof Windproof Anti-Uv Sunshade Canopy.gif"
+            ],
+            "img": "uploads\/697bb928f165c_download (8).jpg",
+            "type": "dynamic",
+            "user_id": "697bb26600c09"
+        },
+        "status": "active",
+        "start_date": "2026-02-18",
+        "end_date": "2026-02-20",
+        "fulfillment": "delivery",
+        "delivery_address": "Kayaplackal (H) ,Chirakadav PO, Ponkunnam, Near Chirakadavu Temple, Ponkunnam Kottayam 685518, Phone: 9876543210",
+        "total_price": 1200,
+        "created_at": "2026-02-18 06:26:29"
     }
 ]

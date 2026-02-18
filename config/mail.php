@@ -6,70 +6,60 @@
 // SMTP Credentials
 if (!defined('SMTP_HOST')) define('SMTP_HOST', 'ssl://smtp.gmail.com');
 if (!defined('SMTP_PORT')) define('SMTP_PORT', 465);
-if (!defined('SMTP_USER')) define('SMTP_USER', 'annachristinajohny2028@mca.ajce.in');
-if (!defined('SMTP_PASS')) define('SMTP_PASS', 'lnjqcasvvxewzyeh'); // App Password
+if (!defined('SMTP_USER')) define('SMTP_USER', 'rendex857@gmail.com');
+if (!defined('SMTP_PASS')) define('SMTP_PASS', 'dhljrxkzvctpnzan'); // App Password
+
+// Include PHPMailer
+require_once __DIR__ . '/../phpmailserver/PHPMailer-master/PHPMailer-master/src/Exception.php';
+require_once __DIR__ . '/../phpmailserver/PHPMailer-master/PHPMailer-master/src/PHPMailer.php';
+require_once __DIR__ . '/../phpmailserver/PHPMailer-master/PHPMailer-master/src/SMTP.php';
+
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception;
+use PHPMailer\PHPMailer\SMTP;
 
 /**
- * Send an email via SMTP
+ * Send an email via SMTP using PHPMailer
  * @param string $to Recipient email
  * @param string $subject Email subject
  * @param string $body Email HTML body
  * @return bool|string True on success, error message on failure
  */
 function send_smtp_email($to, $subject, $body) {
+    $mail = new PHPMailer(true);
+
     try {
-        $context = stream_context_create([
-            'ssl' => [
-                'verify_peer' => false,
-                'verify_peer_name' => false,
-                'allow_self_signed' => true
-            ]
-        ]);
+        // Server settings
+        // $mail->SMTPDebug = 2;                      // Debugging
+        // $mail->Debugoutput = function($str, $level) { file_put_contents(__DIR__ . '/../mail_debug.log', date('Y-m-d H:i:s'). "\t" . $str . "\n", FILE_APPEND | LOCK_EX); };
+        
+        $mail->isSMTP();
+        $mail->Host       = 'smtp.gmail.com';
+        $mail->SMTPAuth   = true;
+        $mail->Username   = SMTP_USER;
+        $mail->Password   = SMTP_PASS;
+        $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS; // Enable implicit TLS encryption
+        $mail->Port       = 465;
 
-        $socket = stream_socket_client(SMTP_HOST . ':' . SMTP_PORT, $errno, $errstr, 30, STREAM_CLIENT_CONNECT, $context);
-        if (!$socket) throw new Exception("Could not connect to SMTP host: $errstr ($errno)");
+        // Recipients
+        $mail->setFrom(SMTP_USER, 'RendeX');
+        $mail->addAddress($to);
 
-        $response = fgets($socket, 515);
-        if (empty($response) || substr($response, 0, 3) != '220') throw new Exception("SMTP connection failure: $response");
+        // Content
+        $mail->isHTML(true);
+        $mail->Subject = $subject;
+        $mail->Body    = $body;
+        $mail->AltBody = strip_tags($body);
 
-        fputs($socket, "EHLO " . ($_SERVER['SERVER_NAME'] ?? 'localhost') . "\r\n");
-        while ($line = fgets($socket, 515)) {
-            if (substr($line, 3, 1) == ' ') break;
-        }
-
-        fputs($socket, "AUTH LOGIN\r\n");
-        fgets($socket, 515);
-        fputs($socket, base64_encode(SMTP_USER) . "\r\n");
-        fgets($socket, 515);
-        fputs($socket, base64_encode(SMTP_PASS) . "\r\n");
-        $response = fgets($socket, 515);
-        if (substr($response, 0, 3) != '235') throw new Exception("Authentication failed: $response");
-
-        fputs($socket, "MAIL FROM: <" . SMTP_USER . ">\r\n");
-        fgets($socket, 515);
-        fputs($socket, "RCPT TO: <$to>\r\n");
-        $response = fgets($socket, 515);
-        if (substr($response, 0, 3) != '250') throw new Exception("Recipient rejected: $response");
-
-        fputs($socket, "DATA\r\n");
-        fgets($socket, 515);
-
-        $headers  = "MIME-Version: 1.0\r\n";
-        $headers .= "Content-type: text/html; charset=utf-8\r\n";
-        $headers .= "From: RendeX <" . SMTP_USER . ">\r\n";
-        $headers .= "To: $to\r\n";
-        $headers .= "Subject: $subject\r\n";
-
-        fputs($socket, "$headers\r\n$body\r\n.\r\n");
-        $response = fgets($socket, 515);
-        if (substr($response, 0, 3) != '250') throw new Exception("Message send failed: $response");
-
-        fputs($socket, "QUIT\r\n");
-        fclose($socket);
-
+        $mail->send();
+        file_put_contents(__DIR__ . '/../mail_debug.log', date('Y-m-d H:i:s') . "\tEmail sent successfully to $to\n", FILE_APPEND | LOCK_EX);
         return true;
     } catch (Exception $e) {
-        return "Error: " . $e->getMessage();
+        // Return error message for debugging if needed, or log it
+        $errorMsg = "Message could not be sent. Mailer Error: {$mail->ErrorInfo}";
+        file_put_contents(__DIR__ . '/../mail_debug.log', date('Y-m-d H:i:s') . "\t" . $errorMsg . "\n", FILE_APPEND | LOCK_EX);
+        error_log($errorMsg);
+        return $errorMsg;
     }
 }
 ?>
