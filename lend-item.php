@@ -34,6 +34,33 @@ $errors = []; // Initialize errors array
 $items = file_exists($items_file) ? json_decode(file_get_contents($items_file), true) : [];
 if (!is_array($items)) $items = [];
 
+// Prefill from Request
+if (isset($_GET['request_id'])) {
+    require_once 'config/database.php';
+    try {
+        $pdo = getDBConnection();
+        $stmt = $pdo->prepare("SELECT item_name, category, description, min_price, max_price FROM item_requests WHERE id = ?");
+        $stmt->execute([$_GET['request_id']]);
+        $req = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        if ($req) {
+            $title = $req['item_name'];
+            $category = $req['category'];
+            $description = "Lending in response to request: " . $req['item_name'] . "\n\n" . $req['description'];
+            // Intelligent price suggestion (average of range or min or max)
+            if ($req['min_price'] && $req['max_price']) {
+                $price = ($req['min_price'] + $req['max_price']) / 2;
+            } elseif ($req['max_price']) {
+                $price = $req['max_price'];
+            } elseif ($req['min_price']) {
+                $price = $req['min_price'];
+            }
+        }
+    } catch (Exception $e) {
+        // Silently fail if DB error, just don't prefill
+    }
+}
+
 // Handle Edit Request (GET)
 if (isset($_GET['edit_id'])) {
     $edit_id = $_GET['edit_id'];
@@ -342,6 +369,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </style>
 </head>
 <body class="bg-background-light dark:bg-background-dark text-text-main dark:text-white transition-colors duration-200">
+    
+    <?php if (isset($_GET['alert']) && $_GET['alert'] === 'accepted'): ?>
+    <div class="fixed top-6 left-1/2 transform -translate-x-1/2 z-[100] w-full max-w-lg px-6">
+        <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded-r shadow-lg flex items-start gap-3 relative animate-bounce-in">
+            <span class="material-symbols-outlined text-green-600">check_circle</span>
+            <div>
+                <p class="font-bold">Request Accepted Successfully!</p>
+                <p class="text-sm mt-1">Great! Now, please list the item below so the renter can book it. If you already have it listed, you can skip this step.</p>
+            </div>
+            <button onclick="this.parentElement.remove()" class="absolute top-2 right-2 hover:bg-green-200 rounded-full p-1">
+                <span class="material-symbols-outlined text-sm">close</span>
+            </button>
+        </div>
+    </div>
+    <script>
+        setTimeout(() => {
+            document.querySelector('.animate-bounce-in').parentElement.remove();
+        }, 10000); // Remove after 10 seconds
+    </script>
+    <?php endif; ?>
     <!-- Navbar -->
     <header class="sticky top-0 z-50 flex items-center justify-between border-b border-[#e9e8ce] dark:border-[#3e3d2a] bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-sm px-6 py-4 lg:px-10">
         <div class="flex items-center gap-8 w-full max-w-[1400px] mx-auto">

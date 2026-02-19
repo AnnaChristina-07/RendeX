@@ -323,6 +323,18 @@ if (isset($_POST['rent_now'])) {
     </header>
 
     <main class="flex-1 w-full max-w-[1400px] mx-auto px-4 md:px-10 py-12">
+        <?php if (isset($_GET['msg']) && $_GET['msg'] === 'offer_accepted'): ?>
+        <div class="mb-6 bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded-lg shadow-md">
+            <div class="flex items-center">
+                <span class="material-symbols-outlined text-green-500 mr-3 text-2xl">check_circle</span>
+                <div>
+                    <h3 class="font-bold">Offer Accepted!</h3>
+                    <p class="text-sm">You have accepted the offer. Please review the details below and proceed to rent it.</p>
+                </div>
+            </div>
+        </div>
+        <?php endif; ?>
+
         <div class="grid grid-cols-1 md:grid-cols-2 gap-12">
             <!-- Left: Image Section with Hover Slideshow -->
             <div class="space-y-4 sticky top-32">

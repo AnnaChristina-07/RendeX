@@ -158,6 +158,8 @@ if (isset($_POST['apply_delivery'])) {
     <div class="hidden lg:flex items-center gap-6">
         <!-- Base Role: Renter -->
         <a href="rentals.php" class="font-bold text-sm hover:text-primary transition-colors">My Rentals</a>
+        <a href="my_requests.php" class="font-bold text-sm hover:text-primary transition-colors">My Requests</a>
+        <a href="browse_requests.php" class="font-bold text-sm hover:text-primary transition-colors">Community Requests</a>
         
         <!-- Owner Role -->
         <?php if ($is_owner): ?>
