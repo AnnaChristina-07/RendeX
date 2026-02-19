@@ -157,7 +157,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirm_booking'])) {
                     $final_address
                 ]);
                 
-                // 2. Update items table status
+                $rental_db_id = $pdo->lastInsertId();
+
+                // 2. Insert into transactions table
+                $trans_stmt = $pdo->prepare("
+                    INSERT INTO transactions (
+                        user_id, rental_id, amount, type, description, status, gateway_ref, created_at
+                    ) VALUES (?, ?, ?, 'debit', ?, 'success', ?, NOW())
+                ");
+                $trans_stmt->execute([
+                    $_SESSION['user_id'],
+                    $rental_db_id,
+                    $total,
+                    'Rental Payment for Item #' . $item['id'],
+                    'PAY_' . uniqid() // Simulating a gateway reference
+                ]);
+                
+                // 3. Update items table status
                 $update_stmt = $pdo->prepare("UPDATE items SET availability_status = 'rented' WHERE id = ?");
                 $update_stmt->execute([$item['id']]);
             }

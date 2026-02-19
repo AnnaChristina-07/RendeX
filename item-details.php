@@ -216,6 +216,21 @@ if (!$is_active && !$is_own_item && !$is_admin) {
     exit();
 }
 
+// Check Wishlist Status
+$in_wishlist = false;
+if (isset($_SESSION['user_id'])) {
+    try {
+        $pdo = getDBConnection();
+        if ($pdo) {
+            $w_stmt = $pdo->prepare("SELECT id FROM wishlist WHERE user_id = ? AND item_id = ?");
+            $w_stmt->execute([$_SESSION['user_id'], $item_id]);
+            if ($w_stmt->fetch()) {
+                $in_wishlist = true;
+            }
+        }
+    } catch (Exception $e) {}
+}
+
 // Handle Rent Action - Redirect to Confirmation Page
 if (isset($_POST['rent_now'])) {
     $duration = $_POST['duration'] ?? 3;
@@ -440,7 +455,15 @@ if (isset($_POST['rent_now'])) {
                             4.<?php echo rand(5, 9); ?> (<?php echo rand(10, 50); ?> reviews)
                         </div>
                     </div>
-                    <h1 class="text-4xl md:text-5xl font-black mb-4 leading-tight"><?php echo htmlspecialchars($item['name']); ?></h1>
+                    <div class="flex items-start justify-between gap-4 mb-4">
+                        <h1 class="text-4xl md:text-5xl font-black leading-tight"><?php echo htmlspecialchars($item['name']); ?></h1>
+                        <button onclick="toggleWishlist(<?php echo $item['id']; ?>)" id="wishlist-btn" class="shrink-0 w-14 h-14 rounded-full flex items-center justify-center transition-all <?php echo $in_wishlist ? 'bg-red-50 text-red-500' : 'bg-gray-100 dark:bg-gray-800 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20'; ?>">
+                            <span class="material-symbols-outlined text-3xl <?php echo $in_wishlist ? 'fill-current' : ''; ?>" id="wishlist-icon"><?php echo $in_wishlist ? 'favorite' : 'favorite'; ?></span>
+                        </button>
+                    </div>
+                    <style>
+                        .fill-current { font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+                    </style>
                     
                     <div class="flex items-end gap-2 mb-6">
                         <span class="text-4xl font-black">₹<?php echo $item['price']; ?></span>
@@ -538,7 +561,11 @@ if (isset($_POST['rent_now'])) {
                         <span class="font-bold"><?php echo htmlspecialchars($owner_phone); ?></span>
                     </div>
                 </div>
-                <button onclick="closeContactModal()" class="w-full bg-black text-white dark:bg-primary dark:text-black font-black py-4 rounded-2xl mt-4 transition-all hover:scale-[1.02] active:scale-95">
+                <a href="chat.php?recipient_id=<?php echo $owner_id; ?>" class="flex items-center justify-center gap-2 w-full bg-primary text-black font-black py-4 rounded-2xl mb-4 transition-all hover:scale-[1.02] active:scale-95 shadow-lg shadow-primary/20">
+                    <span class="material-symbols-outlined">chat</span>
+                    Chat with Owner
+                </a>
+                <button onclick="closeContactModal()" class="w-full bg-black text-white dark:bg-primary dark:text-black font-black py-4 rounded-2xl transition-all hover:scale-[1.02] active:scale-95">
                     Close
                 </button>
             </div>
@@ -558,6 +585,45 @@ if (isset($_POST['rent_now'])) {
             modal.classList.add('hidden');
             modal.classList.remove('flex');
             document.body.style.overflow = 'auto';
+        }
+
+        function toggleWishlist(itemId) {
+            const btn = document.getElementById('wishlist-btn');
+            const icon = document.getElementById('wishlist-icon');
+            const isAdded = icon.classList.contains('fill-current');
+            
+            // Optimistic Update
+            if (isAdded) {
+                icon.classList.remove('fill-current');
+                btn.classList.remove('bg-red-50', 'text-red-500');
+                btn.classList.add('bg-gray-100', 'dark:bg-gray-800', 'text-gray-400');
+            } else {
+                icon.classList.add('fill-current');
+                btn.classList.remove('bg-gray-100', 'dark:bg-gray-800', 'text-gray-400');
+                btn.classList.add('bg-red-50', 'text-red-500');
+            }
+
+            fetch('toggle_wishlist.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ item_id: itemId })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status !== 'success') {
+                    // Revert if error
+                    console.error('Wishlist error:', data.message);
+                    if (isAdded) {
+                        icon.classList.add('fill-current');
+                        btn.classList.add('bg-red-50', 'text-red-500');
+                    } else {
+                        icon.classList.remove('fill-current');
+                        btn.classList.remove('bg-red-50', 'text-red-500');
+                    }
+                    alert('Could not update wishlist. Please try again.');
+                }
+            })
+            .catch(err => console.error(err));
         }
     </script>
     <!-- Footer -->

@@ -52,6 +52,14 @@ foreach($all_items_json as $i) {
 $rentals_file = 'rentals.json';
 $all_rentals = file_exists($rentals_file) ? json_decode(file_get_contents($rentals_file), true) : [];
 
+// Load Users (for Name display)
+$users_file = 'users.json';
+$users_data = file_exists($users_file) ? json_decode(file_get_contents($users_file), true) : [];
+$users_map = [];
+foreach($users_data as $u) {
+    if(isset($u['id'])) $users_map[$u['id']] = $u;
+}
+
 // 3. Process Rentals
 $my_incoming_rentals = []; // People renting MY items
 $my_outgoing_rentals = []; // Items I am renting
@@ -214,6 +222,60 @@ if (isset($_POST['report_damage_id'])) {
         }
 
         header("Location: owner_dashboard.php?tab=incoming&msg=damage_reported");
+        exit();
+    }
+}
+
+// Approve Extension
+if (isset($_POST['approve_extension_id'])) {
+    $r_id = $_POST['approve_extension_id'];
+    $updated_rentals = [];
+    $found = false;
+
+    foreach($all_rentals as $r) {
+        if ($r['id'] === $r_id && isset($r['item']['user_id']) && $r['item']['user_id'] === $user_id) {
+            if (isset($r['extension_request'])) {
+                $req = $r['extension_request'];
+                
+                // Update Request Status to 'approved_pending_payment'
+                $r['extension_request']['status'] = 'approved_pending_payment';
+                $r['extension_request']['approved_at'] = date('Y-m-d H:i:s');
+                
+                // Do NOT update dates/price yet. Wait for payment.
+                $found = true;
+            }
+        }
+        $updated_rentals[] = $r;
+    }
+    
+    if ($found) {
+        file_put_contents($rentals_file, json_encode($updated_rentals, JSON_PRETTY_PRINT));
+        header("Location: owner_dashboard.php?tab=incoming&msg=extension_approved_waiting_payment");
+        exit();
+    }
+}
+
+// Reject Extension
+if (isset($_POST['reject_extension_id'])) {
+    $r_id = $_POST['reject_extension_id'];
+    $updated_rentals = [];
+    $found = false;
+
+    foreach($all_rentals as $r) {
+        if ($r['id'] === $r_id && isset($r['item']['user_id']) && $r['item']['user_id'] === $user_id) {
+            if (isset($r['extension_request'])) {
+                // Determine if we want to keep a record or just delete. 
+                // Let's just remove the pending request so they can request again or return.
+                unset($r['extension_request']);
+                $found = true;
+            }
+        }
+        $updated_rentals[] = $r;
+    }
+    
+    if ($found) {
+        file_put_contents($rentals_file, json_encode($updated_rentals, JSON_PRETTY_PRINT));
+        header("Location: owner_dashboard.php?tab=incoming&msg=extension_rejected");
         exit();
     }
 }
@@ -400,6 +462,71 @@ $tab = isset($_GET['tab']) ? $_GET['tab'] : 'overview';
 
         <?php elseif($tab == 'incoming'): ?>
             <h2 class="text-2xl font-bold mb-8">Incoming Rentals (People renting your items)</h2>
+            
+            <!-- Pending Extension Requests -->
+            <?php 
+                $pending_extensions = [];
+                foreach($my_incoming_rentals as $r) {
+                    if (isset($r['extension_request']) && ($r['extension_request']['status'] === 'pending' || $r['extension_request']['status'] === 'approved_pending_payment')) {
+                        $pending_extensions[] = $r;
+                    }
+                }
+            ?>
+            <?php if (!empty($pending_extensions)): ?>
+            <div class="mb-10">
+                <h3 class="text-lg font-bold flex items-center gap-2 mb-4 text-orange-600">
+                    <span class="material-symbols-outlined">notification_important</span> Extension Requests
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <?php foreach ($pending_extensions as $pe): 
+                        $req = $pe['extension_request'];
+                        $is_approved = ($req['status'] === 'approved_pending_payment');
+                    ?>
+                    <div class="bg-orange-50 border border-orange-200 p-6 rounded-2xl relative overflow-hidden">
+                        <div class="absolute top-0 right-0 p-4 opacity-5">
+                            <span class="material-symbols-outlined text-6xl">calendar_month</span>
+                        </div>
+                        <h4 class="font-bold text-gray-900 mb-1"><?php echo htmlspecialchars($pe['item']['name']); ?></h4>
+                        <p class="text-xs text-gray-500 mb-4">Renter: <?php echo isset($users_map[$pe['user_id']]) ? htmlspecialchars($users_map[$pe['user_id']]['name']) : $pe['user_id']; ?></p>
+                        
+                        <div class="bg-white/60 p-3 rounded-lg text-sm space-y-2 mb-4 backdrop-blur-sm">
+                            <div class="flex justify-between">
+                                <span class="text-gray-500">Current End:</span>
+                                <span class="font-bold line-through text-gray-400"><?php echo date('M d', strtotime($pe['end_date'])); ?></span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-500">New End:</span>
+                                <span class="font-bold text-orange-600"><?php echo date('M d', strtotime($req['new_end_date'])); ?></span>
+                            </div>
+                            <div class="flex justify-between border-t border-orange-100 pt-2 mt-2">
+                                <span class="text-gray-500">Extra Earnings:</span>
+                                <span class="font-black text-green-600">+₹<?php echo number_format($req['extra_cost']); ?></span>
+                            </div>
+                        </div>
+                        
+                        <?php if ($is_approved): ?>
+                            <div class="w-full py-3 rounded-lg bg-green-100 text-green-700 text-xs font-bold text-center border border-green-200 flex items-center justify-center gap-2">
+                                <span class="material-symbols-outlined text-sm">payments</span>
+                                Approved: Waiting for Payment
+                            </div>
+                        <?php else: ?>
+                            <div class="flex gap-3">
+                                <form method="POST" class="flex-1">
+                                    <input type="hidden" name="reject_extension_id" value="<?php echo $pe['id']; ?>">
+                                    <button class="w-full py-2 rounded-lg bg-white border border-gray-200 text-gray-500 text-xs font-bold hover:bg-gray-50">Reject</button>
+                                </form>
+                                <form method="POST" class="flex-1">
+                                    <input type="hidden" name="approve_extension_id" value="<?php echo $pe['id']; ?>">
+                                    <button class="w-full py-2 rounded-lg bg-black text-white text-xs font-bold hover:bg-gray-800 shadow-lg shadow-orange-200">Approve</button>
+                                </form>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+            <?php endif; ?>
+
             <div class="bg-white rounded-2xl border border-gray-200 overflow-hidden">
                 <table class="w-full text-left text-sm">
                     <thead class="bg-gray-50 font-bold text-gray-500 border-b">
@@ -432,6 +559,9 @@ $tab = isset($_GET['tab']) ? $_GET['tab'] : 'overview';
                             </td>
                             <td class="px-6 py-4 text-gray-500">
                                 <?php echo date('M d', strtotime($r['start_date'])) . ' - ' . date('M d', strtotime($r['end_date'])); ?>
+                                <?php if (!empty($r['extension_history'])): ?>
+                                    <span class="block text-[10px] text-orange-600 font-bold uppercase mt-1">Extended (+<?php echo count($r['extension_history']); ?>)</span>
+                                <?php endif; ?>
                             </td>
                             <td class="px-6 py-4 font-bold text-green-600">
                                 <?php if(isset($r['return_status']) && ($r['return_status'] === 'pending_inspection' || $r['return_status'] === 'scheduled')): ?>

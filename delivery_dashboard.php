@@ -128,6 +128,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_status_id'])) 
     $did = $_POST['update_status_id'];
     $new_status = $_POST['new_status'];
     
+    // OTP Verification for 'delivered' status
+    if ($new_status === 'delivered') {
+        $entered_otp = $_POST['delivery_otp'] ?? '';
+        
+        // Find existing delivery
+        $target_d = null;
+        foreach($deliveries as $d) {
+            if ($d['id'] === $did) { $target_d = $d; break; }
+        }
+        
+        // Verify
+        if (!$target_d || !isset($target_d['delivery_otp']) || $target_d['delivery_otp'] !== $entered_otp) {
+            // Invalid OTP
+            header("Location: delivery_dashboard.php?tab=tasks&msg=invalid_otp");
+            exit();
+        }
+    }
+    
     // Update logic
     $updated = false;
     foreach($deliveries as &$d) {
@@ -148,6 +166,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_status_id'])) 
         exit();
     }
 }
+
 
 $tab = isset($_GET['tab']) ? $_GET['tab'] : 'overview';
 
@@ -342,15 +361,12 @@ $tab = isset($_GET['tab']) ? $_GET['tab'] : 'overview';
                                 </button>
                             </form>
                         <?php elseif($d['status'] === 'picked_up'): ?>
-                            <form method="POST" class="w-full">
-                                <input type="hidden" name="update_status_id" value="<?php echo $d['id']; ?>">
-                                <input type="hidden" name="new_status" value="delivered">
-                                <button class="w-full bg-[#f9f506] text-black py-3 rounded-xl font-bold hover:bg-[#fffc4d] transition-all flex flex-col items-center group shadow-md hover:shadow-lg active:scale-95">
-                                    <span class="material-symbols-outlined mb-1 group-hover:scale-110 transition-transform">check_circle</span>
-                                    Confirm Delivery
-                                </button>
-                            </form>
+                            <button onclick="openOTPModal('<?php echo $d['id']; ?>')" class="w-full bg-[#f9f506] text-black py-3 rounded-xl font-bold hover:bg-[#fffc4d] transition-all flex flex-col items-center group shadow-md hover:shadow-lg active:scale-95">
+                                <span class="material-symbols-outlined mb-1 group-hover:scale-110 transition-transform">check_circle</span>
+                                Confirm Delivery
+                            </button>
                         <?php else: ?>
+
                             <div class="text-center text-green-600">
                                 <span class="material-symbols-outlined text-4xl">task_alt</span>
                                 <p class="text-xs font-bold mt-1">Completed</p>
@@ -365,6 +381,63 @@ $tab = isset($_GET['tab']) ? $_GET['tab'] : 'overview';
         <?php endif; ?>
 
     </main>
+
+    <!-- OTP Modal -->
+    <div id="otpModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+        <div class="bg-white rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200">
+            <div class="p-6 text-center">
+                <div class="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4 text-yellow-600">
+                    <span class="material-symbols-outlined text-3xl">lock</span>
+                </div>
+                <h3 class="text-xl font-black mb-2">Verify Delivery</h3>
+                <p class="text-gray-500 text-sm mb-6">Ask the recipient for the 4-digit OTP code to confirm delivery.</p>
+                
+                <form method="POST">
+                    <input type="hidden" name="update_status_id" id="modal_delivery_id">
+                    <input type="hidden" name="new_status" value="delivered">
+                    
+                    <input type="text" name="delivery_otp" maxlength="4" pattern="\d{4}" required 
+                           class="w-full text-center text-3xl font-mono tracking-widest border-2 border-gray-200 rounded-xl py-3 focus:border-black focus:ring-0 mb-6 bg-gray-50" 
+                           placeholder="0000" autocomplete="off" autofocus>
+                    
+                    <div class="flex gap-3">
+                        <button type="button" onclick="closeOTPModal()" class="flex-1 bg-gray-100 text-gray-700 py-3 rounded-xl font-bold hover:bg-gray-200 transition-colors">Cancel</button>
+                        <button type="submit" class="flex-1 bg-black text-white py-3 rounded-xl font-bold hover:bg-gray-900 transition-colors shadow-lg">Verify</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Error Toast -->
+    <div id="errorToast" class="fixed top-5 right-5 z-50 hidden">
+        <div class="bg-red-500 text-white px-6 py-4 rounded-xl shadow-xl flex items-center gap-3 font-bold">
+            <span class="material-symbols-outlined">error</span>
+            Invalid OTP! Try again.
+        </div>
+    </div>
+
+    <script>
+        function openOTPModal(id) {
+            document.getElementById('modal_delivery_id').value = id;
+            document.getElementById('otpModal').classList.remove('hidden');
+            document.getElementById('otpModal').classList.add('flex');
+            document.querySelector('input[name="delivery_otp"]').focus();
+        }
+        
+        function closeOTPModal() {
+            document.getElementById('otpModal').classList.add('hidden');
+            document.getElementById('otpModal').classList.remove('flex');
+        }
+
+        // Check for error msg
+        if (new URLSearchParams(window.location.search).get('msg') === 'invalid_otp') {
+            const t = document.getElementById('errorToast');
+            t.classList.remove('hidden');
+            setTimeout(() => t.classList.add('hidden'), 4000);
+        }
+    </script>
+
 
 </body>
 </html>

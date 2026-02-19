@@ -104,5 +104,40 @@
                 "timestamp": "2026-02-18 06:30:06"
             }
         ]
+    },
+    {
+        "id": "del_69969306777a7",
+        "rental_id": "RENT_699686f4d1979",
+        "partner_id": "695a8dc1e017b",
+        "status": "assigned",
+        "assigned_at": "2026-02-19 05:35:18",
+        "history": [
+            {
+                "status": "assigned",
+                "timestamp": "2026-02-19 05:35:18"
+            }
+        ]
+    },
+    {
+        "id": "del_699693d3d1adb",
+        "rental_id": "RENT_699693b25ec66",
+        "partner_id": "695a8dc1e017b",
+        "status": "delivered",
+        "assigned_at": "2026-02-19 05:38:43",
+        "history": [
+            {
+                "status": "assigned",
+                "timestamp": "2026-02-19 05:38:43"
+            },
+            {
+                "status": "picked_up",
+                "timestamp": "2026-02-19 05:41:20"
+            },
+            {
+                "status": "delivered",
+                "timestamp": "2026-02-19 05:54:51"
+            }
+        ],
+        "delivery_otp": "3112"
     }
 ]

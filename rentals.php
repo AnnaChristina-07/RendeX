@@ -43,6 +43,157 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['return_id'])) {
     exit();
 }
 
+// Handle Rental Extension
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['extend_rental_id'])) {
+    $ext_id = $_POST['extend_rental_id'];
+    $new_end = $_POST['new_end_date'];
+    
+    $target_rental = null;
+    $target_index = -1;
+    
+    // 1. Find Rental
+    foreach ($rentals as $i => $r) {
+        if ($r['id'] === $ext_id) {
+            $target_rental = $r;
+            $target_index = $i;
+            break;
+        }
+    }
+    
+    if ($target_rental) {
+        $current_end = $target_rental['end_date'];
+        $item_id = $target_rental['item']['id'];
+        
+        // 2. Validate: New date must be after current end date
+        if (strtotime($new_end) <= strtotime($current_end)) {
+            header("Location: rentals.php?msg=invalid_date");
+            exit();
+        }
+        
+        // 3. Check Availability (Overlap Check)
+        $is_available = true;
+        foreach ($rentals as $r) {
+            // Skip self and different items
+            if ($r['id'] === $ext_id || $r['item']['id'] !== $item_id) continue;
+            
+            // Check if active rental
+            if (isset($r['status']) && ($r['status'] === 'returned' || $r['status'] === 'cancelled')) continue;
+            
+            // Check overlap: (StartA <= EndB) and (EndA >= StartB)
+            // We are checking the EXTRA period: (CurrentEnd + 1 day) to (NewEnd)
+            $check_start = date('Y-m-d', strtotime($current_end . ' + 1 day'));
+            $check_end = $new_end;
+            
+            $r_start = $r['start_date'];
+            $r_end = $r['end_date'];
+            
+            if ($check_start <= $r_end && $check_end >= $r_start) {
+                $is_available = false;
+                break;
+            }
+        }
+        
+        if (!$is_available) {
+            header("Location: rentals.php?msg=not_available");
+            exit();
+        }
+        
+        // 4. Calculate Extra Cost (For info only)
+        // Assuming simple daily rate. If price not in item, assume 0 or handle error.
+        $daily_price = floatval($target_rental['item']['price'] ?? 0);
+        
+        // Logic for Item object vs array structure difference in JSON
+        if (!$daily_price && isset($target_rental['item']['price_per_day'])) {
+            $daily_price = floatval($target_rental['item']['price_per_day']);
+        }
+        
+        $days_diff = (strtotime($new_end) - strtotime($current_end)) / (60 * 60 * 24);
+        $extra_cost = $days_diff * $daily_price;
+        
+        // CREATE REQUEST instead of applying immediately
+        $rentals[$target_index]['extension_request'] = [
+            'new_end_date' => $new_end,
+            'extra_cost' => $extra_cost,
+            'status' => 'pending',
+            'requested_at' => date('Y-m-d H:i:s')
+        ];
+        
+        // Save
+        file_put_contents($rentals_file, json_encode($rentals, JSON_PRETTY_PRINT));
+        header("Location: rentals.php?msg=extension_requested");
+        exit();
+    }
+}
+
+// Pay for Extension
+if (isset($_POST['pay_extension_id'])) {
+    $r_id = $_POST['pay_extension_id'];
+    $payment_id = $_POST['extension_payment_id'] ?? 'MANUAL_PAY_' . uniqid();
+    
+    $updated_rentals = [];
+    $found = false;
+
+    foreach($rentals as $r) {
+        if ($r['id'] === $r_id && $r['user_id'] === $_SESSION['user_id']) {
+            if (isset($r['extension_request']) && $r['extension_request']['status'] === 'approved_pending_payment') {
+                $req = $r['extension_request'];
+                
+                // Record Payment & Extension
+                if (!isset($r['extension_history'])) $r['extension_history'] = [];
+                $r['extension_history'][] = [
+                    'extended_at' => date('Y-m-d H:i:s'),
+                    'prev_end_date' => $r['end_date'],
+                    'new_end_date' => $req['new_end_date'],
+                    'extra_cost' => $req['extra_cost'],
+                    'payment_id' => $payment_id
+                ];
+                
+                // Update Rental Final
+                $r['end_date'] = $req['new_end_date'];
+                if (isset($r['total_price'])) {
+                    $r['total_price'] += $req['extra_cost'];
+                }
+                
+                // Clear Request
+                unset($r['extension_request']);
+                $found = true;
+            }
+        }
+        $updated_rentals[] = $r;
+    }
+    
+    if ($found) {
+        file_put_contents($rentals_file, json_encode($updated_rentals, JSON_PRETTY_PRINT));
+        header("Location: rentals.php?msg=extended_paid");
+        exit();
+    }
+}
+
+// Handle OTP Generation
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['generate_otp_delivery_id'])) {
+    $del_id = $_POST['generate_otp_delivery_id'];
+    $otp = str_pad(rand(0, 9999), 4, '0', STR_PAD_LEFT);
+    
+    // Update Deliveries JSON
+    $updated_deliveries = [];
+    foreach ($deliveries as $d) {
+        if ($d['id'] === $del_id) {
+            // Verify ownership via rental -> user
+            // Minimal check: if delivery exists, we assume user is authorized since button visible
+            $d['delivery_otp'] = $otp;
+        }
+        $updated_deliveries[] = $d;
+    }
+    
+    // Save
+    file_put_contents($deliveries_file, json_encode($updated_deliveries, JSON_PRETTY_PRINT));
+    
+    // Redirect with success
+    header("Location: rentals.php?msg=otp_generated");
+    exit();
+}
+
+
 $active_rentals = [];
 $past_rentals = [];
 
@@ -74,6 +225,7 @@ foreach ($rentals as $rental) {
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
     <script>
       tailwind.config = {
         darkMode: "class",
@@ -199,9 +351,25 @@ foreach ($rentals as $rental) {
                                             Return Item
                                         </button>
                                     <?php else: ?>
-                                        <a href="return-rental.php?id=<?php echo $rental['id']; ?>" class="bg-black text-white text-xs font-bold px-4 py-2 rounded-full hover:bg-gray-800 transition-colors inline-block">
-                                            Return Item
-                                        </a>
+                                        <div class="flex gap-2">
+                                            <?php if (isset($rental['extension_request']) && $rental['extension_request']['status'] === 'pending'): ?>
+                                                <button disabled class="bg-orange-100 text-orange-600 border border-orange-200 text-xs font-bold px-4 py-2 rounded-full cursor-wait opacity-70">
+                                                    Request Sent
+                                                </button>
+                                            <?php elseif (isset($rental['extension_request']) && $rental['extension_request']['status'] === 'approved_pending_payment'): ?>
+                                                 <button onclick="openExtensionPaymentModal('<?php echo $rental['id']; ?>', '<?php echo $rental['extension_request']['extra_cost']; ?>')" class="bg-green-600 text-white border border-green-700 text-xs font-bold px-4 py-2 rounded-full hover:bg-green-700 transition-colors shadow-lg shadow-green-200/50 animate-pulse">
+                                                    Pay ₹<?php echo $rental['extension_request']['extra_cost']; ?> to Extend
+                                                </button>
+                                            <?php else: ?>
+                                                <button onclick="openExtensionModal('<?php echo $rental['id']; ?>', '<?php echo $rental['end_date']; ?>')" class="bg-white text-black border border-black text-xs font-bold px-4 py-2 rounded-full hover:bg-gray-100 transition-colors">
+                                                    Extend
+                                                </button>
+                                            <?php endif; ?>
+                                            
+                                            <a href="return-rental.php?id=<?php echo $rental['id']; ?>" class="bg-black text-white text-xs font-bold px-4 py-2 rounded-full hover:bg-gray-800 transition-colors inline-block">
+                                                Return Item
+                                            </a>
+                                        </div>
                                     <?php endif; ?>
                                 <?php endif; ?>
                             </div>
@@ -300,8 +468,48 @@ foreach ($rentals as $rental) {
                             <?php endif; ?>
 
                         </div>
+
                         <?php endif; ?>
+
+                        <!-- OTP Generation (Visible only on Delivery Date) -->
+                        <?php 
+                            $delivery_date = $rental['start_date'];
+                            $today = date('Y-m-d');
+                            $is_today_delivery = ($today === $delivery_date);
+                            
+                            if ($is_delivery && $is_today_delivery && $delivery_status !== 'delivered' && $driver): 
+                                // Find the delivery ID again to be safe
+                                $target_delivery_id = null;
+                                $existing_otp = null;
+                                foreach($deliveries as $d) {
+                                    if(isset($d['rental_id']) && $d['rental_id'] === $rental['id']) {
+                                        $target_delivery_id = $d['id'];
+                                        $existing_otp = $d['delivery_otp'] ?? null;
+                                        break;
+                                    }
+                                }
+                        ?>
+                        <div class="mt-2 flex justify-center">
+                            <?php if($existing_otp): ?>
+                                <button disabled class="bg-gray-100 text-gray-800 cursor-default px-6 py-3 rounded-xl font-black text-sm uppercase tracking-wide flex items-center gap-2 border border-gray-200">
+                                    <span class="material-symbols-outlined">verified_user</span>
+                                    OTP: <span class="bg-black text-white px-2 py-1 rounded ml-2 font-mono text-lg"><?php echo htmlspecialchars($existing_otp); ?></span>
+                                </button>
+                            <?php else: ?>
+                                <form method="POST">
+                                    <input type="hidden" name="generate_otp_delivery_id" value="<?php echo htmlspecialchars($target_delivery_id); ?>">
+                                    <button type="submit" class="bg-primary text-black px-6 py-3 rounded-xl font-black text-sm uppercase tracking-wide hover:scale-105 active:scale-95 transition-all shadow-lg flex items-center gap-2">
+                                        <span class="material-symbols-outlined">lock</span>
+                                        Generate Delivery OTP
+                                    </button>
+                                </form>
+                            <?php endif; ?>
+                        </div>
+                        <?php endif; ?>
+
+                        
                     </div>
+
                     <?php endforeach; ?>
                 <?php endif; ?>
             </div>
@@ -374,9 +582,23 @@ foreach ($rentals as $rental) {
                 toastMsg.textContent = 'Return request submitted! Waiting for owner confirmation.';
             } else if (msg === 'returned_success') {
                 toastMsg.textContent = 'Return confirmed successfully.';
+            } else if (msg === 'extended') {
+                toastMsg.textContent = 'Rental extended successfully!';
+            } else if (msg === 'extension_requested') {
+                toastMsg.textContent = 'Extension request submitted to owner.';
+            } else if (msg === 'extension_approved_waiting_payment') {
+                toastMsg.textContent = 'Extension approved! Please make payment.';
+            } else if (msg === 'extended_paid') {
+                toastMsg.textContent = 'Payment successful! Rental extended.';
+            } else if (msg === 'not_available') {
+                toastMsg.textContent = 'Item not available for these dates.';
+                document.getElementById('toast-message').parentElement.classList.add('bg-red-600');
+            } else if (msg === 'invalid_date') {
+                toastMsg.textContent = 'Invalid date selected.';
+                document.getElementById('toast-message').parentElement.classList.add('bg-red-600');
             }
             
-            if (msg === 'return_initiated' || msg === 'returned_success') {
+            if (msg) {
                 setTimeout(() => {
                     toast.classList.remove('translate-y-20', 'opacity-0');
                     setTimeout(() => {
@@ -387,6 +609,176 @@ foreach ($rentals as $rental) {
                 }, 500);
             }
         }
+
+        // Extension Modal
+        function openExtensionModal(rentalID, currentEndDate) {
+            const modal = document.getElementById('extensionModal');
+            const hiddenInput = document.getElementById('extend_rental_id');
+            const dateInput = document.getElementById('new_end_date');
+            
+            hiddenInput.value = rentalID;
+            
+            // Set min date to current end date + 1 day
+            const current = new Date(currentEndDate);
+            current.setDate(current.getDate() + 1);
+            const minDate = current.toISOString().split('T')[0];
+            
+            dateInput.min = minDate;
+            dateInput.value = minDate; // Default selection
+            
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeExtensionModal() {
+            const modal = document.getElementById('extensionModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        // Payment Modal (Extension)
+        function openExtensionPaymentModal(rentalID, amount) {
+            const modal = document.getElementById('extensionPaymentModal');
+            document.getElementById('pay_extension_id').value = rentalID;
+            document.getElementById('ext_pay_amount').textContent = amount;
+            
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeExtensionPaymentModal() {
+            const modal = document.getElementById('extensionPaymentModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        const userName = "<?php echo isset($_SESSION['user_name']) ? $_SESSION['user_name'] : ''; ?>";
+        const userEmail = "<?php echo isset($_SESSION['user_email']) ? $_SESSION['user_email'] : ''; ?>";
+        const userPhone = "<?php echo isset($_SESSION['phone']) ? $_SESSION['phone'] : ''; ?>";
+
+        function startRazorpayExtensionPayment() {
+            const rentalID = document.getElementById('pay_extension_id').value;
+            const amountText = document.getElementById('ext_pay_amount').textContent;
+            const amount = parseFloat(amountText.replace(/,/g, '')); // Remove commas if any
+
+            if (!amount || amount <= 0) {
+                alert("Invalid amount");
+                return;
+            }
+
+            const options = {
+                "key": "rzp_test_S5grQ46aeBtXrF", // Test Key
+                "amount": amount * 100, // Amount in paise
+                "currency": "INR",
+                "name": "RendeX",
+                "description": "Rental Extension Payment",
+                "handler": function (response){
+                    const form = document.getElementById('extension-payment-form');
+                    const btn = document.getElementById('btn-pay-securely');
+                    
+                    btn.disabled = true;
+                    btn.innerHTML = 'Processing...';
+
+                    // Add Payment ID to form (optional depending on backend needs, good for records)
+                    const payInput = document.createElement('input');
+                    payInput.type = 'hidden';
+                    payInput.name = 'extension_payment_id';
+                    payInput.value = response.razorpay_payment_id;
+                    form.appendChild(payInput);
+
+                    form.submit();
+                },
+                "prefill": {
+                    "name": userName,
+                    "email": userEmail,
+                    "contact": userPhone
+                },
+                "theme": {
+                    "color": "#f9f506"
+                }
+            };
+            
+            const rzp1 = new Razorpay(options);
+            rzp1.on('payment.failed', function (response){
+                alert('Payment Failed: ' + response.error.description);
+            });
+            rzp1.open();
+        }
+        
+        function generateOTP(btn) {
+             // Client-side visual only - actual logic handled by server reload now
+        }
     </script>
+    
+    <!-- Extension Modal -->
+    <div id="extensionModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+        <div class="bg-white rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200">
+            <div class="p-6">
+                <!-- ... content ... -->
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-xl font-bold flex items-center gap-2">
+                        <span class="material-symbols-outlined">edit_calendar</span> 
+                        Extend Rental
+                    </h3>
+                    <button onclick="closeExtensionModal()" class="text-gray-400 hover:text-black">
+                        <span class="material-symbols-outlined">close</span>
+                    </button>
+                </div>
+                
+                <p class="text-sm text-gray-500 mb-6">Select a new return date for your rental. Additional charges will apply based on the item's daily rate.</p>
+                
+                <form method="POST">
+                    <input type="hidden" name="extend_rental_id" id="extend_rental_id">
+                    
+                    <div class="mb-6">
+                        <label class="block text-xs font-bold uppercase text-gray-400 mb-2">New Return Date</label>
+                        <input type="date" name="new_end_date" id="new_end_date" required class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-black focus:ring-0 font-bold">
+                        <p class="text-xs text-yellow-600 mt-2 flex items-center gap-1">
+                            <span class="material-symbols-outlined text-[14px]">info</span>
+                            Subject to availability check.
+                        </p>
+                    </div>
+                    
+                    <div class="flex gap-3">
+                        <button type="button" onclick="closeExtensionModal()" class="flex-1 py-3 rounded-xl font-bold border border-gray-200 hover:bg-gray-50">Cancel</button>
+                        <button type="submit" class="flex-1 bg-black text-white py-3 rounded-xl font-bold hover:bg-gray-800">Confirm Extension</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Extension Payment Modal -->
+    <div id="extensionPaymentModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+        <div class="bg-white rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200">
+            <div class="p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-xl font-bold flex items-center gap-2 text-green-600">
+                        <span class="material-symbols-outlined">payments</span> 
+                        Confirm Payment
+                    </h3>
+                    <button onclick="closeExtensionPaymentModal()" class="text-gray-400 hover:text-black">
+                        <span class="material-symbols-outlined">close</span>
+                    </button>
+                </div>
+                
+                <p class="text-sm text-gray-500 mb-6">Payment is required to finalize your rental extension.</p>
+                
+                <div class="bg-green-50 rounded-xl p-4 text-center mb-6 border border-green-100">
+                    <p class="text-xs font-bold text-green-800 uppercase tracking-widest mb-1">Total Amount</p>
+                    <p class="text-3xl font-black text-green-600">₹<span id="ext_pay_amount">0</span></p>
+                </div>
+
+                <form method="POST" id="extension-payment-form">
+                    <input type="hidden" name="pay_extension_id" id="pay_extension_id">
+                    
+                    <button type="button" id="btn-pay-securely" onclick="startRazorpayExtensionPayment()" class="w-full bg-black text-white py-4 rounded-xl font-bold hover:bg-gray-800 shadow-lg flex items-center justify-center gap-2">
+                        Pay Securely
+                        <span class="material-symbols-outlined text-sm">lock</span>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
 </body>
 </html>

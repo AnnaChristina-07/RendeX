@@ -310,6 +310,75 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['assign_delivery'])) {
     exit();
 }
 
+// 5.5 Auto-Assign Delivery Partner
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['auto_assign_delivery'])) {
+    $rental_id = $_POST['rental_id'];
+    
+    // Find rental address
+    $rental = null;
+    foreach($rentals as $r) {
+        if ($r['id'] === $rental_id) { $rental = $r; break; }
+    }
+    
+    if ($rental) {
+        $address = $rental['delivery_address'] ?? '';
+        
+        // Load delivery partners specifically for this action
+        $delivery_partners = [];
+        if ($use_database) {
+            try {
+                $stmt_partners = $pdo->query("SELECT u.*, da.city, da.address, da.pincode FROM users u JOIN driver_applications da ON u.id = da.user_id WHERE da.status = 'approved'");
+                $delivery_partners = $stmt_partners->fetchAll(PDO::FETCH_ASSOC);
+            } catch (PDOException $e) {}
+        } else {
+            // Fallback JSON logic
+            foreach ($users as $u) {
+                if (isset($u['role']) && $u['role'] === 'delivery_partner') {
+                    $delivery_partners[] = $u;
+                }
+            }
+        }
+
+        // Find best partner
+        $sorted_partners = $delivery_partners;
+
+        usort($sorted_partners, function($a, $b) use ($address) {
+            $a_loc = strtolower($a['city'] ?? $a['address'] ?? '');
+            $b_loc = strtolower($b['city'] ?? $b['address'] ?? '');
+            $addr_lower = strtolower($address);
+            
+            $a_match = ($a_loc && strpos($addr_lower, $a_loc) !== false);
+            $b_match = ($b_loc && strpos($addr_lower, $b_loc) !== false);
+            
+            return $b_match <=> $a_match; // true (1) comes before false (0)
+        });
+        
+        $partner_id = !empty($sorted_partners) ? $sorted_partners[0]['id'] : null;
+        
+        if ($partner_id) {
+            $new_delivery = [
+                'id' => uniqid('del_'),
+                'rental_id' => $rental_id,
+                'partner_id' => $partner_id,
+                'status' => 'assigned',
+                'assigned_at' => date('Y-m-d H:i:s'),
+                'history' => [
+                    ['status' => 'assigned', 'timestamp' => date('Y-m-d H:i:s')]
+                ]
+            ];
+            
+            $deliveries[] = $new_delivery;
+            file_put_contents('deliveries.json', json_encode($deliveries, JSON_PRETTY_PRINT));
+            header("Location: admin_dashboard.php?tab=deliveries&msg=auto_assigned");
+            exit();
+        }
+    }
+    // Fallback if failed
+    header("Location: admin_dashboard.php?tab=deliveries&msg=assign_failed");
+    exit();
+}
+
+
 
 // 6. Resolve Dispute
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['resolve_dispute_id'])) {
@@ -1043,6 +1112,115 @@ foreach ($rentals as $rental) {
                 }
             ?>
                 <!-- DELIVERIES VIEW -->
+                
+                <!-- Delivery Search -->
+                <div class="mb-8">
+                    <form method="GET" class="flex gap-4">
+                        <input type="hidden" name="tab" value="deliveries">
+                        <div class="relative flex-1">
+                            <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">search</span>
+                            <input type="text" name="search_delivery" value="<?php echo htmlspecialchars($_GET['search_delivery'] ?? ''); ?>" placeholder="Search by Delivery ID or Rental ID..." class="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 focus:border-black focus:ring-0 outline-none">
+                        </div>
+                        <button type="submit" class="bg-black text-white px-6 rounded-xl font-bold hover:bg-gray-800 transition-colors">Search</button>
+                    </form>
+                </div>
+                
+                <?php
+                    // Filter by search if active
+                    $search_term = strtolower(trim($_GET['search_delivery'] ?? ''));
+                    if ($search_term) {
+                        $unassigned_rentals = array_filter($unassigned_rentals, function($r) use ($search_term) {
+                            return strpos(strtolower($r['id']), $search_term) !== false;
+                        });
+                        
+                        $deliveries = array_filter($deliveries, function($d) use ($search_term) {
+                            return strpos(strtolower($d['id']), $search_term) !== false || 
+                                   strpos(strtolower($d['rental_id']), $search_term) !== false;
+                        });
+                    }
+                ?>
+
+                <!-- Search Results Timeline View -->
+                <?php if ($search_term && !empty($deliveries)): ?>
+                <div class="mb-10">
+                    <h3 class="text-lg font-bold mb-4">Search Result Details</h3>
+                    <?php foreach($deliveries as $searched_del): 
+                        $s_rental = null;
+                        foreach($rentals as $rent) { if($rent['id'] === $searched_del['rental_id']) { $s_rental = $rent; break; } }
+                        $s_item = $s_rental ? $s_rental['item'] : [];
+                        $s_img = $s_item['img'] ?? '';
+                        $img_src = (strpos($s_img, 'uploads/') === 0) ? $s_img : 'https://source.unsplash.com/random/200x200?' . urlencode($s_img);
+                        
+                        // Status Logic
+                        $levels = ['pending' => 0, 'assigned' => 1, 'picked_up' => 2, 'delivered' => 3];
+                        $status_key = $searched_del['status'] ?? 'pending';
+                        $current_level = $levels[$status_key] ?? 0;
+                        
+                        $steps = [
+                            ['label' => 'ORDER PLACED', 'icon' => 'inventory_2'],
+                            ['label' => 'DRIVER ASSIGNED', 'icon' => 'person_pin'],
+                            ['label' => 'IN TRANSIT', 'icon' => 'local_shipping'],
+                            ['label' => 'DELIVERED', 'icon' => 'home_pin']
+                        ];
+                    ?>
+                    <div class="bg-white p-8 rounded-2xl border border-gray-200 shadow-sm mb-6">
+                        <div class="flex items-start gap-6 mb-8">
+                            <div class="w-20 h-20 bg-gray-100 rounded-xl overflow-hidden shrink-0">
+                                <img src="<?php echo htmlspecialchars($img_src); ?>" class="w-full h-full object-cover">
+                            </div>
+                            <div>
+                                <h4 class="text-xl font-bold"><?php echo htmlspecialchars($s_item['name'] ?? 'Unknown Item'); ?></h4>
+                                <p class="text-sm text-gray-500 font-medium">Due Return: <?php echo date('M d, Y', strtotime($s_rental['end_date'] ?? 'now')); ?></p>
+                            </div>
+                            <div class="ml-auto">
+                                <span class="text-2xl font-black">₹<?php echo $s_rental['total_price'] ?? '0'; ?></span>
+                            </div>
+                        </div>
+
+                        <div class="mt-8">
+                             <h4 class="text-sm font-bold mb-6 flex items-center gap-2 text-gray-500">
+                                <span class="material-symbols-outlined text-lg">local_shipping</span> 
+                                Delivery Status
+                            </h4>
+                            
+                            <div class="w-full max-w-4xl mx-auto">
+                                <div class="flex items-center justify-between w-full relative">
+                                    <?php foreach ($steps as $index => $step): 
+                                        $is_completed = $index <= $current_level;
+                                        $is_current = $index === $current_level;
+                                        $bg_color = $is_completed ? 'bg-black text-white' : 'bg-gray-100 text-gray-400';
+                                        $text_color = $is_completed ? 'text-black' : 'text-gray-400';
+                                        $border_color = $is_current ? 'ring-4 ring-gray-100' : '';
+                                    ?>
+                                        <!-- Step -->
+                                        <div class="relative z-10 flex flex-col items-center">
+                                            <div class="w-10 h-10 rounded-full <?php echo $bg_color . ' ' . $border_color; ?> flex items-center justify-center transition-all duration-500 shadow-sm relative">
+                                                <span class="material-symbols-outlined text-lg"><?php echo $step['icon']; ?></span>
+                                            </div>
+                                            <span class="absolute top-14 text-[10px] font-bold uppercase tracking-wider text-center w-32 <?php echo $text_color; ?>">
+                                                <?php echo $step['label']; ?>
+                                            </span>
+                                        </div>
+
+                                        <!-- Line -->
+                                        <?php if ($index < count($steps) - 1): 
+                                            $line_bg = ($index < $current_level) ? 'bg-black' : 'bg-gray-100';
+                                        ?>
+                                            <div class="flex-1 h-1 mx-4 rounded-full bg-gray-100 relative overflow-hidden">
+                                                <div class="absolute inset-0 <?php echo $line_bg; ?>"></div>
+                                            </div>
+                                        <?php endif; ?>
+                                    <?php endforeach; ?>
+                                </div>
+                            </div>
+                            <div class="h-8"></div><!-- Spacer -->
+                        </div>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+                <?php endif; ?>
+
+
                 <div class="space-y-10">
                     <!-- Unassigned Section -->
                     <section>
@@ -1080,20 +1258,11 @@ foreach ($rentals as $rental) {
                                     </div>
                                 </div>
 
-                                <form method="POST" class="mt-4">
-                                    <input type="hidden" name="assign_delivery" value="1">
-                                    <input type="hidden" name="rental_id" value="<?php echo $r['id']; ?>">
-                                    <label class="block text-xs font-bold text-gray-500 mb-2">Assign Partner:</label>
-                                    <div class="flex gap-2">
-                                        <select name="partner_id" required class="flex-1 bg-gray-50 border-gray-200 rounded-lg text-sm py-2 px-3 focus:ring-yellow-500 focus:border-yellow-500">
-                                            <option value="">Select...</option>
-                                            <?php foreach($delivery_partners as $dp): ?>
-                                            <option value="<?php echo $dp['id']; ?>"><?php echo htmlspecialchars($dp['name']); ?> </option>
-                                            <?php endforeach; ?>
-                                        </select>
-                                        <button type="submit" class="bg-primary text-black px-3 py-2 rounded-lg text-xs font-bold hover:bg-yellow-400">Assign</button>
-                                    </div>
-                                </form>
+                                <button onclick="startPartnerAssignment('<?php echo $r['id']; ?>')" class="mt-4 w-full bg-primary text-black px-4 py-2 rounded-lg text-sm font-bold hover:bg-yellow-400 shadow-sm transition-colors flex items-center justify-center gap-2">
+                                    Assign Partner
+                                </button>
+
+
                             </div>
                             <?php endforeach; ?>
                             <?php if(empty($unassigned_rentals)) echo '<p class="text-gray-500 italic col-span-full">No pending deliveries.</p>'; ?>
@@ -1149,6 +1318,51 @@ foreach ($rentals as $rental) {
                         </div>
                     </section>
                 </div>
+
+                </div>
+
+                <!-- Analysis Overlay -->
+                <div id="analysisOverlay" class="fixed inset-0 z-[110] hidden items-center justify-center bg-black/80 backdrop-blur-sm flex-col">
+                    <div class="p-6 bg-white rounded-full mb-6 shadow-[0_0_30px_rgba(255,255,0,0.3)] animate-bounce">
+                        <span class="material-symbols-outlined text-4xl text-primary animate-spin">radar</span>
+                    </div>
+                    <h3 id="analysisText" class="text-white text-2xl font-black tracking-wider animate-pulse text-center">Conducting route analysis...</h3>
+                    <p class="text-white/60 text-sm mt-2 font-mono">Optimizing delivery paths</p>
+                </div>
+
+                <!-- Auto-Assign Form (Hidden) -->
+                <form id="autoAssignForm" method="POST">
+                    <input type="hidden" name="auto_assign_delivery" value="1">
+                    <input type="hidden" name="rental_id" id="auto_assign_rental_id">
+                </form>
+
+                <script>
+                    function startPartnerAssignment(rentalID) {
+                        // Show overlay
+                        const overlay = document.getElementById('analysisOverlay');
+                        const text = document.getElementById('analysisText');
+                        overlay.classList.remove('hidden');
+                        overlay.classList.add('flex');
+                        
+                        // Step 1: Route Analysis
+                        text.innerHTML = 'Conducting route analysis...';
+                        
+                        setTimeout(() => {
+                            // Step 2: Assigning
+                            text.innerHTML = 'Assigning best partner...';
+                            
+                            setTimeout(() => {
+                                // Submit Hidden Form
+                                document.getElementById('auto_assign_rental_id').value = rentalID;
+                                document.getElementById('autoAssignForm').submit();
+                            }, 1500);
+                        }, 1500);
+                    }
+                </script>
+
+
+
+
 
             <?php break; 
             
@@ -1506,17 +1720,9 @@ foreach ($rentals as $rental) {
                         </div>
                     </div>
                 </div>
-            <?php break; 
+            <?php break; ?>
             
-            case 'deliveries': 
-                // Logic to find pending and active deliveries
-                $delivery_map = [];
-                foreach ($deliveries as $d) {
-                    $delivery_map[$d['rental_id']] = $d;
-                }
-                
-                $pending_deliveries = [];
-                $active_deliveries_list = [];
+            <?php if(false): // case 'system': ?>
                 
                 foreach ($rentals as $r) {
                     // Check if rental requires delivery
@@ -1706,7 +1912,7 @@ foreach ($rentals as $rental) {
                     </section>
                 </div>
 
-            <?php break; 
+            <?php endif; break; 
             
             case 'system': ?>
                 <!-- SYSTEM VIEW -->
