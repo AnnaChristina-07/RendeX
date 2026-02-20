@@ -475,9 +475,7 @@ foreach ($rentals as $rental) {
                         <?php 
                             $delivery_date = $rental['start_date'];
                             $today = date('Y-m-d');
-                            $is_today_delivery = ($today === $delivery_date);
-                            
-                            if ($is_delivery && $is_today_delivery && $delivery_status !== 'delivered' && $driver): 
+                            if ($is_delivery && $delivery_status !== 'delivered' && $driver): 
                                 // Find the delivery ID again to be safe
                                 $target_delivery_id = null;
                                 $existing_otp = null;
