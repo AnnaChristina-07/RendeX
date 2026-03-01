@@ -247,6 +247,8 @@ $can_rent = in_array($listing_type, ['rent', 'both']);
 $can_buy  = in_array($listing_type, ['sell', 'both']) && $selling_price > 0 && !$is_unavailable;
 // If item is SOLD (sold_to set), disable buying
 if (!empty($item['sold_to'])) { $can_buy = false; $is_unavailable = true; }
+// Pre-booking flag
+$allow_prebooking = ($item['allow_prebooking'] ?? 1) && $can_rent;
 
 ?>
 <!DOCTYPE html>
@@ -511,7 +513,7 @@ if (!empty($item['sold_to'])) { $can_buy = false; $is_unavailable = true; }
                     <button onclick="openContactModal()" class="ml-auto bg-white dark:bg-[#1e2019] border border-[#e9e8ce] dark:border-[#3e3d2a] px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-black hover:text-white dark:hover:bg-primary dark:hover:text-black transition-all shadow-sm">Contact</button>
                 </div>
 
-                <!-- Location -->
+                 <!-- Location -->
                  <div>
                     <h3 class="font-bold text-lg mb-2">Location</h3>
                     <div class="flex items-center gap-2 text-text-muted">
@@ -520,18 +522,67 @@ if (!empty($item['sold_to'])) { $can_buy = false; $is_unavailable = true; }
                     </div>
                  </div>
 
+                 <!-- ====== AVAILABILITY CALENDAR WIDGET ====== -->
+                 <div class="bg-white dark:bg-surface-dark rounded-2xl border border-[#e9e8ce] dark:border-[#3e3d2a] p-6">
+                     <div class="flex items-center justify-between mb-4">
+                         <h3 class="font-black text-lg flex items-center gap-2">
+                             <span class="material-symbols-outlined text-primary">calendar_month</span>
+                             Availability
+                         </h3>
+                         <div class="flex gap-3 text-[10px] font-bold uppercase tracking-wider">
+                             <span class="flex items-center gap-1"><span class="inline-block w-3 h-3 rounded-sm bg-red-400"></span> Booked</span>
+                             <span class="flex items-center gap-1"><span class="inline-block w-3 h-3 rounded-sm bg-yellow-400"></span> Reserved</span>
+                             <span class="flex items-center gap-1"><span class="inline-block w-3 h-3 rounded-sm bg-green-400"></span> Free</span>
+                         </div>
+                     </div>
+
+                     <!-- Calendar grid rendered by JS -->
+                     <div id="avail-calendar" class="select-none">
+                         <div class="flex items-center justify-between mb-3">
+                             <button type="button" onclick="prevMonth()" class="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center hover:bg-primary transition-colors">
+                                 <span class="material-symbols-outlined text-sm">chevron_left</span>
+                             </button>
+                             <span id="cal-month-label" class="font-black text-base"></span>
+                             <button type="button" onclick="nextMonth()" class="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center hover:bg-primary transition-colors">
+                                 <span class="material-symbols-outlined text-sm">chevron_right</span>
+                             </button>
+                         </div>
+                         <div class="grid grid-cols-7 gap-1 mb-1">
+                             <?php foreach(['Su','Mo','Tu','We','Th','Fr','Sa'] as $d): ?>
+                             <div class="text-center text-[10px] font-black text-text-muted uppercase"><?= $d ?></div>
+                             <?php endforeach; ?>
+                         </div>
+                         <div id="cal-grid" class="grid grid-cols-7 gap-1"></div>
+                     </div>
+
+                     <div id="avail-message" class="mt-4 text-sm font-medium text-center text-text-muted hidden"></div>
+                 </div>
+                 <!-- ====== END CALENDAR ====== -->
+
                  <hr class="border-[#e9e8ce] dark:border-[#3e3d2a]">
 
                  <!-- Actions -->
                      <!-- Actions -->
-                     <?php if ($is_unavailable): ?>
+                     <?php if ($is_unavailable && !empty($item['sold_to'])): ?>
                         <div class="bg-red-50 dark:bg-red-900/10 border border-red-100 dark:border-red-900/30 p-6 rounded-2xl text-center">
                             <span class="material-symbols-outlined text-4xl text-red-500 mb-2">remove_shopping_cart</span>
-                            <h3 class="text-xl font-black text-red-600 dark:text-red-400 mb-1">Currently Unavailable</h3>
-                            <p class="text-sm text-text-muted mb-6">This item has been rented or sold and is currently unavailable.</p>
-                            <button disabled class="w-full bg-gray-200 dark:bg-gray-800 text-gray-400 font-black text-xl py-5 rounded-2xl cursor-not-allowed">
-                                <?= !empty($item['sold_to']) ? 'Sold Out' : 'Out of Stock' ?>
-                            </button>
+                            <h3 class="text-xl font-black text-red-600 dark:text-red-400 mb-1">Sold Out</h3>
+                            <p class="text-sm text-text-muted mb-4">This item has been permanently sold.</p>
+                            <button disabled class="w-full bg-gray-200 dark:bg-gray-800 text-gray-400 font-black text-xl py-5 rounded-2xl cursor-not-allowed">Sold Out</button>
+                        </div>
+                     <?php elseif ($is_unavailable): ?>
+                        <div class="bg-orange-50 dark:bg-orange-900/10 border border-orange-100 dark:border-orange-900/30 p-6 rounded-2xl text-center">
+                            <span class="material-symbols-outlined text-4xl text-orange-500 mb-2">schedule</span>
+                            <h3 class="text-xl font-black text-orange-600 mb-1">Currently Rented</h3>
+                            <p class="text-sm text-text-muted mb-4">Check the calendar above for the next free date.</p>
+                            <?php if ($allow_prebooking): ?>
+                            <a href="prebooking.php?id=<?= urlencode($item_id) ?>" class="block w-full bg-black hover:bg-gray-800 text-primary font-black text-lg py-5 rounded-2xl shadow-lg transition-all hover:-translate-y-1 flex items-center justify-center gap-3">
+                                <span class="material-symbols-outlined">event_available</span>
+                                📅 Pre-Book a Future Date
+                            </a>
+                            <?php else: ?>
+                            <button disabled class="w-full bg-gray-200 text-gray-400 font-black text-xl py-5 rounded-2xl cursor-not-allowed">Unavailable</button>
+                            <?php endif; ?>
                         </div>
                      <?php elseif ($is_own_item): ?>
                         <div class="bg-primary/10 border border-primary/20 p-6 rounded-2xl text-center">
@@ -552,6 +603,13 @@ if (!empty($item['sold_to'])) { $can_buy = false; $is_unavailable = true; }
                              </button>
                              <p class="text-center text-xs text-text-muted mt-2">You won't be charged yet.</p>
                          </form>
+                         <?php endif; ?>
+
+                         <?php if ($can_rent && $allow_prebooking): ?>
+                         <a href="prebooking.php?id=<?= urlencode($item_id) ?>" class="block w-full border-2 border-[#e9e8ce] dark:border-[#3e3d2a] hover:border-black dark:hover:border-white text-text-main dark:text-white font-black text-lg py-4 rounded-2xl transition-all hover:-translate-y-0.5 flex items-center justify-center gap-2 bg-white dark:bg-surface-dark">
+                             <span class="material-symbols-outlined text-xl">calendar_add_on</span>
+                             Schedule a Future Date
+                         </a>
                          <?php endif; ?>
 
                          <?php if ($can_buy): ?>
@@ -575,6 +633,107 @@ if (!empty($item['sold_to'])) { $can_buy = false; $is_unavailable = true; }
             </div>
         </div>
     </main>
+
+    <!-- ====== CALENDAR JS ====== -->
+    <script>
+    (function(){
+        const ITEM_ID = <?= json_encode($item_id) ?>;
+        let bookedRanges = [];
+        let viewYear, viewMonth;
+        const today = new Date();
+        viewYear  = today.getFullYear();
+        viewMonth = today.getMonth(); // 0-based
+
+        const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+        // Fetch availability data
+        fetch('api_availability.php?item_id=' + encodeURIComponent(ITEM_ID))
+            .then(r => r.json())
+            .then(data => {
+                bookedRanges = data.booked_ranges || [];
+                const avFrom = data.available_from;
+                const msg = document.getElementById('avail-message');
+                if (avFrom) {
+                    const d = new Date(avFrom + 'T00:00:00');
+                    const formatted = d.toLocaleDateString('en-IN', {day:'numeric', month:'long', year:'numeric'});
+                    msg.textContent = '✅ Next available: ' + formatted;
+                    msg.className = 'mt-4 text-sm font-bold text-center text-green-600';
+                    msg.classList.remove('hidden');
+                }
+                renderCalendar();
+            })
+            .catch(() => renderCalendar()); // render empty if API fails
+
+        function getDateStatus(year, month, day) {
+            const d = new Date(year, month, day);
+            const iso = d.toISOString().split('T')[0];
+            for (const r of bookedRanges) {
+                if (iso >= r.start && iso <= r.end) {
+                    return r.type === 'rented' ? 'rented' : 'prebooked';
+                }
+            }
+            return 'free';
+        }
+
+        function renderCalendar() {
+            document.getElementById('cal-month-label').textContent = MONTH_NAMES[viewMonth] + ' ' + viewYear;
+            const grid = document.getElementById('cal-grid');
+            grid.innerHTML = '';
+
+            const firstDay = new Date(viewYear, viewMonth, 1).getDay(); // 0=Sun
+            const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+            const todayIso = today.toISOString().split('T')[0];
+
+            // Empty cells before first day
+            for (let i = 0; i < firstDay; i++) {
+                grid.insertAdjacentHTML('beforeend', '<div></div>');
+            }
+
+            for (let d = 1; d <= daysInMonth; d++) {
+                const isoDate = viewYear + '-' +
+                    String(viewMonth + 1).padStart(2,'0') + '-' +
+                    String(d).padStart(2,'0');
+                const isPast = isoDate < todayIso;
+                const status = isPast ? 'past' : getDateStatus(viewYear, viewMonth, d);
+
+                let cls = 'aspect-square rounded-lg flex items-center justify-center text-xs font-bold transition-colors ';
+                let title = '';
+                if (isoDate === todayIso) {
+                    cls += 'ring-2 ring-primary bg-primary/10 text-primary font-black';
+                    title = 'Today';
+                } else if (isPast) {
+                    cls += 'text-gray-300 dark:text-gray-700';
+                } else if (status === 'rented') {
+                    cls += 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400';
+                    title = 'Rented';
+                } else if (status === 'prebooked') {
+                    cls += 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400';
+                    title = 'Pre-booked';
+                } else {
+                    cls += 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/60 cursor-pointer';
+                    title = 'Available';
+                }
+                grid.insertAdjacentHTML('beforeend',
+                    `<div class="${cls}" title="${title} — ${isoDate}">${d}</div>`
+                );
+            }
+        }
+
+        window.prevMonth = function() {
+            if (viewMonth === 0) { viewMonth = 11; viewYear--; }
+            else viewMonth--;
+            renderCalendar();
+        };
+        window.nextMonth = function() {
+            if (viewMonth === 11) { viewMonth = 0; viewYear++; }
+            else viewMonth++;
+            renderCalendar();
+        };
+
+        renderCalendar(); // initial render (empty, data loads async)
+    })();
+    </script>
+    <!-- ====== END CALENDAR JS ====== -->
 
     <!-- Contact Modal -->
     <div id="contactModal" class="fixed inset-0 z-[100] hidden items-center justify-center p-4">

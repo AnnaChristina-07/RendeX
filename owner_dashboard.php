@@ -80,6 +80,26 @@ foreach($all_rentals as $r) {
     }
 }
 
+// 4. Load Pre-Bookings (incoming)
+$my_prebookings = [];
+try {
+    if ($pdo) {
+        $has_pb = $pdo->query("SHOW TABLES LIKE 'pre_bookings'")->rowCount() > 0;
+        if ($has_pb) {
+            $stmt = $pdo->prepare("
+                SELECT pb.*, i.title as item_title, i.price_per_day, u.name as renter_name, u.email as renter_email
+                FROM pre_bookings pb
+                LEFT JOIN items i ON pb.item_id = i.id
+                LEFT JOIN users u ON pb.user_id = u.id
+                WHERE pb.owner_id = ?
+                ORDER BY pb.created_at DESC
+            ");
+            $stmt->execute([$user_id]);
+            $my_prebookings = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        }
+    }
+} catch (Exception $e) {}
+
 // --- ACTIONS ---
 
 // Delete Listing
@@ -91,6 +111,76 @@ if (isset($_POST['delete_listing_id'])) {
     }
     file_put_contents($items_file, json_encode($new_items, JSON_PRETTY_PRINT));
     header("Location: owner_dashboard.php?tab=listings&msg=deleted");
+    exit();
+}
+
+// ─── Approve Pre-Booking ───────────────────────────────────────────────────
+if (isset($_POST['approve_prebooking_ref'])) {
+    $ref = $_POST['approve_prebooking_ref'];
+    try {
+        if ($pdo) {
+            $pb = $pdo->prepare("SELECT * FROM pre_bookings WHERE booking_ref = ? AND owner_id = ?");
+            $pb->execute([$ref, $user_id]);
+            $pbr = $pb->fetch();
+            if ($pbr && $pbr['status'] === 'pending') {
+                $pdo->prepare("UPDATE pre_bookings SET status = 'confirmed', owner_approved = 1 WHERE booking_ref = ?")
+                    ->execute([$ref]);
+                // Email renter
+                if (!empty($pbr['renter_email'] ?? '')) {
+                    // renter_email joined above
+                } else {
+                    $re = $pdo->prepare("SELECT email, name FROM users WHERE id = ?");
+                    $re->execute([$pbr['user_id']]);
+                    $ru = $re->fetch();
+                }
+                $ru = $ru ?? [];
+                $renter_email = $ru['email'] ?? '';
+                $renter_name  = $ru['name'] ?? 'Renter';
+                if ($renter_email) {
+                    require_once 'config/mail.php';
+                    $body = "<div style='font-family:sans-serif;max-width:580px;margin:auto;padding:24px;border:1px solid #e9e8ce;border-radius:20px'>
+                        <h2 style='color:#16a34a'>✅ Pre-Booking Approved!</h2>
+                        <p>Hi <b>" . htmlspecialchars($renter_name) . "</b>,</p>
+                        <p>Great news! The owner has approved your pre-booking request <b>#{$ref}</b>.</p>
+                        <div style='background:#f8f8f5;padding:16px;border-radius:12px;margin:16px 0'>
+                            <p><b>Item:</b> " . htmlspecialchars($pbr['item_title'] ?? '') . "</p>
+                            <p><b>Dates:</b> {$pbr['start_date']} → {$pbr['end_date']} ({$pbr['total_days']} days)</p>
+                            <p><b>Total:</b> ₹" . number_format($pbr['total_amount'], 2) . "</p>
+                        </div>
+                        <p>Please <a href='http://{$_SERVER['HTTP_HOST']}/RendeX/my-prebookings.php' style='color:#000;font-weight:bold'>go to your Pre-Bookings</a> and complete payment to confirm your slot.</p>
+                    </div>";
+                    send_smtp_email($renter_email, "Pre-Booking Confirmed — {$ref}", $body);
+                }
+            }
+        }
+    } catch (Exception $e) {}
+    header("Location: owner_dashboard.php?tab=prebookings&msg=pb_approved");
+    exit();
+}
+
+// ─── Reject Pre-Booking ────────────────────────────────────────────────────
+if (isset($_POST['reject_prebooking_ref'])) {
+    $ref = $_POST['reject_prebooking_ref'];
+    try {
+        if ($pdo) {
+            $pdo->prepare("UPDATE pre_bookings SET status = 'cancelled' WHERE booking_ref = ? AND owner_id = ?")
+                ->execute([$ref, $user_id]);
+            // Notify renter
+            $pb = $pdo->prepare("SELECT pb.*, u.email as re, u.name as rn FROM pre_bookings pb LEFT JOIN users u ON pb.user_id = u.id WHERE pb.booking_ref = ?");
+            $pb->execute([$ref]);
+            $pbr = $pb->fetch();
+            if ($pbr && !empty($pbr['re'])) {
+                require_once 'config/mail.php';
+                $body = "<div style='font-family:sans-serif;max-width:580px;margin:auto;padding:24px;border:1px solid #e9e8ce;border-radius:20px'>
+                    <h2 style='color:#dc2626'>Pre-Booking Declined</h2>
+                    <p>Hi <b>" . htmlspecialchars($pbr['rn']) . "</b>, unfortunately the owner declined your pre-booking <b>#{$ref}</b>.</p>
+                    <p>Please choose different dates or another item on <a href='http://{$_SERVER['HTTP_HOST']}/RendeX/dashboard.php' style='color:#000;font-weight:bold'>RendeX</a>.</p>
+                </div>";
+                send_smtp_email($pbr['re'], "Pre-Booking Declined — {$ref}", $body);
+            }
+        }
+    } catch (Exception $e) {}
+    header("Location: owner_dashboard.php?tab=prebookings&msg=pb_rejected");
     exit();
 }
 
@@ -280,7 +370,6 @@ if (isset($_POST['reject_extension_id'])) {
     }
 }
 
-// Current Tab
 $tab = isset($_GET['tab']) ? $_GET['tab'] : 'overview';
 
 ?>
@@ -344,6 +433,12 @@ $tab = isset($_GET['tab']) ? $_GET['tab'] : 'overview';
                     <a href="?tab=listings" class="px-5 py-2 rounded-full text-sm font-bold transition-all <?php echo $tab=='listings' ? 'bg-white shadow-sm text-black' : 'text-gray-500 hover:text-black'; ?>">My Listings</a>
                     <a href="?tab=incoming" class="px-5 py-2 rounded-full text-sm font-bold transition-all <?php echo $tab=='incoming' ? 'bg-white shadow-sm text-black' : 'text-gray-500 hover:text-black'; ?>">Rentals (Incoming)</a>
                     <a href="?tab=outgoing" class="px-5 py-2 rounded-full text-sm font-bold transition-all <?php echo $tab=='outgoing' ? 'bg-white shadow-sm text-black' : 'text-gray-500 hover:text-black'; ?>">My Orders</a>
+                    <a href="?tab=prebookings" class="px-5 py-2 rounded-full text-sm font-bold transition-all <?php echo $tab=='prebookings' ? 'bg-white shadow-sm text-black' : 'text-gray-500 hover:text-black'; ?> flex items-center gap-1">
+                        <span class="material-symbols-outlined text-sm">calendar_month</span> Pre-Bookings
+                        <?php
+                        $pb_pending = count(array_filter($my_prebookings, fn($b) => $b['status'] === 'pending'));
+                        if ($pb_pending > 0): ?><span class="bg-red-500 text-white text-[10px] font-black w-4 h-4 rounded-full flex items-center justify-center"><?= $pb_pending ?></span><?php endif; ?>
+                    </a>
                     <a href="my-purchases.php" class="px-5 py-2 rounded-full text-sm font-bold transition-all text-gray-500 hover:text-black flex items-center gap-1"><span class="material-symbols-outlined text-sm">shopping_bag</span> Purchases</a>
                 </nav>
             </div>
@@ -759,6 +854,81 @@ $tab = isset($_GET['tab']) ? $_GET['tab'] : 'overview';
                 <?php endforeach; ?>
                  <?php if(empty($my_outgoing_rentals)) echo '<p class="text-gray-500 col-span-full py-10 text-center">You haven\'t rented anything.</p>'; ?>
             </div>
+
+        <?php elseif($tab == 'prebookings'): ?>
+            <div class="flex items-center justify-between mb-8">
+                <h2 class="text-2xl font-bold">Incoming Pre-Booking Requests</h2>
+                <?php if (!empty($my_prebookings)): ?>
+                <span class="text-sm text-gray-500"><?= count($my_prebookings) ?> total</span>
+                <?php endif; ?>
+            </div>
+
+            <?php if (isset($_GET['msg'])): ?>
+            <div class="mb-6 p-4 rounded-xl font-bold text-sm <?= ($_GET['msg']==='pb_approved') ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200' ?>">
+                <?= ($_GET['msg']==='pb_approved') ? '✅ Pre-booking approved! Renter has been notified.' : '❌ Pre-booking declined.' ?>
+            </div>
+            <?php endif; ?>
+
+            <?php if (empty($my_prebookings)): ?>
+            <div class="bg-white rounded-2xl border border-gray-200 p-16 text-center">
+                <span class="material-symbols-outlined text-5xl text-gray-300 mb-4">calendar_month</span>
+                <p class="text-gray-500 font-bold">No pre-booking requests yet.</p>
+                <p class="text-sm text-gray-400 mt-1">When renters pre-book your items, requests will appear here.</p>
+            </div>
+            <?php else: ?>
+            <div class="space-y-4">
+            <?php foreach($my_prebookings as $pb):
+                $s = $pb['status'] ?? 'pending';
+                $status_colors = ['pending'=>'bg-yellow-100 text-yellow-700','confirmed'=>'bg-blue-100 text-blue-700','active'=>'bg-green-100 text-green-700','completed'=>'bg-gray-100 text-gray-600','cancelled'=>'bg-red-100 text-red-600','expired'=>'bg-gray-100 text-gray-400'];
+                $sc = $status_colors[$s] ?? 'bg-gray-100 text-gray-500';
+                $can_act = ($s === 'pending');
+            ?>
+            <div class="bg-white rounded-2xl border border-gray-200 p-6 hover:shadow-md transition-all">
+                <div class="flex flex-col md:flex-row gap-4 items-start md:items-center">
+                    <div class="flex-1">
+                        <div class="flex items-center gap-3 mb-2">
+                            <span class="px-3 py-1 rounded-full text-xs font-bold <?= $sc ?>"><?= ucfirst($s) ?></span>
+                            <span class="text-[10px] font-mono text-gray-400"><?= $pb['booking_ref'] ?></span>
+                        </div>
+                        <h3 class="font-black text-lg"><?= htmlspecialchars($pb['item_title'] ?? 'Item') ?></h3>
+                        <div class="flex flex-wrap gap-4 text-sm text-gray-500 mt-2">
+                            <span class="flex items-center gap-1"><span class="material-symbols-outlined text-sm">person</span> <?= htmlspecialchars($pb['renter_name'] ?? 'Renter') ?></span>
+                            <span class="flex items-center gap-1"><span class="material-symbols-outlined text-sm">calendar_today</span> <?= date('M d', strtotime($pb['start_date'])) ?> → <?= date('M d, Y', strtotime($pb['end_date'])) ?></span>
+                            <span class="flex items-center gap-1"><span class="material-symbols-outlined text-sm">schedule</span> <?= $pb['total_days'] ?> days</span>
+                            <span class="flex items-center gap-1"><span class="material-symbols-outlined text-sm"><?= $pb['delivery_method'] === 'delivery' ? 'local_shipping' : 'storefront' ?></span> <?= ucfirst($pb['delivery_method']) ?></span>
+                        </div>
+                        <?php if ($pb['notes']): ?>
+                        <p class="text-xs text-gray-400 mt-2 italic">Note: "<?= htmlspecialchars($pb['notes']) ?>"</p>
+                        <?php endif; ?>
+                        <?php if ($s === 'pending' && $pb['expires_at']): ?>
+                        <p class="text-[10px] text-orange-500 font-bold mt-1">⏰ Auto-expires: <?= date('M d, g:i A', strtotime($pb['expires_at'])) ?></p>
+                        <?php endif; ?>
+                    </div>
+
+                    <div class="text-right shrink-0">
+                        <p class="text-2xl font-black text-green-600">₹<?= number_format($pb['total_amount'], 0) ?></p>
+                        <p class="text-xs text-gray-400 mb-4">₹<?= number_format($pb['daily_rate'], 0) ?>/day × <?= $pb['total_days'] ?> d</p>
+
+                        <?php if ($can_act): ?>
+                        <div class="flex gap-2">
+                            <form method="POST">
+                                <input type="hidden" name="reject_prebooking_ref" value="<?= htmlspecialchars($pb['booking_ref']) ?>">
+                                <button onclick="return confirm('Decline this request?')" class="px-4 py-2 bg-white border border-gray-200 text-gray-500 text-sm font-bold rounded-xl hover:bg-gray-50 transition-colors">Decline</button>
+                            </form>
+                            <form method="POST">
+                                <input type="hidden" name="approve_prebooking_ref" value="<?= htmlspecialchars($pb['booking_ref']) ?>">
+                                <button class="px-5 py-2 bg-black text-white text-sm font-bold rounded-xl hover:bg-gray-800 transition-colors shadow-lg">✅ Approve</button>
+                            </form>
+                        </div>
+                        <?php elseif ($s === 'confirmed'): ?>
+                        <p class="text-xs font-bold text-blue-600 bg-blue-50 px-3 py-1.5 rounded-full">⏳ Waiting for renter payment</p>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            </div>
+            <?php endforeach; ?>
+            </div>
+            <?php endif; ?>
 
         <?php endif; ?>
 
