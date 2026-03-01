@@ -344,6 +344,7 @@ $tab = isset($_GET['tab']) ? $_GET['tab'] : 'overview';
                     <a href="?tab=listings" class="px-5 py-2 rounded-full text-sm font-bold transition-all <?php echo $tab=='listings' ? 'bg-white shadow-sm text-black' : 'text-gray-500 hover:text-black'; ?>">My Listings</a>
                     <a href="?tab=incoming" class="px-5 py-2 rounded-full text-sm font-bold transition-all <?php echo $tab=='incoming' ? 'bg-white shadow-sm text-black' : 'text-gray-500 hover:text-black'; ?>">Rentals (Incoming)</a>
                     <a href="?tab=outgoing" class="px-5 py-2 rounded-full text-sm font-bold transition-all <?php echo $tab=='outgoing' ? 'bg-white shadow-sm text-black' : 'text-gray-500 hover:text-black'; ?>">My Orders</a>
+                    <a href="my-purchases.php" class="px-5 py-2 rounded-full text-sm font-bold transition-all text-gray-500 hover:text-black flex items-center gap-1"><span class="material-symbols-outlined text-sm">shopping_bag</span> Purchases</a>
                 </nav>
             </div>
             

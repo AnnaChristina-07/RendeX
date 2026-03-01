@@ -29,6 +29,8 @@ $images = [];
 $edit_id = null;
 $is_edit = false;
 $errors = []; // Initialize errors array
+$listing_type = 'rent'; // NEW: listing type (rent/sell/both)
+$selling_price = '';    // NEW: selling price
 
 // Load existing items
 $items = file_exists($items_file) ? json_decode(file_get_contents($items_file), true) : [];
@@ -74,6 +76,8 @@ if (isset($_GET['edit_id'])) {
             $description = $item['description'];
             $address = $item['address'];
             $address = $item['address'];
+            $listing_type = $item['listing_type'] ?? 'rent';
+            $selling_price = $item['selling_price'] ?? '';
             // Try to parse address components
             if (preg_match('/^(.*), (.*), (.*), (.*) - (.*)$/', $address, $matches)) {
                 $addr_house = $matches[1];
@@ -109,6 +113,8 @@ if (isset($_GET['edit_id'])) {
                     $description = $db_item['description'];
                     $address = $db_item['location'];
                     $address = $db_item['location'];
+                    $listing_type = $db_item['listing_type'] ?? 'rent';
+                    $selling_price = $db_item['selling_price'] ?? '';
                     // Try to parse address components
                     if (preg_match('/^(.*), (.*), (.*), (.*) - (.*)$/', $address, $matches)) {
                         $addr_house = $matches[1];
@@ -145,6 +151,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $addr_city = trim($_POST['addr_city'] ?? '');
     $addr_state = trim($_POST['addr_state'] ?? '');
     $addr_pin = trim($_POST['addr_pin'] ?? '');
+    $listing_type = $_POST['listing_type'] ?? 'rent';
+    $selling_price = trim($_POST['selling_price'] ?? '');
+    if (!in_array($listing_type, ['rent','sell','both'])) $listing_type = 'rent';
+    if (in_array($listing_type, ['sell','both']) && (!is_numeric($selling_price) || $selling_price <= 0)) {
+        $errors[] = "Please enter a valid Selling Price greater than 0.";
+    }
 
     if (empty($title)) $errors[] = "Item Name is required.";
     if (empty($category)) $errors[] = "Please select a Category.";
@@ -248,6 +260,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'description' => $description,
             'address' => $address,
             'images' => $final_images,
+            'listing_type' => $listing_type,
+            'selling_price' => in_array($listing_type, ['sell','both']) ? $selling_price : null,
             'created_at' => $is_edit ? ($item['created_at'] ?? date('Y-m-d H:i:s')) : date('Y-m-d H:i:s'),
             'updated_at' => date('Y-m-d H:i:s'),
             'status' => 'Pending Approval'
@@ -277,29 +291,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $images_json = json_encode($final_images);
                 $handover_json = json_encode($handover_methods);
                 
+                $sp = in_array($listing_type, ['sell','both']) ? $selling_price : null;
                 if ($is_edit) {
                     $stmt = $pdo->prepare("UPDATE items SET 
                         title = ?, description = ?, category = ?, 
                         price_per_day = ?, security_deposit = ?, 
                         handover_methods = ?, location = ?, images = ?,
+                        listing_type = ?, selling_price = ?,
                         admin_status = 'pending', updated_at = NOW() 
                         WHERE id = ? AND owner_id = ?");
                     $stmt->execute([
                         $title, $description, $category, 
                         $price, $security_deposit, 
                         $handover_json, $address, $images_json,
+                        $listing_type, $sp,
                         $edit_id, $_SESSION['user_id']
                     ]);
                 } else {
                     $stmt = $pdo->prepare("INSERT INTO items (
                         owner_id, title, description, category, 
                         price_per_day, security_deposit, handover_methods, 
-                        location, images, admin_status, created_at
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', NOW())");
+                        location, images, listing_type, selling_price, admin_status, created_at
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', NOW())");
                     $stmt->execute([
                         $_SESSION['user_id'], $title, $description, $category, 
                         $price, $security_deposit, $handover_json, 
-                        $address, $images_json
+                        $address, $images_json, $listing_type, $sp
                     ]);
     
                     // Add Admin Notification
@@ -523,8 +540,76 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
 
                 <div class="space-y-6">
-                    <!-- Rental Rates -->
+                    <!-- === NEW: Listing Type === -->
                     <div class="space-y-4">
+                        <div class="flex items-center gap-2 text-gray-900 dark:text-white">
+                            <span class="material-symbols-outlined text-yellow-600">sell</span>
+                            <h4 class="font-bold">What are you offering? <span class="text-red-500">*</span></h4>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <?php foreach (['rent' => ['🔄','Rent Only','Renters borrow and return'], 'sell' => ['🛒','Sell Only','Buyer keeps it forever'], 'both' => ['⚡','Rent & Sell','Let users choose']] as $lt => $meta): ?>
+                            <label class="listing-type-card relative cursor-pointer">
+                                <input type="radio" name="listing_type" value="<?= $lt ?>"
+                                    class="sr-only listing-type-radio"
+                                    <?= $listing_type === $lt ? 'checked' : '' ?>
+                                    onchange="handleListingTypeChange(this.value)">
+                                <div class="border-2 <?= $listing_type === $lt ? 'border-yellow-400 bg-yellow-50 dark:bg-yellow-900/10' : 'border-gray-100 dark:border-gray-800' ?> rounded-2xl p-5 transition-all hover:bg-gray-50 dark:hover:bg-gray-800/50 listing-type-label" data-type="<?= $lt ?>">
+                                    <div class="text-3xl mb-2"><?= $meta[0] ?></div>
+                                    <h5 class="font-bold text-gray-900 dark:text-white"><?= $meta[1] ?></h5>
+                                    <p class="text-xs text-gray-500 mt-1"><?= $meta[2] ?></p>
+                                </div>
+                            </label>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+
+                    <!-- === NEW: Selling Price (shown only for sell/both) === -->
+                    <div id="selling-price-section" class="<?= $listing_type === 'rent' ? 'hidden' : '' ?>">
+                        <div class="bg-green-50 dark:bg-green-900/10 border border-green-200 dark:border-green-900/30 rounded-2xl p-6">
+                            <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 ml-1">
+                                🛒 Selling Price (₹) <span class="text-red-500">*</span>
+                            </label>
+                            <div class="relative group">
+                                <span class="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 font-bold text-lg group-focus-within:text-green-600 transition-colors">₹</span>
+                                <input type="number" id="selling_price" name="selling_price"
+                                    value="<?php echo htmlspecialchars($selling_price); ?>"
+                                    placeholder="e.g. 15000.00" min="1" step="0.01"
+                                    class="w-full bg-white dark:bg-gray-800 border-2 border-transparent focus:border-green-400 focus:bg-white dark:focus:bg-gray-700 rounded-2xl pl-10 pr-5 py-4 font-bold text-lg transition-all">
+                            </div>
+                            <p class="text-xs text-green-700 dark:text-green-400 mt-2 ml-1">One-time price — buyer permanently owns the item.</p>
+                        </div>
+                    </div>
+
+                    <script>
+                    function handleListingTypeChange(val) {
+                        const section = document.getElementById('selling-price-section');
+                        const priceInput = document.getElementById('selling_price');
+                        const labels = document.querySelectorAll('.listing-type-label');
+                        labels.forEach(l => {
+                            if (l.dataset.type === val) {
+                                l.classList.add('border-yellow-400','bg-yellow-50');
+                                l.classList.remove('border-gray-100');
+                            } else {
+                                l.classList.remove('border-yellow-400','bg-yellow-50');
+                                l.classList.add('border-gray-100');
+                            }
+                        });
+                        if (val === 'rent') {
+                            section.classList.add('hidden');
+                            priceInput.removeAttribute('required');
+                        } else {
+                            section.classList.remove('hidden');
+                            priceInput.setAttribute('required','required');
+                        }
+                    }
+                    // Init required state
+                    handleListingTypeChange(document.querySelector('input[name="listing_type"]:checked')?.value || 'rent');
+                    </script>
+
+                    <hr class="border-gray-100 dark:border-gray-700">
+
+                    <!-- Rental Rates -->
+                    <div id="rental-rates-section" class="space-y-4">
                         <div class="flex items-center gap-2 text-gray-900 dark:text-white">
                             <span class="material-symbols-outlined text-yellow-600">payments</span>
                             <h4 class="font-bold">Rental Rates</h4>

@@ -80,6 +80,7 @@ require_once 'config/database.php';
 <div class="hidden lg:flex items-center gap-6 ml-auto">
 <nav class="flex gap-6">
 <a class="text-sm font-medium hover:text-primary transition-colors" href="#how-it-works">How it Works</a>
+<a class="text-sm font-medium hover:text-primary transition-colors" href="all_rental_requests.php">All Rental Requests</a>
 <?php if (isset($_SESSION['user_id'])): ?>
     <a class="text-sm font-medium hover:text-primary transition-colors" href="dashboard.php">Dashboard</a>
     <a href="profile.php" class="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-black text-sm font-black border-2 border-transparent hover:border-primary transition-all shadow-sm">

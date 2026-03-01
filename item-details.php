@@ -43,6 +43,8 @@ if (!$item) {
                 $item['name'] = $db_item['title'];
                 $item['price'] = $db_item['price_per_day'];
                 $item['address'] = $db_item['location'];
+                $item['listing_type'] = $db_item['listing_type'] ?? 'rent';
+                $item['selling_price'] = $db_item['selling_price'] ?? null;
                 
                 // Handle JSON images
                 $images = [];
@@ -237,6 +239,14 @@ if (isset($_POST['rent_now'])) {
     header("Location: confirm-rental.php?id=" . $item_id . "&duration=" . $duration);
     exit();
 }
+
+// Determine buy/sell availability
+$listing_type   = $item['listing_type'] ?? 'rent';
+$selling_price  = $item['selling_price'] ?? null;
+$can_rent = in_array($listing_type, ['rent', 'both']);
+$can_buy  = in_array($listing_type, ['sell', 'both']) && $selling_price > 0 && !$is_unavailable;
+// If item is SOLD (sold_to set), disable buying
+if (!empty($item['sold_to'])) { $can_buy = false; $is_unavailable = true; }
 
 ?>
 <!DOCTYPE html>
@@ -518,9 +528,9 @@ if (isset($_POST['rent_now'])) {
                         <div class="bg-red-50 dark:bg-red-900/10 border border-red-100 dark:border-red-900/30 p-6 rounded-2xl text-center">
                             <span class="material-symbols-outlined text-4xl text-red-500 mb-2">remove_shopping_cart</span>
                             <h3 class="text-xl font-black text-red-600 dark:text-red-400 mb-1">Currently Unavailable</h3>
-                            <p class="text-sm text-text-muted mb-6">This item has been rented and is currently out of stock.</p>
+                            <p class="text-sm text-text-muted mb-6">This item has been rented or sold and is currently unavailable.</p>
                             <button disabled class="w-full bg-gray-200 dark:bg-gray-800 text-gray-400 font-black text-xl py-5 rounded-2xl cursor-not-allowed">
-                                Out of Stock
+                                <?= !empty($item['sold_to']) ? 'Sold Out' : 'Out of Stock' ?>
                             </button>
                         </div>
                      <?php elseif ($is_own_item): ?>
@@ -533,13 +543,34 @@ if (isset($_POST['rent_now'])) {
                             </a>
                         </div>
                      <?php else: ?>
-                     <form method="POST">
+                     <div class="space-y-4">
+                         <?php if ($can_rent): ?>
+                         <form method="POST">
+                             <button type="submit" name="rent_now" class="w-full bg-primary hover:bg-yellow-300 text-black font-black text-xl py-5 rounded-2xl shadow-xl shadow-primary/20 transition-all hover:-translate-y-1 flex items-center justify-center gap-3">
+                                 <span class="material-symbols-outlined">sync_alt</span>
+                                 Rent Now — ₹<?php echo number_format($item['price'], 0); ?>/day
+                             </button>
+                             <p class="text-center text-xs text-text-muted mt-2">You won't be charged yet.</p>
+                         </form>
+                         <?php endif; ?>
 
-                         <button type="submit" name="rent_now" class="w-full bg-primary hover:bg-yellow-300 text-black font-black text-xl py-5 rounded-2xl shadow-xl shadow-primary/20 transition-all hover:-translate-y-1 mt-6">
-                             Rent Now
-                         </button>
-                         <p class="text-center text-xs text-text-muted mt-4">You won't be charged yet.</p>
-                     </form>
+                         <?php if ($can_buy): ?>
+                         <a href="confirm-purchase.php?id=<?= urlencode($item_id) ?>" class="block w-full bg-green-500 hover:bg-green-400 text-white font-black text-xl py-5 rounded-2xl shadow-xl shadow-green-200/50 transition-all hover:-translate-y-1 flex items-center justify-center gap-3">
+                             <span class="material-symbols-outlined">shopping_cart</span>
+                             Buy Now — ₹<?php echo number_format($selling_price, 0); ?>
+                         </a>
+                         <p class="text-center text-xs text-text-muted -mt-2">
+                             <span class="material-symbols-outlined text-sm align-middle text-green-500">verified</span>
+                             One-time purchase. Item is yours permanently.
+                         </p>
+                         <?php endif; ?>
+
+                         <?php if (!$can_rent && !$can_buy): ?>
+                         <div class="text-center p-6 bg-gray-50 dark:bg-gray-800 rounded-2xl">
+                             <p class="text-text-muted font-bold">No purchase options available for this item right now.</p>
+                         </div>
+                         <?php endif; ?>
+                     </div>
                      <?php endif; ?>
             </div>
         </div>
