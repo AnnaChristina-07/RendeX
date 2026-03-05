@@ -764,7 +764,7 @@ $allow_prebooking = ($item['allow_prebooking'] ?? 1) && $can_rent;
                         <span class="font-bold"><?php echo htmlspecialchars($owner_phone); ?></span>
                     </div>
                 </div>
-                <a href="chat.php?recipient_id=<?php echo $owner_id; ?>" class="flex items-center justify-center gap-2 w-full bg-primary text-black font-black py-4 rounded-2xl mb-4 transition-all hover:scale-[1.02] active:scale-95 shadow-lg shadow-primary/20">
+                <a href="https://wa.me/<?php echo preg_replace('/[^0-9]/', '', $owner_phone); ?>" target="_blank" class="flex items-center justify-center gap-2 w-full bg-primary text-black font-black py-4 rounded-2xl mb-4 transition-all hover:scale-[1.02] active:scale-95 shadow-lg shadow-primary/20">
                     <span class="material-symbols-outlined">chat</span>
                     Chat with Owner
                 </a>

@@ -199,7 +199,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['email']) && !isset($_
         .material-symbols-outlined { font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24 }
     </style>
 </head>
-<body class="bg-[#f0f2eb] min-h-screen flex items-center justify-center p-4">
+<body class="bg-[#f0f2eb] min-h-screen flex items-center justify-center p-4 relative">
+
+    <!-- Back to Home Button -->
+    <a href="index.php" class="absolute top-6 left-6 md:top-8 md:left-8 flex items-center gap-2 text-black hover:text-gray-600 transition-colors font-bold z-50 bg-white/50 backdrop-blur-sm px-4 py-2 rounded-full shadow-sm hover:shadow">
+        <span class="material-symbols-outlined text-sm">arrow_back</span>
+        <span class="text-sm">Back to Home</span>
+    </a>
 
     <!-- Main Card -->
     <div class="bg-white rounded-[2rem] shadow-2xl overflow-hidden w-full max-w-[1100px] min-h-[700px] flex flex-col md:flex-row">
