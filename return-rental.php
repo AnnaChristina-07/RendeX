@@ -1,6 +1,7 @@
 <?php
 session_start();
 if (!isset($_SESSION['user_id'])) {
+    $_SESSION['redirect_after_login'] = $_SERVER['REQUEST_URI'];
     header("Location: login.php");
     exit();
 }
@@ -94,11 +95,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirm_return'])) {
     }
     file_put_contents($rentals_file, json_encode($updated_rentals, JSON_PRETTY_PRINT));
 
-    // 3. Update Database (rentals table only)
+    // 3. Update Database (rentals table + items table)
     require_once 'config/database.php';
     try {
         $pdo = getDBConnection();
         if ($pdo) {
+            // Update the rental record
             $stmt = $pdo->prepare("UPDATE rentals SET 
                 return_status = 'pending_inspection',
                 return_method = ?,
@@ -115,9 +117,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirm_return'])) {
                 json_encode($uploaded_images),
                 $rental_id
             ]);
+
+            // Reset item availability so other users can rent it again.
+            // The owner inspection step is independent of re-availability.
+            if ($item_id) {
+                $pdo->prepare("UPDATE items SET availability_status = 'available' WHERE id = ?")
+                    ->execute([$item_id]);
+            }
         }
     } catch (Exception $e) {
         // Log error but proceed
+    }
+
+    // 4. Also reset availability in items.json (for JSON-backed items)
+    if ($item_id) {
+        $items_file = 'items.json';
+        $all_items_json = file_exists($items_file)
+            ? json_decode(file_get_contents($items_file), true) : [];
+        if (is_array($all_items_json)) {
+            $changed = false;
+            foreach ($all_items_json as &$ji) {
+                if (isset($ji['id']) && (string)$ji['id'] === (string)$item_id) {
+                    $ji['availability_status'] = 'available';
+                    $ji['status'] = 'Active';
+                    $changed = true;
+                }
+            }
+            unset($ji);
+            if ($changed) {
+                file_put_contents($items_file, json_encode($all_items_json, JSON_PRETTY_PRINT));
+            }
+        }
     }
 
     // Redirect to rentals with success message

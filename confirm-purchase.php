@@ -219,10 +219,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirm_purchase'])) 
 <!-- ===== SUCCESS OVERLAY ===== -->
 <div class="success-overlay">
     <div class="bg-white max-w-md w-full rounded-[40px] p-10 text-center shadow-2xl relative overflow-hidden animate-pop">
-        <div class="absolute top-0 left-0 w-full h-2 bg-green-500"></div>
+        <div class="absolute top-0 left-0 w-full h-2 bg-[#f9f506]"></div>
 
-        <div class="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-            <span class="material-symbols-outlined text-green-500 text-5xl">check_circle</span>
+        <div class="w-24 h-24 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-6">
+            <span class="material-symbols-outlined text-5xl" style="color:#b8a800">check_circle</span>
         </div>
 
         <h2 class="text-3xl font-black mb-2">Purchase Complete!</h2>
@@ -240,12 +240,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirm_purchase'])) 
             </div>
             <div class="flex justify-between border-t pt-3 text-sm">
                 <span class="text-text-muted">Total Paid</span>
-                <span class="font-black text-green-600">₹<?= number_format($success_purchase['amount'], 2) ?></span>
+                <span class="font-black" style="color:#b8a800">₹<?= number_format($success_purchase['amount'], 2) ?></span>
             </div>
         </div>
 
         <div class="space-y-3">
-            <a href="my-purchases.php" class="block w-full bg-green-500 text-white py-4 rounded-2xl font-black hover:bg-green-600 transition-all shadow-lg">
+            <a href="my-purchases.php" class="block w-full bg-[#f9f506] text-black py-4 rounded-2xl font-black hover:bg-[#fffc4d] transition-all shadow-lg">
                 View My Purchases
             </a>
             <a href="dashboard.php" class="block w-full border-2 border-gray-100 py-4 rounded-2xl font-bold text-text-muted hover:bg-gray-50 transition-all">
@@ -384,14 +384,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirm_purchase'])) 
 
                     <div class="flex justify-between pt-4 border-t border-dashed border-gray-300 items-center">
                         <span class="text-lg font-black">Total</span>
-                        <span class="text-2xl font-black text-green-600">₹<?= number_format($total_amount, 2) ?></span>
+                        <span class="text-2xl font-black" style="color:#b8a800">₹<?= number_format($total_amount, 2) ?></span>
                     </div>
                 </div>
 
                 <!-- Pay Button -->
                 <div class="p-8 bg-gray-50">
                     <button type="button" onclick="startPurchasePayment()"
-                        class="w-full bg-green-500 hover:bg-green-400 text-white font-black py-5 rounded-2xl text-lg flex items-center justify-center gap-3 shadow-lg shadow-green-200 transition-all hover:scale-[1.02] active:scale-95">
+                        class="w-full bg-[#f9f506] hover:bg-[#fffc4d] text-black font-black py-5 rounded-2xl text-lg flex items-center justify-center gap-3 shadow-lg shadow-yellow-200 transition-all hover:scale-[1.02] active:scale-95">
                         <span class="material-symbols-outlined">lock</span>
                         Pay ₹<?= number_format($total_amount, 2) ?>
                     </button>
@@ -417,27 +417,46 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirm_purchase'])) 
 
 <script>
 function startPurchasePayment() {
-    // Validate delivery form
+    // Validate delivery form with inline errors
     const fields = ['delivery_address','delivery_city','delivery_state','delivery_zip','delivery_phone'];
     let valid = true;
+
+    // Remove old error messages
+    document.querySelectorAll('.field-error').forEach(el => el.remove());
+    document.getElementById('form-error-banner')?.remove();
+
     fields.forEach(id => {
         const el = document.getElementById(id);
         if (!el.value.trim()) {
-            el.classList.add('ring-2','ring-red-400');
+            el.classList.add('ring-2','ring-red-400','bg-red-50');
+            // Add inline error label below field
+            const err = document.createElement('p');
+            err.className = 'field-error text-red-500 text-xs font-bold mt-1 flex items-center gap-1';
+            err.innerHTML = '<span class="material-symbols-outlined text-sm">error</span> This field is required';
+            el.parentElement.appendChild(err);
             valid = false;
         } else {
-            el.classList.remove('ring-2','ring-red-400');
+            el.classList.remove('ring-2','ring-red-400','bg-red-50');
         }
     });
+
     if (!valid) {
-        alert('Please fill in all delivery details before proceeding.');
+        // Show banner at top of form
+        const form = document.getElementById('purchase-form');
+        const banner = document.createElement('div');
+        banner.id = 'form-error-banner';
+        banner.className = 'flex items-center gap-3 bg-red-50 border border-red-200 text-red-700 rounded-2xl px-5 py-4 mb-2';
+        banner.innerHTML = '<span class="material-symbols-outlined text-xl shrink-0">warning</span><p class="text-sm font-bold">Please fill in all delivery details to continue.</p>';
+        form.insertBefore(banner, form.firstChild);
+        // Scroll to form
+        form.scrollIntoView({ behavior: 'smooth', block: 'start' });
         return;
     }
 
     const totalPaise = <?= $total_amount * 100 ?>;
 
     const options = {
-        key: 'rzp_test_YourKeyHere', // Replace with your Razorpay test key
+        key: 'rzp_test_S5grQ46aeBtXrF',
         amount: totalPaise,
         currency: 'INR',
         name: 'RendeX',
@@ -451,14 +470,10 @@ function startPurchasePayment() {
             name: '<?= addslashes($_SESSION['user_name']) ?>',
             email: '<?= addslashes($_SESSION['user_email'] ?? '') ?>',
         },
-        theme: { color: '#22c55e' },
+        theme: { color: '#f9f506' },
         modal: {
             ondismiss: function() {
-                // If user closes without paying, allow via demo fallback
-                if (confirm('Payment cancelled. Submit as demo purchase (for testing)?')) {
-                    document.getElementById('payment_ref_input').value = 'DEMO_' + Date.now();
-                    document.getElementById('purchase-form').submit();
-                }
+                // User closed the payment modal — do nothing
             }
         }
     };
@@ -467,13 +482,29 @@ function startPurchasePayment() {
         const rzp = new Razorpay(options);
         rzp.open();
     } catch(e) {
-        // Razorpay unavailable — demo mode
-        if (confirm('Razorpay unavailable. Confirm as demo purchase?')) {
-            document.getElementById('payment_ref_input').value = 'DEMO_' + Date.now();
-            document.getElementById('purchase-form').submit();
-        }
+        const form = document.getElementById('purchase-form');
+        const banner = document.createElement('div');
+        banner.id = 'form-error-banner';
+        banner.className = 'flex items-center gap-3 bg-red-50 border border-red-200 text-red-700 rounded-2xl px-5 py-4 mb-2';
+        banner.innerHTML = '<span class="material-symbols-outlined text-xl shrink-0">wifi_off</span><p class="text-sm font-bold">Unable to open Razorpay. Please check your internet connection and try again.</p>';
+        document.getElementById('form-error-banner')?.remove();
+        form.insertBefore(banner, form.firstChild);
     }
 }
+
+// Clear field errors live as user types
+document.addEventListener('DOMContentLoaded', function() {
+    ['delivery_address','delivery_city','delivery_state','delivery_zip','delivery_phone'].forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.addEventListener('input', function() {
+            if (el.value.trim()) {
+                el.classList.remove('ring-2','ring-red-400','bg-red-50');
+                el.parentElement.querySelectorAll('.field-error').forEach(e => e.remove());
+            }
+        });
+    });
+});
 </script>
 </body>
 </html>

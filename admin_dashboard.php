@@ -1421,6 +1421,18 @@ foreach ($rentals as $rental) {
                 $pending_items_list = [];
                 if ($use_database) {
                     $pending_items_list = $pending_items_db;
+                    // Also include items from JSON that have Pending Approval but don't exist in DB
+                    $db_item_ids = array_column($pending_items_db, 'id');
+                    foreach ($items as $item) {
+                        if (isset($item['status']) && ($item['status'] === 'Pending Approval' || $item['status'] === 'pending')) {
+                            $item_id = $item['id'] ?? '';
+                            // Only add if not already in DB results
+                            if (!in_array($item_id, $db_item_ids)) {
+                                $item['owner_name'] = $item['owner_name'] ?? 'User';
+                                $pending_items_list[] = $item;
+                            }
+                        }
+                    }
                 } else {
                     foreach ($items as $item) {
                         if (isset($item['status']) && ($item['status'] === 'Pending Approval' || $item['status'] === 'pending')) {

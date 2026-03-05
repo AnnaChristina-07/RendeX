@@ -3,6 +3,7 @@ ob_start();
 session_start();
 
 if (!isset($_SESSION['user_id'])) {
+    $_SESSION['redirect_after_login'] = $_SERVER['REQUEST_URI'];
     header("Location: login.php");
     exit();
 }
@@ -613,12 +614,12 @@ $allow_prebooking = ($item['allow_prebooking'] ?? 1) && $can_rent;
                          <?php endif; ?>
 
                          <?php if ($can_buy): ?>
-                         <a href="confirm-purchase.php?id=<?= urlencode($item_id) ?>" class="block w-full bg-green-500 hover:bg-green-400 text-white font-black text-xl py-5 rounded-2xl shadow-xl shadow-green-200/50 transition-all hover:-translate-y-1 flex items-center justify-center gap-3">
+                         <a href="confirm-purchase.php?id=<?= urlencode($item_id) ?>" class="block w-full bg-[#f9f506] hover:bg-[#fffc4d] text-black font-black text-xl py-5 rounded-2xl shadow-xl shadow-yellow-200/50 transition-all hover:-translate-y-1 flex items-center justify-center gap-3">
                              <span class="material-symbols-outlined">shopping_cart</span>
                              Buy Now — ₹<?php echo number_format($selling_price, 0); ?>
                          </a>
                          <p class="text-center text-xs text-text-muted -mt-2">
-                             <span class="material-symbols-outlined text-sm align-middle text-green-500">verified</span>
+                             <span class="material-symbols-outlined text-sm align-middle text-[#b8a800]">verified</span>
                              One-time purchase. Item is yours permanently.
                          </p>
                          <?php endif; ?>

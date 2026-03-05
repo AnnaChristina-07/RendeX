@@ -133,10 +133,16 @@ foreach ($rentals as $rental) {
                 <h1 class="text-3xl font-black mb-2">My Dashboard</h1>
                 <p class="text-text-muted">Manage your rentals and view your history.</p>
             </div>
-            <a href="dashboard.php" class="bg-black dark:bg-white text-white dark:text-black px-6 py-3 rounded-full font-bold flex items-center gap-2 hover:opacity-90 transition-opacity">
-                <span class="material-symbols-outlined">add_shopping_cart</span>
-                Rent New Items
-            </a>
+            <div class="flex gap-3 mt-2 md:mt-0 items-center w-full md:w-auto hidden-scrollbar overflow-x-auto">
+                <a href="my-prebookings.php" class="bg-primary hover:bg-yellow-300 text-black px-6 py-3 rounded-full font-bold flex flex-1 md:flex-none items-center justify-center gap-2 shadow-lg shadow-primary/20 transition-all whitespace-nowrap">
+                    <span class="material-symbols-outlined">event_available</span>
+                    My Pre-Bookings
+                </a>
+                <a href="dashboard.php" class="bg-black dark:bg-white text-white dark:text-black px-6 py-3 rounded-full font-bold flex flex-1 md:flex-none items-center justify-center gap-2 hover:opacity-90 transition-opacity whitespace-nowrap">
+                    <span class="material-symbols-outlined">add_shopping_cart</span>
+                    Browse Items
+                </a>
+            </div>
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">

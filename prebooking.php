@@ -3,6 +3,7 @@ ob_start();
 session_start();
 
 if (!isset($_SESSION['user_id'])) {
+    $_SESSION['redirect_after_login'] = $_SERVER['REQUEST_URI'];
     header("Location: login.php");
     exit();
 }
@@ -137,7 +138,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif ($start > $max_date) {
         $error = "Cannot pre-book more than {$item['max_advance_days']} days in advance.";
     } else {
-        $conflict = hasConflict($pdo, is_numeric($item_id) ? $item_id : 0, $start, $end);
+        $conflict = hasConflict($pdo, $item_id, $start, $end);
         if ($conflict === 'rented') {
             $error = "Those dates overlap with an active rental. Please choose different dates.";
         } elseif ($conflict === 'prebooked') {
@@ -163,7 +164,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     ");
                     $stmt->execute([
                         $ref,
-                        is_numeric($item_id) ? $item_id : 0,
+                        $item_id,
                         $_SESSION['user_id'],
                         $owner_id,
                         $start, $end, $days, $rate, $total,

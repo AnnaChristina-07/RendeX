@@ -3,6 +3,7 @@ ob_start();
 session_start();
 
 if (!isset($_SESSION['user_id'])) {
+    $_SESSION['redirect_after_login'] = $_SERVER['REQUEST_URI'];
     header("Location: login.php");
     exit();
 }
@@ -96,6 +97,23 @@ try {
             ");
             $stmt->execute([$user_id]);
             $my_prebookings = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            // Backfill from JSON if DB joins returned NULL
+            foreach ($my_prebookings as &$pb) {
+                if (empty($pb['item_title'])) {
+                    foreach ($all_items as $itm) {
+                        if (($itm['id'] ?? '') == $pb['item_id']) {
+                            $pb['item_title'] = $itm['title'] ?? $itm['name'] ?? 'Item';
+                            $pb['price_per_day'] = $pb['price_per_day'] ?? $itm['price_per_day'] ?? $itm['price'] ?? 0;
+                            break;
+                        }
+                    }
+                }
+                if (empty($pb['renter_name'])) {
+                    $pb['renter_name'] = $users_map[$pb['user_id']]['name'] ?? 'User';
+                    $pb['renter_email'] = $users_map[$pb['user_id']]['email'] ?? '';
+                }
+            }
         }
     }
 } catch (Exception $e) {}
@@ -910,14 +928,18 @@ $tab = isset($_GET['tab']) ? $_GET['tab'] : 'overview';
                         <p class="text-xs text-gray-400 mb-4">₹<?= number_format($pb['daily_rate'], 0) ?>/day × <?= $pb['total_days'] ?> d</p>
 
                         <?php if ($can_act): ?>
-                        <div class="flex gap-2">
-                            <form method="POST">
+                        <div class="flex gap-2 w-full">
+                            <form method="POST" class="flex-1">
                                 <input type="hidden" name="reject_prebooking_ref" value="<?= htmlspecialchars($pb['booking_ref']) ?>">
-                                <button onclick="return confirm('Decline this request?')" class="px-4 py-2 bg-white border border-gray-200 text-gray-500 text-sm font-bold rounded-xl hover:bg-gray-50 transition-colors">Decline</button>
+                                <button onclick="return confirm('Decline this request?')" class="w-full py-3 bg-[#f9f506] hover:bg-[#fffc4d] text-black text-sm font-black rounded-xl shadow-lg shadow-yellow-200 transition-all hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-2">
+                                    <span class="material-symbols-outlined text-lg">cancel</span> Decline
+                                </button>
                             </form>
-                            <form method="POST">
+                            <form method="POST" class="flex-1">
                                 <input type="hidden" name="approve_prebooking_ref" value="<?= htmlspecialchars($pb['booking_ref']) ?>">
-                                <button class="px-5 py-2 bg-black text-white text-sm font-bold rounded-xl hover:bg-gray-800 transition-colors shadow-lg">✅ Approve</button>
+                                <button class="w-full py-3 bg-[#f9f506] hover:bg-[#fffc4d] text-black text-sm font-black rounded-xl shadow-lg shadow-yellow-200 transition-all hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-2">
+                                    <span class="material-symbols-outlined text-lg">check_circle</span> Approve
+                                </button>
                             </form>
                         </div>
                         <?php elseif ($s === 'confirmed'): ?>

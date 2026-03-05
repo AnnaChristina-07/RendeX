@@ -3,6 +3,7 @@ ob_start();
 session_start();
 
 if (!isset($_SESSION['user_id'])) {
+    $_SESSION['redirect_after_login'] = $_SERVER['REQUEST_URI'];
     header("Location: login.php");
     exit();
 }
@@ -138,6 +139,7 @@ if (!isset($_SESSION['user_id'])) {
     if (!is_array($dynamic_items)) $dynamic_items = [];
 
     $items_to_show = [];
+    $actively_rented_ids = []; // item IDs with a live rental in the DB
     
     // 1. Add Dynamic Items from Database
     try {
@@ -200,6 +202,42 @@ if (!isset($_SESSION['user_id'])) {
                     $items_to_show[] = $item;
                 }
             }
+
+            // --- Build set of ACTIVELY rented item IDs ---
+            // An item counts as "rented" ONLY if there is a rental record that:
+            //   1. Has status 'confirmed' or 'active'
+            //   2. Has NOT been fully returned/completed
+            //   3. The end_date has NOT yet passed (>= today)
+            // This means: when the rental end date passes OR the owner confirms
+            // return, the item automatically shows as available again.
+            try {
+                $rent_stmt = $pdo->query("
+                    SELECT DISTINCT item_id 
+                    FROM rentals 
+                    WHERE status IN ('confirmed', 'active')
+                      AND (return_status IS NULL 
+                           OR return_status NOT IN ('completed', 'damage_reported'))
+                      AND end_date >= CURDATE()
+                ");
+                foreach ($rent_stmt->fetchAll() as $row) {
+                    $actively_rented_ids[] = (string)$row['item_id'];
+                }
+            } catch (Exception $e) {}
+
+            // Also auto-reset stale availability_status in DB for expired rentals
+            // so future reads are consistent (best-effort, silent)
+            try {
+                $pdo->exec("
+                    UPDATE items SET availability_status = 'available'
+                    WHERE availability_status = 'rented'
+                      AND id NOT IN (
+                          SELECT item_id FROM rentals
+                          WHERE status IN ('confirmed','active')
+                            AND (return_status IS NULL OR return_status NOT IN ('completed','damage_reported'))
+                            AND end_date >= CURDATE()
+                      )
+                ");
+            } catch (Exception $e) {}
         }
     } catch (Exception $e) {}
 
@@ -408,10 +446,36 @@ if (!isset($_SESSION['user_id'])) {
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                     <?php foreach($items_to_show as $index => $item): 
                         $distance = rand(1, 15); 
-                        $avail_status = isset($item['availability_status']) ? strtolower($item['availability_status']) : '';
-                        $main_status = isset($item['status']) ? strtolower($item['status']) : '';
-                        
-                        $is_rented = ($avail_status === 'rented' || $avail_status === 'unavailable' || $main_status === 'unavailable');
+
+                        // Dynamically check: is this item actively rented RIGHT NOW?
+                        // We use the $actively_rented_ids set built from the rentals table
+                        // (only includes items with confirmed/active status AND end_date >= today
+                        //  AND not yet fully returned). This means:
+                        //   - Once the rental end_date passes → item shows as available
+                        //   - Once the owner confirms return → item shows as available
+                        //   - Once renter initiates return → item shows as available
+                        // Fall back to JSON-based rentals.json check for JSON-only items.
+                        $item_id_str = (string)($item['id'] ?? '');
+                        $is_rented_db = in_array($item_id_str, $actively_rented_ids);
+
+                        // For JSON-only items (non-numeric IDs not in DB),
+                        // fall back to checking rentals.json for an active, non-expired entry
+                        $is_rented_json = false;
+                        if (!$is_rented_db && !is_numeric($item['id'] ?? '')) {
+                            $all_json_rentals = file_exists('rentals.json')
+                                ? json_decode(file_get_contents('rentals.json'), true) : [];
+                            foreach ($all_json_rentals as $jr) {
+                                if (isset($jr['item']['id']) && $jr['item']['id'] === $item_id_str
+                                    && in_array($jr['status'] ?? '', ['active', 'confirmed'])
+                                    && !in_array($jr['return_status'] ?? '', ['completed', 'damage_reported'])
+                                    && isset($jr['end_date']) && strtotime($jr['end_date']) >= strtotime('today')) {
+                                    $is_rented_json = true;
+                                    break;
+                                }
+                            }
+                        }
+
+                        $is_rented = $is_rented_db || $is_rented_json;
                     ?>
                     <a href="item-details.php?id=<?php echo $item['id']; ?>" 
                        class="item-card block group bg-surface-light dark:bg-surface-dark rounded-2xl p-3 shadow-sm hover:shadow-xl hover:shadow-gray-200/50 dark:hover:shadow-black/50 transition-all duration-300 border border-transparent hover:border-[#e9e8ce] dark:hover:border-[#3e3d2a] <?php echo $is_rented ? 'opacity-75 grayscale' : ''; ?>"

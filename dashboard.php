@@ -3,6 +3,7 @@ ob_start();
 session_start();
 
 if (!isset($_SESSION['user_id'])) {
+    $_SESSION['redirect_after_login'] = $_SERVER['REQUEST_URI'];
     header("Location: login.php");
     exit();
 }
@@ -158,6 +159,7 @@ if (isset($_POST['apply_delivery'])) {
     <div class="hidden lg:flex items-center gap-6">
         <!-- Base Role: Renter -->
         <a href="rentals.php" class="font-bold text-sm hover:text-primary transition-colors">My Rentals</a>
+        <a href="my-prebookings.php" class="font-bold text-sm hover:text-primary transition-colors">My Pre-Bookings</a>
         <a href="my_requests.php" class="font-bold text-sm hover:text-primary transition-colors">My Requests</a>
         <a href="browse_requests.php" class="font-bold text-sm hover:text-primary transition-colors">Community Requests</a>
         

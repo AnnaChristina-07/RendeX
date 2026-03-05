@@ -4,6 +4,7 @@ session_start();
 require_once 'config/database.php';
 
 if (!isset($_SESSION['user_id'])) {
+    $_SESSION['redirect_after_login'] = $_SERVER['REQUEST_URI'];
     header("Location: login.php");
     exit();
 }
@@ -92,11 +93,14 @@ try {
                 </div>
                 <h2 class="text-xl font-bold tracking-tight">RendeX</h2>
             </a>
-            <div class="hidden lg:flex items-center gap-6 ml-auto">
-                <a href="dashboard.php" class="bg-white border border-[#e9e8ce] hover:bg-gray-50 text-black text-sm font-bold px-6 py-2.5 rounded-full transition-all flex items-center gap-2">
-                    <span class="material-symbols-outlined text-[18px]">arrow_back</span>
-                    Back to Dashboard
-                </a>
+            <!-- Right Side: Navigation & User Menu -->
+            <div class="flex items-center gap-4 lg:gap-8 ml-auto">
+                 <div class="hidden lg:flex items-center gap-6">
+                    <a href="dashboard.php" class="text-sm font-bold hover:text-primary transition-colors">Home</a>
+                    <a href="rentals.php" class="text-sm font-bold hover:text-primary transition-colors">My Rentals</a>
+                    <a href="my-prebookings.php" class="text-sm font-bold hover:text-primary transition-colors">My Pre-Bookings</a>
+                    <a href="dashboard.php" class="text-sm font-bold hover:text-primary transition-colors">Browse Gear</a>
+                </div>
             </div>
         </div>
     </header>

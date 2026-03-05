@@ -1,7 +1,11 @@
 <?php
 ob_start();
 session_start();
-if (!isset($_SESSION['user_id'])) { header("Location: login.php"); exit(); }
+if (!isset($_SESSION['user_id'])) {
+    $_SESSION['redirect_after_login'] = $_SERVER['REQUEST_URI'];
+    header("Location: login.php");
+    exit();
+}
 require_once 'config/database.php';
 
 $user_id = $_SESSION['user_id'];
@@ -37,6 +41,30 @@ try {
             ");
             $stmt->execute([$user_id]);
             $bookings = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            // Backfill from JSON if DB joins returned NULL
+            $all_items = file_exists('items.json') ? json_decode(file_get_contents('items.json'), true) : [];
+            $users_file = 'users.json';
+            $users_data = file_exists($users_file) ? json_decode(file_get_contents($users_file), true) : [];
+            $users_map = [];
+            foreach ($users_data as $u) { $users_map[$u['id']] = $u; }
+            
+            foreach ($bookings as &$pb) {
+                if (empty($pb['item_title'])) {
+                    foreach ($all_items as $itm) {
+                        if (($itm['id'] ?? '') == $pb['item_id']) {
+                            $pb['item_title'] = $itm['title'] ?? $itm['name'] ?? 'Item';
+                            $pb['category'] = $pb['category'] ?? $itm['category'] ?? 'others';
+                            $pb['images'] = $pb['images'] ?? (isset($itm['images']) ? json_encode($itm['images']) : '[]');
+                            $pb['price_per_day'] = $pb['price_per_day'] ?? $itm['price_per_day'] ?? $itm['price'] ?? 0;
+                            break;
+                        }
+                    }
+                }
+                if (empty($pb['owner_name'])) {
+                    $pb['owner_name'] = $users_map[$pb['owner_id']]['name'] ?? 'User';
+                }
+            }
         }
     }
 } catch (Exception $e) {}

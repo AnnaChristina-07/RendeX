@@ -80,7 +80,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['google_name'])) {
         session_destroy();
         header("Location: login.php?error=" . urlencode("Your owner account is pending approval."));
     } else {
-        header("Location: dashboard.php");
+        $redirect = $_SESSION['redirect_after_login'] ?? 'dashboard.php';
+        unset($_SESSION['redirect_after_login']);
+        header("Location: " . $redirect);
     }
     exit();
 }
@@ -164,7 +166,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['credential'])) {
                 session_destroy();
                 header("Location: login.php?error=" . urlencode("Your owner account is pending approval."));
             } else {
-                header("Location: dashboard.php");
+                $redirect = $_SESSION['redirect_after_login'] ?? 'dashboard.php';
+                unset($_SESSION['redirect_after_login']);
+                header("Location: " . $redirect);
             }
             exit();
         } else {

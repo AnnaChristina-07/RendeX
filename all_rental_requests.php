@@ -5,6 +5,7 @@ require_once 'config/database.php';
 
 // Check if user is logged in (requests are usually for members)
 if (!isset($_SESSION['user_id'])) {
+    $_SESSION['redirect_after_login'] = $_SERVER['REQUEST_URI'];
     header("Location: login.php");
     exit();
 }

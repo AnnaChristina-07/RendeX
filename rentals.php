@@ -1,6 +1,7 @@
 <?php
 session_start();
 if (!isset($_SESSION['user_id'])) {
+    $_SESSION['redirect_after_login'] = $_SERVER['REQUEST_URI'];
     header("Location: login.php");
     exit();
 }
@@ -269,6 +270,7 @@ foreach ($rentals as $rental) {
             <div class="flex items-center gap-4 lg:gap-8 ml-auto">
                 <div class="hidden lg:flex items-center gap-6">
                     <a href="dashboard.php" class="text-sm font-bold hover:text-primary transition-colors">Home</a>
+                    <a href="my-prebookings.php" class="text-sm font-bold hover:text-primary transition-colors">My Pre-Bookings</a>
                     <a href="dashboard.php" class="text-sm font-bold hover:text-primary transition-colors">Browse Gear</a>
                 </div>
 

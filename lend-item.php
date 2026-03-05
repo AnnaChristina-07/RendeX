@@ -3,6 +3,7 @@ ob_start();
 session_start();
 
 if (!isset($_SESSION['user_id'])) {
+    $_SESSION['redirect_after_login'] = $_SERVER['REQUEST_URI'];
     header("Location: login.php");
     exit();
 }
@@ -168,8 +169,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     $address = "$addr_house, $addr_street, $addr_city, $addr_state - $addr_pin";
     
-    // Validate Price
-    if (!is_numeric($price) || $price <= 0) {
+    // Validate Price (only required when renting)
+    if ($listing_type !== 'sell' && (!is_numeric($price) || $price <= 0)) {
         $errors[] = "Price must be a valid number greater than 0.";
     }
     
@@ -292,6 +293,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $handover_json = json_encode($handover_methods);
                 
                 $sp = in_array($listing_type, ['sell','both']) ? $selling_price : null;
+                // For sell-only, price_per_day has no meaning — default to 0 to avoid DB NOT NULL errors
+                $db_price = ($listing_type === 'sell') ? 0 : $price;
                 if ($is_edit) {
                     $stmt = $pdo->prepare("UPDATE items SET 
                         title = ?, description = ?, category = ?, 
@@ -302,7 +305,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         WHERE id = ? AND owner_id = ?");
                     $stmt->execute([
                         $title, $description, $category, 
-                        $price, $security_deposit, 
+                        $db_price, $security_deposit, 
                         $handover_json, $address, $images_json,
                         $listing_type, $sp,
                         $edit_id, $_SESSION['user_id']
@@ -315,7 +318,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', NOW())");
                     $stmt->execute([
                         $_SESSION['user_id'], $title, $description, $category, 
-                        $price, $security_deposit, $handover_json, 
+                        $db_price, $security_deposit, $handover_json, 
                         $address, $images_json, $listing_type, $sp
                     ]);
     
@@ -583,7 +586,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <script>
                     function handleListingTypeChange(val) {
                         const section = document.getElementById('selling-price-section');
+                        const rentalSection = document.getElementById('rental-rates-section');
                         const priceInput = document.getElementById('selling_price');
+                        const dailyRateInput = document.querySelector('input[name="price"]');
                         const labels = document.querySelectorAll('.listing-type-label');
                         labels.forEach(l => {
                             if (l.dataset.type === val) {
@@ -594,12 +599,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 l.classList.add('border-gray-100');
                             }
                         });
-                        if (val === 'rent') {
-                            section.classList.add('hidden');
-                            priceInput.removeAttribute('required');
-                        } else {
+
+                        if (val === 'sell') {
+                            // Sell Only: show selling price, hide rental rates
                             section.classList.remove('hidden');
                             priceInput.setAttribute('required','required');
+                            rentalSection.classList.add('hidden');
+                            if (dailyRateInput) dailyRateInput.removeAttribute('required');
+                        } else if (val === 'both') {
+                            // Rent & Sell: show both
+                            section.classList.remove('hidden');
+                            priceInput.setAttribute('required','required');
+                            rentalSection.classList.remove('hidden');
+                            if (dailyRateInput) dailyRateInput.setAttribute('required','required');
+                        } else {
+                            // Rent Only: hide selling price, show rental rates
+                            section.classList.add('hidden');
+                            priceInput.removeAttribute('required');
+                            rentalSection.classList.remove('hidden');
+                            if (dailyRateInput) dailyRateInput.setAttribute('required','required');
                         }
                     }
                     // Init required state

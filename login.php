@@ -92,7 +92,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['credential'])) {
                 header("Location: admin_dashboard.php");
                 exit();
             } else {
-                header("Location: dashboard.php");
+                $redirect = $_SESSION['redirect_after_login'] ?? 'dashboard.php';
+                unset($_SESSION['redirect_after_login']);
+                header("Location: " . $redirect);
                 exit();
             }
         }
