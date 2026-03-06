@@ -150,7 +150,15 @@ if (isset($_POST['apply_delivery'])) {
 <div class="relative flex min-h-screen w-full flex-col overflow-x-hidden">
 <!-- Navbar -->
 <header class="sticky top-0 z-50 flex items-center justify-between border-b border-[#e9e8ce] dark:border-[#3e3d2a] bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-sm px-6 py-4 lg:px-10">
-<div class="flex items-center gap-8 w
+<div class="flex items-center gap-8 w-full max-w-[1400px] mx-auto">
+<a href="dashboard.php" class="flex items-center gap-2 text-text-main dark:text-white">
+<div class="size-8 text-primary">
+<svg class="w-full h-full" fill="none" viewbox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+    <ellipse cx="14" cy="24" rx="10" ry="20" fill="currentColor" />
+    <ellipse cx="24" cy="24" rx="10" ry="20" fill="currentColor" />
+    <ellipse cx="34" cy="24" rx="10" ry="20" fill="currentColor" />
+</svg>
+</div>
 <h2 class="text-xl font-bold tracking-tight">RendeX</h2>
 </a>
 
@@ -416,10 +424,19 @@ $trending_items = [];
 // Try DB
 if (isset($pdo) && $pdo) {
     try {
-        // Fetch active items
-        $stmt = $pdo->query("SELECT * FROM items WHERE admin_status = 'approved' AND is_active = 1 AND (active_until IS NULL OR active_until >= NOW()) ORDER BY created_at DESC LIMIT 4");
+        // Fetch more active items initially to allow for filtering
+        $stmt = $pdo->query("SELECT * FROM items WHERE admin_status = 'approved' AND is_active = 1 AND (active_until IS NULL OR active_until >= NOW()) ORDER BY RAND() LIMIT 20");
         $db_raw = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        $seen_titles = [];
         foreach ($db_raw as $row) {
+             if (count($trending_items) >= 4) break;
+             
+             // Avoid duplicate titles
+             $lower_title = strtolower(trim($row['title']));
+             if (in_array($lower_title, $seen_titles)) continue;
+             $seen_titles[] = $lower_title;
+             
              $item = $row;
              $item['price'] = $row['price_per_day']; // Map for view
              $item['address'] = $row['location'] ?? 'Nearby';  // Map for view
@@ -638,7 +655,9 @@ if (empty($trending_items) && !empty($items)) {
 <div class="flex items-center gap-2 text-text-main dark:text-white mb-6">
 <div class="size-6 text-primary">
 <svg class="w-full h-full" fill="none" viewbox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
-<path d="M36.7273 44C33.9891 44 31.6043 39.8386 30.3636 33.69C29.123 39.8386 26.7382 44 24 44C21.2618 44 18.877 39.8386 17.6364 33.69C16.3957 39.8386 14.0109 44 11.2727 44C7.25611 44 4 35.0457 4 24C4 12.9543 7.25611 4 11.2727 4C14.0109 4 16.3957 8.16144 17.6364 14.31C18.877 8.16144 21.2618 4 24 4C26.7382 4 29.123 8.16144 30.3636 14.31C31.6043 8.16144 33.9891 4 36.7273 4C40.7439 4 44 12.9543 44 24C44 35.0457 40.7439 44 36.7273 44Z" fill="currentColor"></path>
+    <ellipse cx="14" cy="24" rx="10" ry="20" fill="currentColor" />
+    <ellipse cx="24" cy="24" rx="10" ry="20" fill="currentColor" />
+    <ellipse cx="34" cy="24" rx="10" ry="20" fill="currentColor" />
 </svg>
 </div>
 <h2 class="text-lg font-bold tracking-tight">RendeX</h2>
