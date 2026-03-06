@@ -522,9 +522,22 @@ if (empty($trending_items) && !empty($items)) {
                                     <?php echo ucwords(str_replace('-', ' ', $item['category'] ?? 'General')); ?>
                                 </p>
                             </div>
+                            <?php
+                            $avg_rating = 0;
+                            if (isset($pdo) && $pdo) {
+                                try {
+                                    $r_stmt = $pdo->prepare("SELECT AVG(rating) as avg_r FROM reviews WHERE item_id = ?");
+                                    $r_stmt->execute([$item['id']]);
+                                    $row = $r_stmt->fetch();
+                                    if ($row && $row['avg_r']) {
+                                        $avg_rating = round($row['avg_r'], 1);
+                                    }
+                                } catch(Exception $e){}
+                            }
+                            ?>
                             <div class="flex items-center gap-1 text-xs font-bold bg-[#f4f4e6] dark:bg-[#3e3d2a] px-2 py-1 rounded-full shrink-0">
-                                <span class="material-symbols-outlined text-sm text-yellow-600">star</span>
-                                5.0
+                                <span class="material-symbols-outlined text-sm text-yellow-600 <?php echo $avg_rating > 0 ? 'fill-current' : ''; ?>">star</span>
+                                <?php echo $avg_rating > 0 ? number_format($avg_rating, 1) : 'New'; ?>
                             </div>
                         </div>
                         

@@ -541,11 +541,14 @@ foreach ($rentals as $rental) {
                                 <?php echo $is_returned_early ? 'Returned on' : 'Expired on'; ?>: <span class="font-bold text-text-main"><?php echo date('M d, Y', strtotime($rental['end_date'])); ?></span>
                             </p>
                         </div>
-                        <div class="text-right">
+                        <div class="text-right flex flex-col items-end gap-2">
                              <span class="block font-black text-xl">₹<?php echo $rental['total_price']; ?></span>
-                             <span class="text-xs <?php echo $is_returned_early ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'; ?> font-bold px-2 py-1 rounded-md uppercase">
+                             <span class="text-xs <?php echo $is_returned_early ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'; ?> font-bold px-2 py-1 rounded-md uppercase inline-block">
                                  <?php echo $is_returned_early ? 'Returned' : 'Completed'; ?>
                              </span>
+                             <a href="item-details.php?id=<?php echo urlencode($item['id']); ?>" class="mt-1 text-[10px] font-bold uppercase tracking-wider bg-white dark:bg-[#1e2019] border border-[#e9e8ce] dark:border-[#3e3d2a] text-black dark:text-white px-3 py-1.5 rounded-full hover:bg-primary hover:text-black dark:hover:bg-primary dark:hover:text-black transition-colors flex items-center gap-1 shadow-sm">
+                                <span class="material-symbols-outlined text-[14px]">rate_review</span> Leave a Review
+                             </a>
                         </div>
                     </div>
                     <?php endforeach; ?>

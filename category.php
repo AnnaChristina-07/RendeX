@@ -152,8 +152,7 @@ if (!isset($_SESSION['user_id'])) {
                     FROM items i 
                     JOIN users u ON i.owner_id = u.id 
                     WHERE (i.title LIKE ? OR i.description LIKE ?) 
-                    AND i.admin_status = 'approved' 
-                    AND (i.active_until IS NULL OR i.active_until > NOW())
+                    AND i.admin_status = 'approved'
                 ");
                 $search_term = "%$search_query%";
                 $stmt->execute([$search_term, $search_term]);
@@ -164,8 +163,7 @@ if (!isset($_SESSION['user_id'])) {
                     FROM items i 
                     JOIN users u ON i.owner_id = u.id 
                     WHERE i.category = ? 
-                    AND i.admin_status = 'approved' 
-                    AND (i.active_until IS NULL OR i.active_until > NOW())
+                    AND i.admin_status = 'approved'
                 ");
                 $stmt->execute([$cat_slug]);
             }
@@ -272,7 +270,6 @@ if (!isset($_SESSION['user_id'])) {
             if ($already_added) continue;
 
             if (isset($d_item['status']) && in_array($d_item['status'], ['Active', 'Unavailable'])) {
-                if (isset($d_item['active_until']) && strtotime($d_item['active_until']) < time()) continue;
                 $item = $d_item;
             } else {
                 continue;
@@ -510,9 +507,22 @@ if (!isset($_SESSION['user_id'])) {
                         <div class="pt-4 px-2 pb-2">
                             <div class="flex justify-between items-start mb-1">
                                 <h3 class="font-bold text-lg leading-tight truncate flex-1 pr-2"><?php echo htmlspecialchars($item['name']); ?></h3>
+                                <?php
+                                $avg_rating = 0;
+                                if (isset($pdo) && $pdo) {
+                                    try {
+                                        $r_stmt = $pdo->prepare("SELECT AVG(rating) as avg_r FROM reviews WHERE item_id = ?");
+                                        $r_stmt->execute([$item['id']]);
+                                        $row = $r_stmt->fetch();
+                                        if ($row && $row['avg_r']) {
+                                            $avg_rating = round($row['avg_r'], 1);
+                                        }
+                                    } catch(Exception $e){}
+                                }
+                                ?>
                                 <div class="flex items-center gap-1 text-[10px] font-black bg-primary/10 text-text-main dark:text-primary px-2 py-1 rounded-full">
-                                    <span class="material-symbols-outlined text-[12px] text-primary fill-current">star</span>
-                                    4.<?php echo rand(5, 9); ?>
+                                    <span class="material-symbols-outlined text-[12px] text-primary <?php echo $avg_rating > 0 ? 'fill-current' : ''; ?>">star</span>
+                                    <?php echo $avg_rating > 0 ? number_format($avg_rating, 1) : 'New'; ?>
                                 </div>
                             </div>
                             <p class="text-xs text-text-muted dark:text-gray-500 font-medium mb-4"><?php echo $current_cat['title']; ?></p>

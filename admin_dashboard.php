@@ -68,7 +68,7 @@ try {
     $use_database = false;
 }
 
-// Fallback to JSON files
+// Fallback/Merge with JSON files
 if (!$use_database) {
     $users_file = 'users.json';
     $users = file_exists($users_file) ? json_decode(file_get_contents($users_file), true) : [];
@@ -82,13 +82,40 @@ $items = file_exists($items_file) ? json_decode(file_get_contents($items_file), 
 $rentals = file_exists($rentals_file) ? json_decode(file_get_contents($rentals_file), true) : [];
 $deliveries = file_exists($deliveries_file) ? json_decode(file_get_contents($deliveries_file), true) : [];
 
+if ($use_database) {
+    try {
+        $stmt = $pdo->query("SELECT i.*, u.name as owner_name FROM items i LEFT JOIN users u ON i.owner_id = u.id ORDER BY i.created_at DESC");
+        $db_items = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        // Map DB fields to match what JSON logic expects
+        foreach ($db_items as &$di) {
+            $di['price'] = $di['price'] ?? $di['price_per_day'] ?? 0;
+            $di['name'] = $di['name'] ?? $di['title'] ?? 'Item';
+            $di['status'] = $di['status'] ?? $di['admin_status'] ?? 'pending';
+        }
+        
+        // Merge DB items with JSON items (avoiding duplicates by id might be ideal, but simple merge works if IDs differ)
+        $items = array_merge($items, $db_items);
+    } catch (PDOException $e) {}
+}
+
 // --- ACTION HANDLERS ---
 
 // 1. Delete Item
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_item_id'])) {
     $delete_id = $_POST['delete_item_id'];
-    $new_items = array_filter($items, function($i) use ($delete_id) { return $i['id'] !== $delete_id; });
+    
+    if ($use_database && isset($pdo)) {
+        try {
+            $stmt = $pdo->prepare("DELETE FROM items WHERE id = ?");
+            $stmt->execute([$delete_id]);
+        } catch(PDOException $e) {}
+    }
+    
+    // Fallback cleanup in JSON, using loose comparison just in case
+    $new_items = array_filter($items, function($i) use ($delete_id) { return $i['id'] != $delete_id; });
     file_put_contents($items_file, json_encode(array_values($new_items), JSON_PRETTY_PRINT));
+    
     header("Location: admin_dashboard.php?tab=products&msg=item_deleted");
     exit();
 }

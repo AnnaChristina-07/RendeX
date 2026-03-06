@@ -251,6 +251,50 @@ if (!empty($item['sold_to'])) { $can_buy = false; $is_unavailable = true; }
 // Pre-booking flag
 $allow_prebooking = ($item['allow_prebooking'] ?? 1) && $can_rent;
 
+// --- REVIEWS LOGIC ---
+$reviews = [];
+$avg_rating = 0;
+$total_reviews = 0;
+$can_review = false;
+
+try {
+    if (isset($pdo) && $pdo) {
+        $stmt = $pdo->prepare("SELECT r.*, u.name as reviewer_name FROM reviews r JOIN users u ON r.reviewer_id = u.id WHERE r.item_id = ? ORDER BY r.created_at DESC");
+        $stmt->execute([$item_id]);
+        $reviews = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        $total_reviews = count($reviews);
+        if ($total_reviews > 0) {
+            $sum = 0;
+            foreach ($reviews as $rev) {
+                $sum += $rev['rating'];
+            }
+            $avg_rating = round($sum / $total_reviews, 1);
+        }
+
+        // Check eligibility to review
+        if (isset($_SESSION['user_id'])) {
+            // Did they rent and return?
+            $elig_stmt = $pdo->prepare("SELECT id FROM rentals WHERE item_id = ? AND renter_id = ? AND (status = 'completed' OR return_status = 'completed') LIMIT 1");
+            $elig_stmt->execute([$item_id, $_SESSION['user_id']]);
+            if ($elig_stmt->fetch()) {
+                // Have they already reviewed?
+                $rev_stmt = $pdo->prepare("SELECT id FROM reviews WHERE item_id = ? AND reviewer_id = ? LIMIT 1");
+                $rev_stmt->execute([$item_id, $_SESSION['user_id']]);
+                if (!$rev_stmt->fetch()) {
+                    // Get the rental ID for the form
+                    $r_id_stmt = $pdo->prepare("SELECT id FROM rentals WHERE item_id = ? AND renter_id = ? AND (status = 'completed' OR return_status = 'completed') ORDER BY created_at DESC LIMIT 1");
+                    $r_id_stmt->execute([$item_id, $_SESSION['user_id']]);
+                    $eligible_rental = $r_id_stmt->fetch();
+                    if ($eligible_rental) {
+                        $can_review = true;
+                        $eligible_rental_id = $eligible_rental['id'];
+                    }
+                }
+            }
+        }
+    }
+} catch (Exception $e) {}
 ?>
 <!DOCTYPE html>
 <html class="light" lang="en">
@@ -476,8 +520,8 @@ $allow_prebooking = ($item['allow_prebooking'] ?? 1) && $can_rent;
                             <span class="bg-primary/20 text-primary-dark font-bold px-3 py-1 rounded-full text-xs uppercase tracking-wide">Available</span>
                         <?php endif; ?>
                         <div class="flex items-center gap-1 text-xs font-bold bg-[#f4f4e6] dark:bg-[#3e3d2a] px-2 py-1 rounded-full">
-                            <span class="material-symbols-outlined text-sm text-yellow-600">star</span>
-                            4.<?php echo rand(5, 9); ?> (<?php echo rand(10, 50); ?> reviews)
+                            <span class="material-symbols-outlined text-sm text-yellow-600 <?php echo $total_reviews > 0 ? 'fill-current' : ''; ?>">star</span>
+                            <?php echo $total_reviews > 0 ? (number_format($avg_rating, 1) . ' (' . $total_reviews . ' reviews)') : 'New'; ?>
                         </div>
                     </div>
                     <div class="flex items-start justify-between gap-4 mb-4">
@@ -560,7 +604,113 @@ $allow_prebooking = ($item['allow_prebooking'] ?? 1) && $can_rent;
                  </div>
                  <!-- ====== END CALENDAR ====== -->
 
-                 <hr class="border-[#e9e8ce] dark:border-[#3e3d2a]">
+                 <!-- ====== REVIEWS SECTION ====== -->
+                 <div class="mt-8">
+                     <h3 class="font-black text-2xl mb-6">Reviews</h3>
+                     
+                     <?php if ($can_review): ?>
+                     <div class="bg-surface-light dark:bg-surface-dark border border-[#e9e8ce] dark:border-[#3e3d2a] p-6 rounded-2xl mb-6 shadow-sm" id="review-form-container">
+                         <h4 class="font-bold text-lg mb-4">Write a Review</h4>
+                         <form id="submit-review-form" onsubmit="submitReview(event)" class="space-y-4">
+                             <input type="hidden" name="item_id" value="<?php echo htmlspecialchars($item_id); ?>">
+                             <input type="hidden" name="rental_id" value="<?php echo htmlspecialchars($eligible_rental_id); ?>">
+                             
+                             <div>
+                                 <label class="block text-xs font-bold text-text-muted mb-2 uppercase tracking-wide">Rating (1-5)</label>
+                                 <div class="flex gap-2" id="star-rating-selector">
+                                     <?php for($i=1; $i<=5; $i++): ?>
+                                     <button type="button" class="star-btn material-symbols-outlined text-3xl text-gray-300 hover:text-yellow-400 transition-colors" data-val="<?php echo $i; ?>" onclick="setRating(<?php echo $i; ?>)">star</button>
+                                     <?php endfor; ?>
+                                 </div>
+                                 <input type="hidden" name="rating" id="selected-rating" required>
+                             </div>
+                             
+                             <div>
+                                 <label class="block text-xs font-bold text-text-muted mb-2 uppercase tracking-wide">Comment</label>
+                                 <textarea name="comment" rows="3" class="w-full bg-background-light dark:bg-[#1e2019] border border-[#e9e8ce] dark:border-[#3e3d2a] rounded-xl p-3 text-sm focus:ring-primary focus:border-primary outline-none text-text-main dark:text-white" required placeholder="Tell others about your experience..."></textarea>
+                             </div>
+                             
+                             <button type="submit" class="bg-primary text-black font-bold px-6 py-3 rounded-xl hover:bg-yellow-400 transition-colors inline-flex items-center gap-2">
+                                 <span class="material-symbols-outlined text-sm">send</span> Submit Review
+                             </button>
+                             <div id="review-status" class="mt-2 text-sm font-bold hidden"></div>
+                         </form>
+                     </div>
+                     <script>
+                         function setRating(val) {
+                             document.getElementById('selected-rating').value = val;
+                             const stars = document.querySelectorAll('.star-btn');
+                             stars.forEach(s => {
+                                 if (parseInt(s.dataset.val) <= val) {
+                                     s.classList.remove('text-gray-300');
+                                     s.classList.add('text-yellow-400');
+                                     s.style.fontVariationSettings = "'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24";
+                                 } else {
+                                     s.classList.add('text-gray-300');
+                                     s.classList.remove('text-yellow-400');
+                                     s.style.fontVariationSettings = "'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24";
+                                 }
+                             });
+                         }
+                         function submitReview(e) {
+                             e.preventDefault();
+                             if(!document.getElementById('selected-rating').value) {
+                                 alert('Please select a rating.'); return;
+                             }
+                             const formData = new FormData(e.target);
+                             fetch('submit_review.php', { method: 'POST', body: formData })
+                             .then(res => res.json())
+                             .then(data => {
+                                 const status = document.getElementById('review-status');
+                                 status.classList.remove('hidden');
+                                 if(data.success) {
+                                     status.className = 'mt-2 text-sm font-bold text-green-600';
+                                     status.textContent = data.message;
+                                     setTimeout(() => location.reload(), 1500);
+                                 } else {
+                                     status.className = 'mt-2 text-sm font-bold text-red-600';
+                                     status.textContent = data.message;
+                                 }
+                             });
+                         }
+                     </script>
+                     <?php endif; ?>
+
+                     <?php if (empty($reviews)): ?>
+                     <div class="text-center p-8 bg-gray-50 dark:bg-gray-800 rounded-2xl border border-dashed border-gray-300 dark:border-gray-700">
+                         <span class="material-symbols-outlined text-4xl text-gray-400 mb-2">reviews</span>
+                         <p class="text-text-muted font-bold">No reviews yet for this item.</p>
+                     </div>
+                     <?php else: ?>
+                     <div class="space-y-4">
+                         <?php foreach($reviews as $r): ?>
+                         <div class="bg-surface-light dark:bg-surface-dark border border-[#e9e8ce] dark:border-[#3e3d2a] p-5 rounded-2xl shadow-sm">
+                             <div class="flex justify-between items-start mb-3">
+                                 <div class="flex items-center gap-3">
+                                     <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-800 font-bold">
+                                         <?php echo strtoupper(substr($r['reviewer_name'] ?? 'U', 0, 1)); ?>
+                                     </div>
+                                     <div>
+                                         <p class="font-bold text-sm leading-none mb-1"><?php echo htmlspecialchars($r['reviewer_name'] ?? 'User'); ?></p>
+                                         <p class="text-[10px] text-text-muted"><?php echo date('M d, Y', strtotime($r['created_at'])); ?></p>
+                                     </div>
+                                 </div>
+                                 <div class="flex items-center bg-[#f4f4e6] dark:bg-[#3e3d2a] px-2 py-1 rounded-full text-yellow-600 gap-0.5">
+                                     <span class="font-black text-xs mr-1"><?php echo $r['rating']; ?>.0</span>
+                                     <?php for($i=1; $i<=5; $i++): ?>
+                                         <span class="material-symbols-outlined text-[12px] <?php echo $i <= $r['rating'] ? 'fill-current' : 'opacity-30'; ?>">star</span>
+                                     <?php endfor; ?>
+                                 </div>
+                             </div>
+                             <p class="text-sm text-text-muted leading-relaxed"><?php echo nl2br(htmlspecialchars($r['comment'])); ?></p>
+                         </div>
+                         <?php endforeach; ?>
+                     </div>
+                     <?php endif; ?>
+                 </div>
+                 <!-- ====== END REVIEWS SECTION ====== -->
+
+                 <hr class="border-[#e9e8ce] dark:border-[#3e3d2a] mt-8">
 
                  <!-- Actions -->
                      <!-- Actions -->
