@@ -154,6 +154,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $addr_pin = trim($_POST['addr_pin'] ?? '');
     $listing_type = $_POST['listing_type'] ?? 'rent';
     $selling_price = trim($_POST['selling_price'] ?? '');
+    $fulfilled_request_id = isset($_POST['fulfilled_request_id']) && !empty($_POST['fulfilled_request_id']) ? $_POST['fulfilled_request_id'] : null;
+
     if (!in_array($listing_type, ['rent','sell','both'])) $listing_type = 'rent';
     if (in_array($listing_type, ['sell','both']) && (!is_numeric($selling_price) || $selling_price <= 0)) {
         $errors[] = "Please enter a valid Selling Price greater than 0.";
@@ -314,16 +316,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $stmt = $pdo->prepare("INSERT INTO items (
                         owner_id, title, description, category, 
                         price_per_day, security_deposit, handover_methods, 
-                        location, images, listing_type, selling_price, admin_status, created_at
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', NOW())");
+                        location, images, listing_type, selling_price, admin_status, created_at, fulfilled_request_id
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', NOW(), ?)");
                     $stmt->execute([
                         $_SESSION['user_id'], $title, $description, $category, 
                         $db_price, $security_deposit, $handover_json, 
-                        $address, $images_json, $listing_type, $sp
+                        $address, $images_json, $listing_type, $sp, $fulfilled_request_id
                     ]);
     
-                    // Add Admin Notification
                     $item_id = $pdo->lastInsertId();
+
+                    // If fulfilling a request, notify the renter
+                    if ($fulfilled_request_id) {
+                        try {
+                            $rStmt = $pdo->prepare("SELECT renter_id FROM item_requests WHERE id = ?");
+                            $rStmt->execute([$fulfilled_request_id]);
+                            $reqData = $rStmt->fetch(PDO::FETCH_ASSOC);
+                            if ($reqData) {
+                                $notif_stmt = $pdo->prepare("INSERT INTO notifications (user_id, title, message, type, link, created_at) VALUES (?, ?, ?, 'info', ?, NOW())");
+                                $notif_title = "Your Request is Listed!";
+                                $notif_msg = "Great news! " . ($_SESSION['user_name'] ?? 'An owner') . " just listed the '" . $title . "' you requested. Click here to book it!";
+                                $notif_link = "item-details.php?id=" . $item_id;
+                                $notif_stmt->execute([$reqData['renter_id'], $notif_title, $notif_msg, $notif_link]);
+                            }
+                        } catch(Exception $e) {}
+                    }
                     $notif_stmt = $pdo->prepare("INSERT INTO admin_notifications (type, reference_id, title, message) VALUES ('item_listing', ?, ?, ?)");
                     $notif_title = "New Item Listing: " . $title;
                     $notif_msg = "A new item '" . $title . "' has been listed by " . ($_SESSION['user_name'] ?? 'User') . " and is awaiting approval.";
@@ -457,7 +474,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <?php endif; ?>
 
         <form id="lendItemForm" class="space-y-10" method="POST" enctype="multipart/form-data" onsubmit="const btn = this.querySelector('button[type=submit]'); if(btn.disabled) return false; btn.disabled = true; btn.classList.add('opacity-50', 'cursor-not-allowed');">
-            
+            <input type="hidden" name="fulfilled_request_id" value="<?php echo isset($_GET['request_id']) ? htmlspecialchars($_GET['request_id']) : ''; ?>">
             <!-- Section 1: Item Details -->
             <div class="bg-white dark:bg-[#1e1e1e] p-8 md:p-10 rounded-[2.5rem] shadow-xl shadow-gray-200/50 dark:shadow-none space-y-6">
                 <div class="flex items-center gap-3 pb-2">

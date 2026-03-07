@@ -168,7 +168,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
         <?php endif; ?>
 
-        <form class="space-y-10" method="POST">
+        <form class="space-y-10" method="POST" onsubmit="
+            const btn = this.querySelector('button[type=submit]');
+            btn.disabled = true;
+            btn.classList.add('opacity-50', 'cursor-not-allowed');
+            btn.innerHTML = '<span class=\'material-symbols-outlined animate-spin\'>refresh</span><span>Submitting...</span>';
+        ">
             
             <div class="bg-white dark:bg-[#1e1e1e] p-8 md:p-10 rounded-[2.5rem] shadow-xl shadow-gray-200/50 dark:shadow-none space-y-6">
                 <div>

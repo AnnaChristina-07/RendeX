@@ -29,13 +29,17 @@ if (isset($_POST['cancel_request'])) {
 try {
     $pdo = getDBConnection();
     // Get requests
-    $stmt = $pdo->prepare("SELECT * FROM item_requests WHERE renter_id = ? ORDER BY created_at DESC");
+    $stmt = $pdo->prepare("
+        SELECT r.*, i.id as fulfilled_item_id, i.title as fulfilled_item_name, i.admin_status as fulfilled_item_status
+        FROM item_requests r 
+        LEFT JOIN items i ON r.id = i.fulfilled_request_id
+        WHERE r.renter_id = ? 
+        ORDER BY r.created_at DESC
+    ");
     $stmt->execute([$user_id]);
     $requests = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
-    // Offers fetching removed as per user request
-    $offers_by_request = []; // Kept empty array to avoid undefined variable errors in view if any remain
-    
+    $offers_by_request = [];
 } catch (PDOException $e) {
     die("Error: " . $e->getMessage());
 }
@@ -195,13 +199,35 @@ try {
                             
                             <?php if ($req['status'] === 'active'): ?>
                             <div class="flex flex-col items-end gap-2">
-                                <form method="POST" onsubmit="return confirm('Are you sure you want to cancel this request?');">
+                                <form method="POST" id="cancel-form-<?php echo $req['id']; ?>">
                                     <input type="hidden" name="request_id" value="<?php echo $req['id']; ?>">
-                                    <button type="submit" name="cancel_request" class="px-5 py-2.5 bg-white dark:bg-transparent border border-gray-200 dark:border-gray-700 hover:border-red-200 hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-900/20 dark:hover:border-red-800 rounded-xl text-xs font-bold text-gray-500 transition-all flex items-center gap-2">
+                                    <button type="button" onclick="openCancelModal('<?php echo $req['id']; ?>', '<?php echo htmlspecialchars(addslashes($req['item_name'])); ?>')" class="px-5 py-2.5 bg-white dark:bg-transparent border border-gray-200 dark:border-gray-700 hover:border-red-200 hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-900/20 dark:hover:border-red-800 rounded-xl text-xs font-bold text-gray-500 transition-all flex items-center gap-2">
                                         <span class="material-symbols-outlined text-[18px]">close</span>
                                         Cancel Request
                                     </button>
                                 </form>
+                            </div>
+                            <?php elseif ($req['status'] === 'fulfilled'): ?>
+                            <div class="flex flex-col items-end gap-2">
+                                <?php if (!empty($req['fulfilled_item_id']) && $req['fulfilled_item_status'] === 'approved'): ?>
+                                    <a href="item-details.php?id=<?php echo $req['fulfilled_item_id']; ?>" class="px-6 py-3 bg-primary hover:bg-[#e6e200] text-black rounded-xl text-sm font-black transition-all flex items-center gap-2 shadow-lg shadow-yellow-200/50 dark:shadow-none hover:translate-y-[-2px] active:translate-y-[0px]">
+                                        <span class="material-symbols-outlined font-bold">visibility</span>
+                                        View Listed Item
+                                    </a>
+                                    <p class="text-[10px] text-gray-400 font-bold uppercase mt-1">Ready to book!</p>
+                                <?php elseif (!empty($req['fulfilled_item_id']) && $req['fulfilled_item_status'] === 'pending'): ?>
+                                    <div class="px-6 py-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-400 rounded-xl text-sm font-bold flex items-center gap-2">
+                                        <span class="material-symbols-outlined font-bold animate-pulse w-5 h-5 flex items-center justify-center">pending_actions</span>
+                                        Admin Review Active
+                                    </div>
+                                    <p class="text-[10px] text-gray-400 font-bold uppercase mt-1 text-right">Owner listed the item,<br>awaiting admin approval.</p>
+                                <?php else: ?>
+                                    <div class="px-6 py-3 bg-gray-100 dark:bg-gray-800 text-gray-500 rounded-xl text-sm font-bold flex items-center gap-2">
+                                        <span class="material-symbols-outlined font-bold animate-spin w-5 h-5 flex items-center justify-center">sync</span>
+                                        Preparing Listing...
+                                    </div>
+                                    <p class="text-[10px] text-gray-400 font-bold uppercase mt-1 text-right">Owner is uploading photos,<br>check back in a minute.</p>
+                                <?php endif; ?>
                             </div>
                             <?php endif; ?>
                         </div>
@@ -212,5 +238,81 @@ try {
             </div>
         <?php endif; ?>
     </main>
+    
+    <!-- Cancel Request Modal -->
+    <div id="cancelModal" class="fixed inset-0 z-[100] hidden items-center justify-center bg-black/50 backdrop-blur-sm transition-opacity duration-300 opacity-0">
+        <div class="bg-white dark:bg-[#1e1e1e] rounded-[2rem] p-8 max-w-sm w-full mx-4 shadow-2xl border border-gray-100 dark:border-gray-800 transform transition-transform duration-300 scale-95" id="cancelModalContent">
+            <div class="flex flex-col items-center text-center">
+                <div class="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mb-6">
+                    <span class="material-symbols-outlined text-3xl text-red-500">warning</span>
+                </div>
+                <h3 class="text-2xl font-black text-gray-900 dark:text-white mb-2">Cancel Request?</h3>
+                <p class="text-sm text-gray-500 dark:text-gray-400 mb-8">Are you sure you want to cancel your request for "<span id="cancelItemName" class="font-bold text-gray-800 dark:text-gray-200"></span>"? This action cannot be undone.</p>
+                
+                <div class="flex gap-4 w-full">
+                    <button type="button" onclick="closeCancelModal()" class="flex-1 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-900 dark:text-white font-bold py-4 rounded-xl transition-colors">
+                        Keep It
+                    </button>
+                    <button type="button" onclick="confirmCancellation()" class="flex-1 bg-red-500 hover:bg-red-600 text-white font-bold py-4 rounded-xl transition-colors shadow-lg shadow-red-500/30">
+                        Yes, Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let cancelFormId = null;
+
+        function openCancelModal(reqId, itemName) {
+            cancelFormId = `cancel-form-${reqId}`;
+            document.getElementById('cancelItemName').textContent = itemName;
+            
+            const modal = document.getElementById('cancelModal');
+            const content = document.getElementById('cancelModalContent');
+            
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                content.classList.remove('scale-95');
+            }, 10);
+        }
+
+        function closeCancelModal() {
+            const modal = document.getElementById('cancelModal');
+            const content = document.getElementById('cancelModalContent');
+            
+            modal.classList.add('opacity-0');
+            content.classList.add('scale-95');
+            
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+                cancelFormId = null;
+            }, 300);
+        }
+
+        function confirmCancellation() {
+            if (cancelFormId) {
+                const form = document.getElementById(cancelFormId);
+                if (form) {
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = 'cancel_request';
+                    input.value = '1';
+                    form.appendChild(input);
+                    form.submit();
+                }
+            }
+        }
+
+        document.getElementById('cancelModal').addEventListener('click', (e) => {
+            if (e.target === document.getElementById('cancelModal')) {
+                closeCancelModal();
+            }
+        });
+    </script>
 </body>
 </html>

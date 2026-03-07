@@ -1,23 +1,6 @@
 <?php
-require_once 'config/database.php';
-$email = 'annachristina2005@gmail.com';
-try {
-    $pdo = getDBConnection();
-    if ($pdo) {
-        $stmt = $pdo->prepare("SELECT * FROM users WHERE email = ?");
-        $stmt->execute([$email]);
-        $user = $stmt->fetch();
-        if ($user) {
-            echo "User found in DB!\n";
-            echo "Email: " . $user['email'] . "\n";
-            echo "Hash: " . $user['password_hash'] . "\n";
-        } else {
-            echo "User NOT found in DB.\n";
-        }
-    } else {
-        echo "Could not connect to DB.\n";
-    }
-} catch (Exception $e) {
-    echo "Error: " . $e->getMessage() . "\n";
-}
+require 'c:\xamppp\htdocs\RendeX\config\database.php';
+$pdo = getDBConnection();
+print_r($pdo->query('SELECT id, title, fulfilled_request_id FROM items WHERE fulfilled_request_id IS NOT NULL')->fetchAll(PDO::FETCH_ASSOC));
+print_r($pdo->query('SELECT id, status, item_name FROM item_requests WHERE status=\'fulfilled\'')->fetchAll(PDO::FETCH_ASSOC));
 ?>
