@@ -286,16 +286,35 @@ try {
         let currentShareReqId = null;
         let currentShareItemName = '';
         let currentShareRenterName = '';
+        let currentShortUrl = '';
 
         function getShareUrl(reqId) {
-            const baseUrl = window.location.origin + window.location.pathname.replace(/\/[^\/]+$/, '/browse_requests.php');
+            let baseUrl = window.location.origin + window.location.pathname.replace(/\/[^\/]+$/, '/browse_requests.php');
+            baseUrl = baseUrl.replace('localhost', '127.0.0.1'); 
             return baseUrl + '?highlight=' + reqId;
+        }
+
+        async function prefetchShortUrl(reqId) {
+            const longUrl = getShareUrl(reqId);
+            currentShortUrl = longUrl; // Fallback immediately
+            try {
+                const response = await fetch(`https://tinyurl.com/api-create.php?url=${encodeURIComponent(longUrl)}`);
+                if (response.ok) {
+                    currentShortUrl = await response.text();
+                }
+            } catch (e) {
+                console.error("Short URL failed", e);
+            }
         }
 
         function openShareModal(reqId, itemName, renterName) {
             currentShareReqId = reqId;
             currentShareItemName = itemName;
             currentShareRenterName = renterName;
+            
+            // Generate the TinyURL in the background so it's ready when they click share
+            prefetchShortUrl(reqId);
+
             const modal = document.getElementById('shareModal');
             const content = document.getElementById('shareModalContent');
             modal.classList.remove('hidden');
@@ -318,24 +337,27 @@ try {
         }
 
         function shareToWhatsApp() {
-            const text = `Hey! Is anyone renting out a ${currentShareItemName}?\n\n${currentShareRenterName} is looking for one on RendeX right now! Check it out here:\n${getShareUrl(currentShareReqId)}\n\n📸🚀`;
+            const urlToShare = currentShortUrl || getShareUrl(currentShareReqId);
+            const text = `Hey! Is anyone renting out a ${currentShareItemName}?\n\n${currentShareRenterName} is looking for one on RendeX right now! Check it out here:\n${urlToShare}\n\n📸🚀`;
             window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
         }
 
         function shareToFacebook() {
-            const url = encodeURIComponent(getShareUrl(currentShareReqId));
+            const urlToShare = currentShortUrl || getShareUrl(currentShareReqId);
+            const url = encodeURIComponent(urlToShare);
             window.open(`https://www.facebook.com/sharer/sharer.php?u=${url}`, '_blank', 'width=600,height=400');
         }
 
         function shareToX() {
-            const url = encodeURIComponent(getShareUrl(currentShareReqId));
+            const urlToShare = currentShortUrl || getShareUrl(currentShareReqId);
+            const url = encodeURIComponent(urlToShare);
             const text = encodeURIComponent(`Could you help out? ${currentShareRenterName} is searching for a ${currentShareItemName} to rent on RendeX. Do you have one lying around? Let them know!\n\n`);
             window.open(`https://twitter.com/intent/tweet?text=${text}&url=${url}`, '_blank', 'width=600,height=400');
         }
 
         function copyShareLink() {
-            const url = getShareUrl(currentShareReqId);
-            navigator.clipboard.writeText(url).then(() => {
+            const urlToShare = currentShortUrl || getShareUrl(currentShareReqId);
+            navigator.clipboard.writeText(urlToShare).then(() => {
                 const btn = document.getElementById('copyLinkBtn');
                 const icon = document.getElementById('copyIcon');
                 const text = document.getElementById('copyText');
