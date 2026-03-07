@@ -94,8 +94,23 @@ if ($use_database) {
             $di['status'] = $di['status'] ?? $di['admin_status'] ?? 'pending';
         }
         
-        // Merge DB items with JSON items (avoiding duplicates by id might be ideal, but simple merge works if IDs differ)
-        $items = array_merge($items, $db_items);
+        // Smart merge: DB items take precedence. Filter out JSON items that are already in DB
+        $merged_items = $db_items;
+        foreach ($items as $j_item) {
+            $is_dup = false;
+            $j_name = strtolower(trim($j_item['title'] ?? $j_item['name'] ?? ''));
+            foreach ($db_items as $d_item) {
+                $d_name = strtolower(trim($d_item['name'] ?? ''));
+                if ($j_name !== '' && $j_name === $d_name) {
+                    $is_dup = true;
+                    break;
+                }
+            }
+            if (!$is_dup) {
+                $merged_items[] = $j_item;
+            }
+        }
+        $items = $merged_items;
     } catch (PDOException $e) {}
 }
 
