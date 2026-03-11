@@ -1005,5 +1005,53 @@
         "delivery_address": "Self-Pickup",
         "total_price": 270,
         "created_at": "2026-03-06 05:36:55"
+    },
+    {
+        "id": "RENT_69ae4cc4d5d98",
+        "user_id": "695a8dc1e017b",
+        "item": {
+            "id": 56,
+            "owner_id": "697e2d046713b",
+            "title": "Trolley bag",
+            "description": "Trolley bag for travel and storage use.",
+            "category": "outdoor-gear",
+            "price_per_day": "150.00",
+            "security_deposit": "0.00",
+            "condition_status": "good",
+            "availability_status": "available",
+            "active_until": "2026-03-02 17:47:28",
+            "listing_duration": 30,
+            "location": "pathanamthitta",
+            "city": null,
+            "state": null,
+            "pincode": null,
+            "images": "[\"697e2ecebc1e4_Suitcase.jpg\",\"697e2ecebefe1_download (17).jpg\"]",
+            "is_active": 1,
+            "views_count": 0,
+            "created_at": "2026-01-31 22:03:18",
+            "updated_at": "2026-01-31 22:17:28",
+            "handover_methods": "[\"pickup\"]",
+            "admin_status": "approved",
+            "fulfilled_request_id": null,
+            "listing_type": "rent",
+            "selling_price": null,
+            "name": "Trolley bag",
+            "price": "150.00",
+            "address": "pathanamthitta",
+            "all_images": [
+                "uploads\/697e2ecebc1e4_Suitcase.jpg",
+                "uploads\/697e2ecebefe1_download (17).jpg"
+            ],
+            "img": "uploads\/697e2ecebc1e4_Suitcase.jpg",
+            "type": "dynamic",
+            "user_id": "697e2d046713b"
+        },
+        "status": "active",
+        "start_date": "2026-03-09",
+        "end_date": "2026-03-11",
+        "fulfillment": "delivery",
+        "delivery_address": "Kunnel House, Near Erumeli Town Junction, Near Erumeli Sree Dharma Sastha Temple, Erumeli Kerala 686509, Phone: +91 98765 43210",
+        "total_price": 750,
+        "created_at": "2026-03-09 05:29:56"
     }
 ]

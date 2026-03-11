@@ -916,7 +916,11 @@ try {
                 </div>
                 <a href="https://wa.me/<?php echo preg_replace('/[^0-9]/', '', $owner_phone); ?>" target="_blank" class="flex items-center justify-center gap-2 w-full bg-primary text-black font-black py-4 rounded-2xl mb-4 transition-all hover:scale-[1.02] active:scale-95 shadow-lg shadow-primary/20">
                     <span class="material-symbols-outlined">chat</span>
-                    Chat with Owner
+                    Chat via WhatsApp
+                </a>
+                <a href="https://mail.google.com/mail/?view=cm&fs=1&to=<?php echo urlencode($owner_email); ?>&su=Inquiry+regarding+<?php echo urlencode($item['name']); ?>" target="_blank" class="flex items-center justify-center gap-2 w-full bg-green-500 text-white font-black py-4 rounded-2xl mb-4 transition-all hover:scale-[1.02] active:scale-95 shadow-lg shadow-green-500/20">
+                    <span class="material-symbols-outlined">mail</span>
+                    Chat via Email
                 </a>
                 <button onclick="closeContactModal()" class="w-full bg-black text-white dark:bg-primary dark:text-black font-black py-4 rounded-2xl transition-all hover:scale-[1.02] active:scale-95">
                     Close
